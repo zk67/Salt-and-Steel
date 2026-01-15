@@ -42,8 +42,8 @@ describe('MainPageComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it("should have as title 'LOG2995'", () => {
-        expect(component.title).toEqual('LOG2995');
+    it("should have as title 'Salt and Steel'", () => {
+        expect(component.title).toEqual('Salt and Steel');
     });
 
     it('should call basicGet when calling getMessagesFromServer', () => {
