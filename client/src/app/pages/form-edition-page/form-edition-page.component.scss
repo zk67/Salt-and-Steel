@@ -1,0 +1,47 @@
+.container {
+    min-height: 100vh;
+    height: auto;
+    align-content: center;
+    text-align: center;
+    font-size: 25px;
+}
+
+.form-radio {
+    input[type="radio"] {
+        display: none;
+    }
+
+    label {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 5px;
+        border: 2px solid black;
+        background-color: white;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background-color: black;
+            color: white;
+        }
+    }
+
+    input[type="radio"]:checked + label {
+        background-color: black;
+        color: white;
+        border-color: black;
+    }
+}
+
+.btn-submit{
+    border: 2px solid black;
+    background-color: white;
+    transition: all 0.3s ease;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 25px;
+
+    &:hover {
+        background-color: black;
+        color: white;
+    }
+}

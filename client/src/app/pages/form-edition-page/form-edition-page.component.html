@@ -1,0 +1,22 @@
+<div class="container">
+    <form (ngSubmit)="onSubmit()" method="get" class="form-edition-page">
+        <div class="form-radio">
+            <input type="radio" name="mode" id="CTF-mode" value="CTF" [(ngModel)]="selectedMode" disabled required />
+            <label for="CTF-mode" class="CTF"> CTF </label>
+            <input type="radio" name="mode" id="classic-mode" value="classic" [(ngModel)]="selectedMode" checked required />
+            <label for="classic-mode" class="Classic"> Classique </label>
+        </div>
+        <div class="form-radio">
+            <input type="radio" name="size" id="tiny-mode" value="tiny" [(ngModel)]="selectedSize" checked required />
+            <label for="tiny-mode" class="Tiny"> Petite </label>
+            <input type="radio" name="size" id="medium-mode" value="medium" [(ngModel)]="selectedSize" required />
+            <label for="medium-mode" class="Medium"> Moyenne </label>
+            <input type="radio" name="size" id="big-mode" value="big" [(ngModel)]="selectedSize" required />
+            <label for="big-mode" class="Big"> Grande </label>
+            <p class="size-description">{{ getSizeDescription() }}</p>
+        </div>
+        <div>
+            <button type="submit" class="btn-submit" > Créer un nouveau jeu </button>
+        </div>
+    </form>
+</div>

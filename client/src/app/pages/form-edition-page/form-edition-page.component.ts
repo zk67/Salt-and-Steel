@@ -1,0 +1,40 @@
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+
+@Component({
+    selector: 'app-form-edition-page',
+    templateUrl: './form-edition-page.component.html',
+    styleUrls: ['./form-edition-page.component.scss'],
+    imports: [FormsModule],
+})
+
+export class FormEditionPageComponent {
+    selectedMode: string = 'classic';
+    selectedSize: string = 'tiny';
+
+    constructor(private router: Router) {}
+
+    onSubmit(): void {
+        const queryParams = {
+            mode: this.selectedMode,
+            size: this.selectedSize,
+        };
+
+        // TODO: Changer le /game pour la vue d'edition quand elle sera faite (Sera changer dans la pr ou la vue est creer)
+        this.router.navigate(['/game'], { queryParams });
+    }
+
+    getSizeDescription(): string {
+        switch (this.selectedSize) {
+            case 'tiny':
+                return 'La taille petite est une grille de 10x10 pour 2 joueurs.';
+            case 'medium':
+                return 'La taille moyenne est une grille de 15x15 pour 2 à 4 joueurs.';
+            case 'big':
+                return 'La taille grande est une grille de 20x20 pour 2 à 6 joueurs.';
+            default:
+                return '';
+        }
+    }
+}
