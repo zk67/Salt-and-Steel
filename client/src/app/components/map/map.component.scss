@@ -1,0 +1,49 @@
+.map-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-size), 1fr);
+    gap: 2px;
+    background-color: black;
+    width: min(90vw, 90vh);
+    height: min(90vw, 90vh);
+    margin: auto;
+}
+
+.tile {
+    aspect-ratio: 1;
+    background-color: white;
+
+    &[data-tile-type="Basic"] {
+        background-color: #5e3010;
+    }
+
+    &[data-tile-type="Water"] {
+        background-color: #2854d9;
+    }
+
+    &[data-tile-type="Ice"] {
+        background-color: #44d7ff;
+    }
+
+    &[data-tile-type="Wall"] {
+        background-color: #2d2d2d;
+    }
+
+    &[data-tile-type="Door"] {
+        background-color: #9b4e16;
+    }
+
+    &[data-object="SpawnPoint"] {
+        //background-image: url(''); quand on aura une image
+        background-size: 80%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    transition: border 0.1s ease;
+    border: 2px solid transparent;
+
+    &:hover {
+        border: 2px solid #fff;
+        cursor: pointer;
+    }
+}
