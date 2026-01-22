@@ -23,11 +23,11 @@ export class MapObject {
         return this.tileMap[y][x];
     }
 
-    setMapObjectAt(x: number, y: number, mapObject: MapObjectType): void {
+    setMapObject(x: number, y: number, mapObject: MapObjectType): void {
         this.tileMap[y][x].setMapObject(mapObject);
     }
 
-    getMapObjectAt(x: number, y: number): MapObjectType {
+    getMapObject(x: number, y: number): MapObjectType {
         return this.tileMap[y][x].getMapObject();
     }
 }

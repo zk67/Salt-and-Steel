@@ -40,10 +40,12 @@ export class Tile {
     }
 
     setTileType(type: TileType): void {
-        this.tileType = type;
+        if(type !== this.tileType){
+            this.tileType = type;
 
-        if (type === TileType.Wall) {
-            this.mapObject = MapObjectType.None;
+            if (type === TileType.Wall) {
+                this.mapObject = MapObjectType.None;
+            }
         }
     }
 }

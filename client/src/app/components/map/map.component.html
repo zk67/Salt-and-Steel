@@ -6,9 +6,10 @@
             <div class="tile"
                  [attr.data-tile-type]="tileType[tile.getTileType()]"
                  [attr.data-object]="mapObjectType[tile.getMapObject()]"
-                 (mousedown)="onMouseDown(colIndex, rowIndex); $event.preventDefault()"
-                 (mouseenter)="onMouseEnter(colIndex, rowIndex)"
-                 (dragstart)="$event.preventDefault()">
+                 (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
+                 (mouseenter)="onMouseEnter($event, colIndex, rowIndex)"
+                 (dragstart)="$event.preventDefault()"
+                 (contextmenu)="$event.preventDefault()">
             </div>
         }
     }

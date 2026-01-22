@@ -1,6 +1,7 @@
 import { Component, Input, OnInit  } from '@angular/core';
 import { MapObject } from '@app/classes/game/map/map';
 import { TileType, MapObjectType } from '@app/classes/game/map/tile';
+import { Tool } from '@app/classes/game/map/tool';
 
 @Component({
     selector: 'app-map-editor',
@@ -11,19 +12,20 @@ import { TileType, MapObjectType } from '@app/classes/game/map/tile';
 export class MapEditorComponent implements OnInit {
     @Input() gridSize = 10;
     map!: MapObject;
+    private tool!: Tool;
 
-    selectedTileType: TileType = TileType.Water; // default
-    selectedObjectType: MapObjectType | null = null;
-    isMouseDown: boolean = false; // Pour gerer le mouse drag
+    private isMouseDown: boolean = false; // Pour gerer le mouse drag
+    private mouseButton: number = 0; // Pour gerer le drag car mouseenter ne donne pas le bouton
 
     // Utile pour la composante HTML pour lier le enum et string
     tileType = TileType;
     mapObjectType = MapObjectType;
 
 
-    onMouseDown(x: number, y: number): void {
+    onMouseDown(event: MouseEvent, x: number, y: number): void {
         this.isMouseDown = true;
-        this.onTileClick(x, y);
+        this.mouseButton = event.button;
+        this.tool.useTool(this.mouseButton, event.shiftKey, x, y);
     }
 
     onMouseUp(): void {
@@ -31,21 +33,14 @@ export class MapEditorComponent implements OnInit {
     }
 
     // Permet de gerer le mouse drag
-    onMouseEnter(x: number, y: number): void {
+    onMouseEnter(event: MouseEvent, x: number, y: number): void {
         if (this.isMouseDown) {
-            this.onTileClick(x, y);
-        }
-    }
-
-    onTileClick(x: number, y: number): void {
-        if (this.selectedObjectType !== null) {
-            this.map.setMapObjectAt(x, y, this.selectedObjectType);
-        } else {
-            this.map.setTile(x, y, this.selectedTileType);
+            this.tool.useTool(this.mouseButton, event.shiftKey, x, y);
         }
     }
 
     ngOnInit(): void {
         this.map = new MapObject(this.gridSize);
+        this.tool = new Tool(this.map);
     }
 }
