@@ -3,11 +3,12 @@ import { enableProdMode, enableProfiling, provideZoneChangeDetection } from '@an
 import { bootstrapApplication } from '@angular/platform-browser';
 import { Routes, provideRouter, withHashLocation } from '@angular/router';
 import { AppComponent } from '@app/pages/app/app.component';
+import { FormEditionPageComponent } from '@app/pages/form-edition-page/form-edition-page.component';
+import { GameCreationPageComponent } from '@app/pages/game-creation-page/game-creation-page.component';
 import { GamePageComponent } from '@app/pages/game-page/game-page.component';
 import { MainPageComponent } from '@app/pages/main-page/main-page.component';
 import { MaterialPageComponent } from '@app/pages/material-page/material-page.component';
 import { environment } from './environments/environment';
-import { FormEditionPageComponent } from '@app/pages/form-edition-page/form-edition-page.component';
 
 if (environment.production) {
     enableProdMode();
@@ -18,6 +19,7 @@ const routes: Routes = [
     { path: '', redirectTo: '/home', pathMatch: 'full' },
     { path: 'home', component: MainPageComponent },
     { path: 'game', component: GamePageComponent },
+    { path: 'game-creation', component: GameCreationPageComponent },
     { path: 'material', component: MaterialPageComponent },
     { path: 'form-edition', component: FormEditionPageComponent },
     { path: '**', redirectTo: '/home' },

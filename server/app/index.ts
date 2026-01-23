@@ -1,4 +1,4 @@
-import { AppModule } from '@app/app.module';
+import { AppModule } from '@app/database/game/game.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';

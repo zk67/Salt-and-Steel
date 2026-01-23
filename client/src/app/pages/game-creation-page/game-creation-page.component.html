@@ -1,0 +1,20 @@
+<div class="page-container">
+  <header class="page-header">
+    <h1>Liste des jeux</h1>
+  </header>
+
+  <div class="page-content">
+    <div class="game-list">
+    @if (game){
+      @for (game of games; track game._id) {
+        <app-game-card [game]="game"></app-game-card>
+      }
+    }
+    </div>
+
+    <div class="buttons">
+      <button class="button" (click)="getAllGames()">get</button>
+      <button class="button" (click)="addGame(game)">add</button>
+    </div>
+  </div>
+</div>

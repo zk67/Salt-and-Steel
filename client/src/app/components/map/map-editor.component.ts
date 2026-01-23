@@ -1,7 +1,7 @@
-import { Component, Input, OnInit  } from '@angular/core';
-import { MapObject } from '@app/classes/game/map/map';
-import { TileType, MapObjectType } from '@app/classes/game/map/tile';
-import { Tool } from '@app/classes/game/map/tool';
+import { Component, Input, OnInit } from '@angular/core';
+import { MapObject } from '@common/classes/map';
+import { Tool } from '@common/classes/tool';
+import { MapObjectType, TileType } from '@common/types/tile.types';
 
 @Component({
     selector: 'app-map-editor',
