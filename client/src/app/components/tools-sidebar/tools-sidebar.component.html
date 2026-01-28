@@ -1,0 +1,69 @@
+<div class="sidebar">
+    <div class="sidebar-content">
+        <div class="top-btn">
+            <button class="tool-btn" id="placement-btn" [class.active]="placementOptionsOpen" (click)="togglePlacementOptions()">
+                <span>Options de placement</span>
+            </button>
+            <div class="options" id="placement-options" [class.active]="placementOptionsOpen">
+                <h4>Tuiles</h4>
+                <div class="options-grid">
+                    <button class="option-btn" [class.selected]="isSelectedTile(tileType.Wall)" (click)="selectTile(tileType.Wall)" data-tooltip="TODO: description du mur">
+                        <img src="TODO: image Mur" alt="Mur">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedTile(tileType.Water)" (click)="selectTile(tileType.Water)" data-tooltip="TODO: description de l'eau">
+                        <img src="TODO: image Eau" alt="Eau">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedTile(tileType.Ice)" (click)="selectTile(tileType.Ice)" data-tooltip="TODO: description de la glace">
+                        <img src="TODO: image Glace" alt="Glace">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedTile(tileType.Door)" (click)="selectTile(tileType.Door)" data-tooltip="TODO: description de la porte">
+                        <img src="TODO: image Porte" alt="Porte">
+                    </button>
+                </div>
+                <h4>Objets</h4>
+                <div class="options-grid">
+                    <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.SpawnPoint)" (click)="selectObject(mapObjectType.SpawnPoint)" data-tooltip="TODO: description du point de départ">
+                        <img src="TODO: image Point de départ" alt="Depart">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="TODO: description du drapeau">
+                        <img src="TODO: image Drapeau" alt="Drapeau">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.HealingShrine)" (click)="selectObject(mapObjectType.HealingShrine)" data-tooltip="TODO: description du sanctuaire #1">
+                        <img src="TODO: image Sanctuaire-1" alt="Sanctuaire-1">
+                    </button>
+                    <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.CombatShrine)" (click)="selectObject(mapObjectType.CombatShrine)" data-tooltip="TODO: description du sanctuaire #2">
+                        <img src="TODO: image Sanctuaire-2" alt="Sanctuaire-2">
+                    </button>
+                </div>
+            </div>
+
+            <button class="tool-btn" id="text-btn" [class.active]="textOptionsOpen" (click)="toggleTextOptions()">
+                <span>Options de texte</span>
+            </button>
+            <div class="options" id="text-options" [class.active]="textOptionsOpen">
+                <div class="text-inputs">
+                    <label for="game-name">Nom du jeu:</label>
+                    <input type="text" id="game-name" placeholder="Entrez le nom du jeu"
+                           [ngModel]="mapService.getName()"
+                           (ngModelChange)="mapService.setName($event)">
+                    <label for="game-description">Description:</label>
+                    <textarea id="game-description" placeholder="Entrez la description du jeu"
+                              [ngModel]="mapService.getDescription()"
+                              (ngModelChange)="mapService.setDescription($event)"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-btn">
+            <button class="action-btn" id="reset-btn" (click)="resetMap()">
+                <span>Réinitialiser</span>
+            </button>
+            <button class="action-btn" id="save-btn" (click)="saveMap()">
+                <span>Sauvegarder</span>
+            </button>
+            <button class="action-btn" id="menu-btn" (click)="goToMenu()">
+                <span>Retour au menu</span>
+            </button>
+        </div>
+    </div>
+</div>

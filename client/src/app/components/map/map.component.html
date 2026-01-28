@@ -1,11 +1,11 @@
 <div class="map-grid" [style.--grid-size]="gridSize"
     (mouseup)="onMouseUp()"
 >
-    @for (row of map.getTileMap(); track $index; let rowIndex = $index) {
+    @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
         @for (tile of row; track $index; let colIndex = $index) {
             <div class="tile"
-                 [attr.data-tile-type]="tileType[tile.getTileType()]"
-                 [attr.data-object]="mapObjectType[tile.getMapObject()]"
+                 [attr.data-tile-type]="tileType[tile.tileType]"
+                 [attr.data-object]="mapObjectType[tile.mapObject]"
                  (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
                  (mouseenter)="onMouseEnter($event, colIndex, rowIndex)"
                  (dragstart)="$event.preventDefault()"

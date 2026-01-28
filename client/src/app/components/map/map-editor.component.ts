@@ -1,18 +1,16 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { MapObject } from '@common/classes/map';
-import { Tool } from '@common/classes/tool';
-import { MapObjectType, TileType } from '@common/types/tile.types';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { GameMode, MapSize, TileType, MapObjectType } from '@common/types/map.interface';
+import { MapService } from '@app/services/map/map.service';
+import { ToolService, ToolType } from '@app/services/tool/tool.service';
 
 @Component({
     selector: 'app-map-editor',
     templateUrl: './map.component.html',
     styleUrls: ['./map.component.scss'],
 })
-
 export class MapEditorComponent implements OnInit {
-    @Input() gridSize = 10;
-    map!: MapObject;
-    private tool!: Tool;
+    gridSize: number = 10;
 
     private isMouseDown: boolean = false; // Pour gerer le mouse drag
     private mouseButton: number = 0; // Pour gerer le drag car mouseenter ne donne pas le bouton
@@ -21,11 +19,16 @@ export class MapEditorComponent implements OnInit {
     tileType = TileType;
     mapObjectType = MapObjectType;
 
+    constructor(
+        private route: ActivatedRoute,
+        public mapService: MapService,
+        private toolService: ToolService,
+    ) {}
 
     onMouseDown(event: MouseEvent, x: number, y: number): void {
         this.isMouseDown = true;
         this.mouseButton = event.button;
-        this.tool.useTool(this.mouseButton, event.shiftKey, x, y);
+        this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
     }
 
     onMouseUp(): void {
@@ -34,13 +37,23 @@ export class MapEditorComponent implements OnInit {
 
     // Permet de gerer le mouse drag
     onMouseEnter(event: MouseEvent, x: number, y: number): void {
-        if (this.isMouseDown) {
-            this.tool.useTool(this.mouseButton, event.shiftKey, x, y);
+        if (this.isMouseDown && (this.toolService.getToolType() !== ToolType.Object || (this.mouseButton === 2 && !event.shiftKey))) {
+            this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
         }
     }
 
     ngOnInit(): void {
-        this.map = new MapObject(this.gridSize);
-        this.tool = new Tool(this.map);
+        // id pas encore implementer, potentielement etre le nom de la map a la place du id
+        const id = this.route.snapshot.queryParams.id;
+
+        if (id) {
+            // Charger la map du db ici
+        } else {
+            this.gridSize = this.route.snapshot.queryParams.size as MapSize || MapSize.Small;
+            const mode = this.route.snapshot.queryParams.mode as GameMode || GameMode.Classic;
+
+            this.mapService.initializeMap(this.gridSize);
+            this.mapService.setGameMode(mode);
+        }
     }
 }

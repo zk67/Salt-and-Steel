@@ -5,6 +5,7 @@ import { Routes, provideRouter, withHashLocation } from '@angular/router';
 import { AppComponent } from '@app/pages/app/app.component';
 import { FormEditionPageComponent } from '@app/pages/form-edition-page/form-edition-page.component';
 import { GameCreationPageComponent } from '@app/pages/game-creation-page/game-creation-page.component';
+import { EditionPageComponent } from '@app/pages/edition-page/edition-page.component';
 import { GamePageComponent } from '@app/pages/game-page/game-page.component';
 import { MainPageComponent } from '@app/pages/main-page/main-page.component';
 import { MaterialPageComponent } from '@app/pages/material-page/material-page.component';
@@ -22,6 +23,7 @@ const routes: Routes = [
     { path: 'game-creation', component: GameCreationPageComponent },
     { path: 'material', component: MaterialPageComponent },
     { path: 'form-edition', component: FormEditionPageComponent },
+    { path: 'edition', component: EditionPageComponent },
     { path: '**', redirectTo: '/home' },
 ];
 
