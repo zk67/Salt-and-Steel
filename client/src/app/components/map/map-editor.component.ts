@@ -49,7 +49,7 @@ export class MapEditorComponent implements OnInit {
         if (id) {
             // Charger la map du db ici
         } else {
-            this.gridSize = this.route.snapshot.queryParams.size as MapSize || MapSize.Small;
+            this.gridSize = Number(this.route.snapshot.queryParams.size) || MapSize.Small;
             const mode = this.route.snapshot.queryParams.mode as GameMode || GameMode.Classic;
 
             this.mapService.initializeMap(this.gridSize);
