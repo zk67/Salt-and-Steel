@@ -12,6 +12,7 @@ export class MapService {
     private mapId: string = '';
     private name: string = '';
     private description: string = '';
+    private isVisible: boolean = false;
 
     initializeMap(size: number): void {
         this.size = size;
@@ -21,6 +22,7 @@ export class MapService {
         this.tileMap = Array.from({ length: size }, () =>
             Array.from({ length: size }, () => createTile()),
         );
+        this.isVisible = false;
     }
 
     loadFromDB(data: MapData): void {
@@ -30,6 +32,7 @@ export class MapService {
         this.size = data.size;
         this.gameMode = data.gameMode;
         this.tileMap = data.tiles;
+        this.isVisible = data.visible;
     }
 
     getMapData(): MapData {
@@ -40,6 +43,7 @@ export class MapService {
             size: this.size,
             gameMode: this.gameMode,
             tiles: this.tileMap,
+            visible: this.isVisible,
         };
     }
 
@@ -102,5 +106,13 @@ export class MapService {
     resetMap(): void {
         // Ajouter un check ici pour renitialiser a l'etat de la db si ce n'est pas une nouvelle map
         this.initializeMap(this.size);
+    }
+
+    getVisibility(): boolean {
+        return this.isVisible;
+    }
+    
+    setVisibility(visible: boolean): void {
+        this.isVisible = visible;
     }
 }

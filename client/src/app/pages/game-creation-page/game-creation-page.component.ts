@@ -15,13 +15,7 @@ export class GameCreationPageComponent implements OnInit {
   constructor(private gameService: GameService) {}
 
   games: Game[] = [];
-  game: Game = {
-    name: 'Aventure Épique',
-    description: 'Un jeu passionnant avec exploration et stratégie.',
-    minPlayers: 2,
-    maxPlayers: 4,
-    visible: true,
-  };
+  game: Game;
 
   ngOnInit(): void {
     this.getAllGames();

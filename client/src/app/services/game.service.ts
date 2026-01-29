@@ -21,6 +21,10 @@ export class GameService {
         return this.http.post<Game>(`${this.baseUrl}/games`, game).pipe(catchError(this.handleError<Game>('addGame')));
     }
 
+    updateGame(_id: string, game: Game): Observable<Game> {
+        return this.http.put<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('addGame')));
+    }
+
     deleteGame(_id: string): Observable<Game> {
         return this.http.delete<Game>(`${this.baseUrl}/games/${_id}`).pipe(catchError(this.handleError<Game>('deleteGame')));
     }

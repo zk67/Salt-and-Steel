@@ -1,13 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { MapData } from '@common/types/map.interface';
 
 export type GameDocument = Game & Document;
 
 @Schema()
 export class Game {
 
-    // @Prop({ required: false })
-    // map: MapObject;
+    @Prop({ type: Object, required: false })
+    map: MapData;
 
     @Prop({ required: true })
     name: string;

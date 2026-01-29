@@ -37,4 +37,5 @@ export interface MapData {
     size: number;
     gameMode: GameMode;
     tiles: TileData[][];
+    visible: boolean;
 }
