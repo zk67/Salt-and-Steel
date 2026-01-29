@@ -1,11 +1,16 @@
 <div class="game-card" (click)="handleClick()">
   <div class="game-image">
-    <p>image</p>
+    @if (game.imageUrl){
+     <img [src]="game.imageUrl" [alt]="game.name" />
+    }@else {
+      <p>image</p>
+    }
   </div>
 
   <div class="game-info">
     <h2 class="game-name">{{ game.name }}</h2>
     <p class="game-description">{{ game.description }}</p>
     <p class="game-players">Max Joueurs : {{ game.maxPlayers }}</p>
+    <p class="game-players">Min Joueurs : {{ game.minPlayers }}</p>
   </div>
 </div>

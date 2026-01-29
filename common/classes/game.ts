@@ -1,6 +1,5 @@
 import { MapData } from "@common/types/map.interface";
 export interface Game {
-    // map est comment car sinon je doit créer une map pour tester la BD
     _id?: string,
     map: MapData;
     name: string;
@@ -8,4 +7,5 @@ export interface Game {
     minPlayers: number;
     maxPlayers: number;
     visible: boolean;
+    imageUrl?: string;
 }

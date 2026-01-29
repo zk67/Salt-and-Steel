@@ -1,6 +1,6 @@
 import { Game } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 
 @Controller('games')
 export class GamesController {
@@ -32,5 +32,10 @@ export class GamesController {
     @Delete(':id')
     deleteGame(@Param('id') _id: string) {
         return this.gamesService.deleteGame(_id);
+    }
+
+    @Put(':id')
+    replaceGame(@Param('id') _id: string, @Body() game: Game) {
+        return this.gamesService.replaceGame(_id, game);
     }
 }

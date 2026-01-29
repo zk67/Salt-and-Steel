@@ -1,3 +1,4 @@
+import { Game } from '@app/database/game/game.schema';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -57,7 +58,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         this.logger.log(`Déconnexion par l'utilisateur avec id : ${socket.id}`);
     }
 
+    notifyElementAdded(element: Game) {
+        this.server.emit('element-added', element);
+    }
+
     private emitTime() {
         this.server.emit(ChatEvents.Clock, new Date().toLocaleTimeString());
     }
+
 }

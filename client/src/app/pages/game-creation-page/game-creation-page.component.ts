@@ -56,7 +56,7 @@ export class GameCreationPageComponent implements OnInit {
 
 
   changeGameVisibility(_id: string, visibility: boolean): void {
-    this.gameService.patchGame(_id, visibility).subscribe(() => {
+    this.gameService.updateGameVisibility(_id, visibility).subscribe(() => {
       this.getAllGames();
     });
   }

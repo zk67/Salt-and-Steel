@@ -21,8 +21,8 @@ export class GameService {
         return this.http.post<Game>(`${this.baseUrl}/games`, game).pipe(catchError(this.handleError<Game>('addGame')));
     }
 
-    updateGame(_id: string, game: Game): Observable<Game> {
-        return this.http.put<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('addGame')));
+    replaceGame(_id: string, game: Game): Observable<Game> {
+        return this.http.put<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('replaceGame')));
     }
 
     deleteGame(_id: string): Observable<Game> {
@@ -33,8 +33,9 @@ export class GameService {
         return this.http.get<Game>(`${this.baseUrl}/games/${_id}`).pipe(catchError(this.handleError<Game>('getGame')));
     }
 
-    patchGame(_id: string, visibility: boolean): Observable<Game> {
-        return this.http.patch<Game>(`${this.baseUrl}/games/${_id}`, { visible: visibility }).pipe(catchError(this.handleError<Game>('patchGame')));
+    updateGameVisibility(_id: string, visibility: boolean): Observable<Game> {
+        const game: Partial<Game> = { visible: visibility };
+        return this.http.patch<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('patchGame')));
     }
 
     private handleError<T>(request: string, result?: T): (error: Error) => Observable<T> {

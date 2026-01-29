@@ -77,7 +77,7 @@ export class ToolsSidebarComponent {
         const game = this.buildGame();
 
         if (game._id) {
-            this.gameService.updateGame(game._id, game).subscribe({
+            this.gameService.replaceGame(game._id, game).subscribe({
                 next: () => {
                     alert(`Jeu "${game.name}" modifié avec succès !`);
                     this.router.navigate(['/admin']);
