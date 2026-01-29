@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { createTile } from '@common/classes/tile';
-import { MapData, TileData, GameMode, TileType, MapObjectType } from '@common/types/map.interface';
+import { GameMode, MapData, MapObjectType, TileData, TileType } from '@common/types/map.interface';
 
 @Injectable({
     providedIn: 'root',
@@ -76,23 +76,14 @@ export class MapService {
     }
 
     setTile(x: number, y: number, type: TileType): void {
-        if(type === TileType.Wall) {
-            this.setMapObject(x, y, MapObjectType.None);
-        }
-
         this.tileMap[y][x].tileType = type;
     }
 
-    getTile(x: number, y: number): TileData  {
+    getTile(x: number, y: number): TileData {
         return this.tileMap[y][x];
     }
 
     setMapObject(x: number, y: number, mapObject: MapObjectType): void {
-        if(mapObject === MapObjectType.None && this.getMapObject(x, y) !== MapObjectType.None) {
-            // Ajouter une utilisation de l'objet enlever ici
-        }
-
-        // Enlever une utilisation de l'objet suivant ici si mapObject !== MapObjectType.None
         this.tileMap[y][x].mapObject = mapObject;
     }
 

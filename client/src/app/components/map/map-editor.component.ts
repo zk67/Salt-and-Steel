@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { GameMode, MapSize, TileType, MapObjectType } from '@common/types/map.interface';
 import { MapService } from '@app/services/map/map.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
+import { GameMode, MapObjectType, MapSize, TileType } from '@common/types/map.interface';
 
 @Component({
     selector: 'app-map-editor',
@@ -54,6 +54,7 @@ export class MapEditorComponent implements OnInit {
 
             this.mapService.initializeMap(this.gridSize);
             this.mapService.setGameMode(mode);
+            this.toolService.defaultNumbers();
         }
     }
 }
