@@ -5,16 +5,13 @@
 
   <div class="page-content">
     <div class="game-list">
-    @if (game){
       @for (game of games; track game._id) {
         <app-game-card [game]="game"></app-game-card>
       }
-    }
     </div>
 
     <div class="buttons">
-      <button class="button" (click)="getAllGames()">get</button>
-      <button class="button" (click)="addGame(game)">add</button>
+      <button class="button" routerLink="/">Retour</button>
     </div>
   </div>
 </div>

@@ -32,4 +32,6 @@ export class GamesService {
   async deleteGame(_id: string): Promise<Game> {
     return await this.gameModel.findByIdAndDelete(_id).exec();
   }
+
+
 }

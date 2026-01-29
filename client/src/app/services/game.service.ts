@@ -33,6 +33,9 @@ export class GameService {
         return this.http.get<Game>(`${this.baseUrl}/games/${_id}`).pipe(catchError(this.handleError<Game>('getGame')));
     }
 
+    patchGame(_id: string, visibility: boolean): Observable<Game> {
+        return this.http.patch<Game>(`${this.baseUrl}/games/${_id}`, { visible: visibility }).pipe(catchError(this.handleError<Game>('patchGame')));
+    }
 
     private handleError<T>(request: string, result?: T): (error: Error) => Observable<T> {
         return () => of(result as T);

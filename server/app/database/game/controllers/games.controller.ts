@@ -1,6 +1,6 @@
 import { Game } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 
 @Controller('games')
 export class GamesController {
@@ -24,7 +24,7 @@ export class GamesController {
         return this.gamesService.getOneGame(_id);
     }
 
-    @Put(':id')
+    @Patch(':id')
     updateGame(@Param('id') _id: string, @Body() data: Partial<Game>) {
         return this.gamesService.updateGame(_id, data);
     }

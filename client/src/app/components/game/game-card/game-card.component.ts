@@ -1,13 +1,20 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import { Game } from '@common/classes/game';
 
 @Component({
   selector: 'app-game-card',
-  imports: [],
   standalone: true,
   templateUrl: './game-card.component.html',
   styleUrl: './game-card.component.scss',
 })
 export class GameCardComponent {
   @Input() game: Game;
+  @Output() click = new EventEmitter<void>();
+
+  constructor(private router: Router) {}
+  handleClick() {
+    this.router.navigate(['/character-from']);
+    this.click.emit();
+  }
 }
