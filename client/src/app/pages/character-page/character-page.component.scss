@@ -1,0 +1,65 @@
+.container {
+    min-height: 100vh;
+    height: auto;
+}
+
+.justified {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-item {
+    justify-content: center;
+    text-align: center;
+}
+
+.avatar-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 360px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+}
+
+.avatar.selected {
+  border-color: #4caf50;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.statButton.active {
+  background-color: #4caf50;
+  color: white;
+}
+
+.page-background {
+  min-height: 100vh;
+  background-image: url("/assets/Background.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}

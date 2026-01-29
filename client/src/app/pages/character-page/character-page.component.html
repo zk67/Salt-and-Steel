@@ -1,0 +1,60 @@
+<div class="page-background">
+  <div class="justified">
+      <h1 class="header-item">Création de personnage</h1>
+      <div class="field">
+          <label for="characterName">Nom du personnage: </label>
+          <input id="characterName" type="text" [formControl]="characterName" />
+      </div>
+  </div>
+
+  <h3 class="justified">Choisissez un avatar</h3>
+  <div class="avatar-wrapper">
+      <div class="avatar-grid">
+          @for (a of avatars; track a) {
+              <img
+              [src]="a"
+              [alt]="'Avatar ' + a"
+              class="avatar"
+              [class.selected]="avatar.value === a"
+              (click)="selectAvatar(a)"
+              />
+          }
+      </div>
+  </div>
+
+  <div class="stat-row">
+    <span>Vie (nombre de points de vie du personnage) : {{ life.value }}</span>
+    <button class="statButton" (click)="toggleBonus('life')" [class.active]="bonusTarget === 'life'">
+      +2
+    </button>
+  </div>
+
+  <div class="stat-row">
+    <span>Rapidité (détermine l'ordre des tours et correspond aussi aux points de mouvement par tour d'un personnage) : {{ speed.value }}</span>
+    <button class="statButton" (click)="toggleBonus('speed')" [class.active]="bonusTarget === 'speed'">
+      +2
+    </button>
+  </div>
+
+  <div class="stat-row">
+    <span>Attaque (la force avec laquelle une attaque est faite sur l'adversaire) : {{ attack.value }}</span>
+    <button class="statButton" (click)="toggleDiceBonus('attack')" [class.active]="diceD6BonusTarget === 'attack'">
+      D6
+    </button>
+  </div>
+
+  <div class="stat-row">
+    <span>Defence (la capacité à bloquer l'attaque d'un adversaire) : {{ defense.value }}</span>
+    <button class="statButton" (click)="toggleDiceBonus('defense')" [class.active]="diceD6BonusTarget === 'defense'">
+      D6
+    </button>
+  </div>
+
+  <div class="justified">
+      <button (click)="randomizeStats()">Randomiser personnage</button>
+  </div>
+
+  <div class="justified">
+      <button (click)="submitCharacter()">Créer personnage</button>
+  </div>
+</div>
