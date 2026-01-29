@@ -8,34 +8,34 @@
                 <h4>Tuiles</h4>
                 <div class="options-grid">
                     <button class="option-btn" [class.selected]="isSelectedTile(tileType.Wall)" (click)="selectTile(tileType.Wall)" data-tooltip="TODO: description du mur">
-                        <img src="TODO: image Mur" alt="Mur">
+                        <img src="assets/tiles/wall.png" alt="Mur">
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedTile(tileType.Water)" (click)="selectTile(tileType.Water)" data-tooltip="TODO: description de l'eau">
-                        <img src="TODO: image Eau" alt="Eau">
+                        <img src="assets/tiles/water.png" alt="Eau">
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedTile(tileType.Ice)" (click)="selectTile(tileType.Ice)" data-tooltip="TODO: description de la glace">
-                        <img src="TODO: image Glace" alt="Glace">
+                        <img src="assets/tiles/ice.png" alt="Glace">
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedTile(tileType.Door)" (click)="selectTile(tileType.Door)" data-tooltip="TODO: description de la porte">
-                        <img src="TODO: image Porte" alt="Porte">
+                        <img src="assets/tiles/door.png" alt="Porte">
                     </button>
                 </div>
                 <h4>Objets</h4>
                 <div class="options-grid">
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.SpawnPoint)" (click)="selectObject(mapObjectType.SpawnPoint)" data-tooltip="TODO: description du point de départ">
-                        <img src="TODO: image Point de départ" alt="Depart">
+                        <img src="assets/objects/flag.png" alt="Depart">
                         <p>{{ toolService.getNumberObject(mapObjectType.SpawnPoint) }}</p>
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="TODO: description du drapeau">
-                        <img src="TODO: image Drapeau" alt="Drapeau">
+                        <img src="assets/objects/flag.png" alt="Drapeau">
                         <p>{{ toolService.getNumberObject(mapObjectType.Flag) }}</p>
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.HealingShrine)" (click)="selectObject(mapObjectType.HealingShrine)" data-tooltip="TODO: description du sanctuaire de soin">
-                        <img src="TODO: image Sanctuaire de soin" alt="Sanctuaire de soin">
+                        <img src="assets/objects/heal.png" alt="Sanctuaire de soin">
                         <p>{{ toolService.getNumberObject(mapObjectType.HealingShrine) }}</p>
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.CombatShrine)" (click)="selectObject(mapObjectType.CombatShrine)" data-tooltip="TODO: description du sanctuaire de combat">
-                        <img src="TODO: image Sanctuaire de combat" alt="Sanctuaire de combat">
+                        <img src="assets/objects/combat.png" alt="Sanctuaire de combat">
                         <p>{{ toolService.getNumberObject(mapObjectType.CombatShrine) }}</p>
                     </button>
                 </div>

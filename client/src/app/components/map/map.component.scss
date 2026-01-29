@@ -33,6 +33,28 @@
     }
 
     &[data-object="SpawnPoint"] {
+        background-image: url("/assets/objects/spawn.png");
+        background-size: 80%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    &[data-object="Flag"] {
+        background-image:url("/assets/objects/flag.png"); 
+        background-size: 80%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    &[data-object="HealingShrine"] {
+        background-image: url("/assets/objects/heal.png"); 
+        background-size: 80%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    &[data-object="CombatShrine"] {
+        background-image: url("/assets/objects/combat.png"); 
         //background-image: url(''); quand on aura une image
         background-color: #5900ff;
         background-size: 80%;
