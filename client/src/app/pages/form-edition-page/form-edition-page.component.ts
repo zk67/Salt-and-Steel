@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { GameMode, MapSize } from '@common/types/map.interface';
 
 @Component({
     selector: 'app-form-edition-page',
     templateUrl: './form-edition-page.component.html',
     styleUrls: ['./form-edition-page.component.scss'],
-    imports: [FormsModule],
+    imports: [FormsModule, RouterLink],
 })
 
 export class FormEditionPageComponent {
@@ -27,7 +27,6 @@ export class FormEditionPageComponent {
 
         this.router.navigate(['/edition'], { queryParams });
     }
-
     getSizeDescription(): string {
         switch (this.selectedSize) {
             case MapSize.Small:

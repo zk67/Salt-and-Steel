@@ -1,22 +1,57 @@
-<div class="container">
-    <form (ngSubmit)="onSubmit()" method="get" class="form-edition-page">
-        <div class="form-radio">
-            <input type="radio" name="mode" id="CTF-mode" [value]="gameMode.CTF" [(ngModel)]="selectedMode" disabled required />
-            <label for="CTF-mode" class="CTF"> CTF </label>
-            <input type="radio" name="mode" id="classic-mode" [value]="gameMode.Classic" [(ngModel)]="selectedMode" checked required />
-            <label for="classic-mode" class="Classic"> Classique </label>
-        </div>
-        <div class="form-radio">
-            <input type="radio" name="size" id="tiny-mode" [value]="mapSize.Small" [(ngModel)]="selectedSize" checked required />
-            <label for="tiny-mode" class="Tiny"> Petite </label>
-            <input type="radio" name="size" id="medium-mode" [value]="mapSize.Medium" [(ngModel)]="selectedSize" required />
-            <label for="medium-mode" class="Medium"> Moyenne </label>
-            <input type="radio" name="size" id="big-mode" [value]="mapSize.Large" [(ngModel)]="selectedSize" required />
-            <label for="big-mode" class="Big"> Grande </label>
-            <p class="size-description">{{ getSizeDescription() }}</p>
-        </div>
-        <div>
-            <button type="submit" class="button-submit" > Créer un nouveau jeu </button>
-        </div>
-    </form>
+<div class="config-page">
+    <h1 class="title">Configuration du jeu</h1>
+
+    <section class="panel">
+        <form (ngSubmit)="onSubmit()" method="get" class="form-edition-page">
+
+            <div class="section">
+                <h3 class="section-title sous-title">Mode de jeu</h3>
+
+                <div class="options form-radio">
+                    <input type="radio" name="mode" id="classic-mode" [value]="gameMode.Classic" [(ngModel)]="selectedMode" checked required />
+                    <label for="classic-mode" class="option-card">
+                        <div class="btn-name">classic</div>
+                    </label>
+
+                    <input type="radio" name="mode" id="CTF-mode" [value]="gameMode.CTF" [(ngModel)]="selectedMode" disabled required />
+                    <label for="CTF-mode" class="option-card disabled">
+                        <div class="btn-name">CTF</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title sous-title">Taille du jeu</h3>
+
+                <div class="options options-3 form-radio">
+                    <input type="radio" name="size" id="tiny-mode" [value]="mapSize.Small" [(ngModel)]="selectedSize" checked required />
+                    <label for="tiny-mode" class="option-card">
+                        <div class="btn-name">Petite</div>
+                        <div class="desc">Plateau de 10x10</div>
+                        <div class="players">👥 2 &nbsp;&nbsp;</div>
+                    </label>
+
+                    <input type="radio" name="size" id="medium-mode" [value]="mapSize.Medium" [(ngModel)]="selectedSize" required />
+                    <label for="medium-mode" class="option-card">
+                        <div class="btn-name">Moyenne</div>
+                        <div class="desc">Plateau de 15x15</div>
+                        <div class="players">👥2-4 </div>
+                    </label>
+
+                    <input type="radio" name="size" id="big-mode" [value]="mapSize.Large" [(ngModel)]="selectedSize" required />
+                    <label for="big-mode" class="option-card">
+                        <div class="btn-name">Large</div>
+                        <div class="desc">Plateau de 20x20</div>
+                        <div class="players">👥2-6</div>
+                    </label>
+                </div>
+
+                <p class="size-description">{{ getSizeDescription() }}</p>
+            </div>
+
+            <button type="submit" class="btn-submit btn-primary ">▶ Créer la partie</button>
+        </form>
+    </section>
+
+    <button class="btn-back" type="button" routerLink="/admin">← Retour</button>
 </div>
