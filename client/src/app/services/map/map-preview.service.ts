@@ -1,11 +1,12 @@
-import { MapService } from '@app/services/map/map.service';
-import { MapObjectType, TileType } from '@common/types/map.interface';
-//injectable pas encore fait 
+import { MapData, MapObjectType, TileType} from '@common/types/map.interface';
+import { Injectable } from '@angular/core';
 
+@Injectable({
+    providedIn: 'root',
+})
 export class MapPreviewService {
-    constructor(private readonly mapService: MapService) {}
     readonly previewSize = 256;
-    readonly nombreMajore =0.15;
+    readonly nombreMajore = 0.15;
 
     private readonly tilePaths = new Map<TileType, string>([
         [TileType.Basic, 'assets/tiles/basic.png'],
@@ -21,18 +22,21 @@ export class MapPreviewService {
         [MapObjectType.HealingShrine, 'assets/objects/heal.png'],
         [MapObjectType.CombatShrine, 'assets/objects/combat.png'],
     ]);
+
     // cache global (évite de re-télécharger les images à chaque preview)
     private readonly imageCache = new Map<string, Promise<HTMLImageElement>>();
 
     private loadImage(src: string): Promise<HTMLImageElement> {
-        // cache: même src => même Promise
         const cached = this.imageCache.get(src);
         if (cached) return cached;
 
         const p = new Promise<HTMLImageElement>((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error(`Image introuvable: ${src}`));
+            img.onerror = () => {
+                this.imageCache.delete(src);
+                reject(new Error(`Image introuvable: ${src}`));
+            };
             img.src = src;
         });
 
@@ -40,12 +44,10 @@ export class MapPreviewService {
         return p;
     }
 
-    async generatePreview(pixelSize: number = this.previewSize): Promise<string> {
-        if (typeof document === 'undefined') return '';
+    async generatePreview(map:MapData ,pixelSize: number = this.previewSize): Promise<string> {
 
-        const size = this.mapService.getSize();
+        const size = map.size;
 
-        // Pas de  cellules décimales
         const cell = Math.floor(pixelSize / size);
         const finalSize = cell * size;
 
@@ -58,8 +60,6 @@ export class MapPreviewService {
 
         ctx.imageSmoothingEnabled = false;
 
-        // fond
-        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, finalSize, finalSize);
 
         // caches locaux évite await répété sur même type
@@ -90,7 +90,7 @@ export class MapPreviewService {
 
         for (let y = 0; y < size; y++) {
             for (let x = 0; x < size; x++) {
-                const tile = this.mapService.getTile(x, y); // TileData
+                const tile = map.tiles[y][x];
                 const type = tile.tileType;
                 const obj = tile.mapObject;
 
@@ -102,14 +102,9 @@ export class MapPreviewService {
                 if (obj !== MapObjectType.None) {
                     const objImg = await getObjImg(obj);
                     if (objImg) {
-                        const pad = Math.floor(cell * nombreMajore);
-                        ctx.drawImage(
-                            objImg,
-                            x * cell + pad,
-                            y * cell + pad,
-                            cell - 2 * pad,
-                            cell - 2 * pad,
-                        );
+                        //marge pour que l'objet soit un peu plus petit a changer si juge necessaire.
+                        const pad = Math.floor(cell * this.nombreMajore); 
+                        ctx.drawImage( objImg,x * cell + pad,y * cell + pad,cell - 2 * pad, cell - 2 * pad);
                     }
                 }
             }

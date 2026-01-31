@@ -23,7 +23,7 @@
                 <h4>Objets</h4>
                 <div class="options-grid">
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.SpawnPoint)" (click)="selectObject(mapObjectType.SpawnPoint)" data-tooltip="TODO: description du point de départ">
-                        <img src="assets/objects/flag.png" alt="Depart">
+                        <img src="assets/objects/startFlag.png" alt="Depart">
                         <p>{{ toolService.getNumberObject(mapObjectType.SpawnPoint) }}</p>
                     </button>
                     <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="TODO: description du drapeau">
