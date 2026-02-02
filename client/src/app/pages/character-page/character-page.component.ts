@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 const BASELIFE = 6;
 const BASESPEED = 6;
@@ -13,7 +13,7 @@ const HALFRANDOM = 0.5;
     selector: 'app-character-page',
     templateUrl: './character-page.component.html',
     styleUrls: ['./character-page.component.scss'],
-    imports: [RouterLink, ReactiveFormsModule],
+    imports: [ReactiveFormsModule],
 })
 
 export class CharacterPageComponent {
@@ -80,7 +80,6 @@ export class CharacterPageComponent {
         'Le Baron des Flots',
         'Élias Vent-du-Nord',
     ];
-
 
     avatars: string[] = Array.from({ length: NBAVATAR }, (_, i) => `assets/avatars/avatar-${i + 1}.png`);
 

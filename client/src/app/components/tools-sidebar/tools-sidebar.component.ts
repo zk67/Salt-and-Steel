@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
-import { SaveService } from '@app/services/save-service';
+import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { Game } from '@common/classes/game';
 import { MapData, MapObjectType, TileType } from '@common/types/map.interface';
@@ -64,6 +64,7 @@ export class ToolsSidebarComponent {
 
     resetMap(): void {
         this.mapService.resetMap();
+        this.toolService.defaultNumbers();
     }
 
     async saveMap(): Promise<void> {

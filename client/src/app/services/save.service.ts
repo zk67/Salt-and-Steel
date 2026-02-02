@@ -4,28 +4,30 @@ import { TileType, MapObjectType, TileData } from '@common/types/map.interface';
 import { GameService } from './game.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-
-const SMALL_MAP_SIZE = 10;
-const MEDIUM_MAP_SIZE = 15;
-const LARGE_MAP_SIZE = 20;
-const SMALL_MAP_SPAWNS = 2;
-const MEDIUM_MAP_SPAWNS = 4;
-const LARGE_MAP_SPAWNS = 6;
+import { isStringValid } from '@common/classes/utils';
+import { ToolService } from '@app/services/tool/tool.service';
 
 @Injectable({
     providedIn: 'root',
 })
 export class SaveService {
 
-    constructor(private mapService: MapService, private gameService: GameService) {}
-
+    constructor(private mapService: MapService, private gameService: GameService, private toolService: ToolService) {}
 
     async validateBeforeSave(): Promise<string[]> {
         const tileMap = this.mapService.getTileMap();
         const size = this.mapService.getSize();
         const name = this.mapService.getName();
+        const description = this.mapService.getDescription();
         const errors: string[] = [];
+
+        if(!isStringValid(name)){
+            errors.push('Le nom de la carte est invalide.');
+        }
+
+        if(!isStringValid(description)){
+            errors.push('La description de la carte est invalide.');
+        }
 
         if (!this.hasEnoughBasicTiles(tileMap, size)) {
             errors.push('Le nombre de tuiles de terrain doit couvrir plus de la moitié de la zone de jeu.');
@@ -35,7 +37,7 @@ export class SaveService {
             errors.push('Certaines tuiles sur le jeu sont inaccessibles.');
         }
 
-        if (!this.hasCorrectSpawnPoints(tileMap, size)) {
+        if (!this.hasCorrectSpawnPoints()) {
             errors.push('Le nombre de points de départ ne correspond pas aux exigences.');
         }
 
@@ -121,22 +123,7 @@ export class SaveService {
         );
     }
 
-    private hasCorrectSpawnPoints(tiles: TileData[][], size: number): boolean {
-        let requiredSpawns = 0;
-
-        switch (size) {
-            case SMALL_MAP_SIZE:
-                requiredSpawns = SMALL_MAP_SPAWNS;
-                break;
-            case MEDIUM_MAP_SIZE:
-                requiredSpawns = MEDIUM_MAP_SPAWNS;
-                break;
-            case LARGE_MAP_SIZE:
-                requiredSpawns = LARGE_MAP_SPAWNS;
-                break;
-        }
-
-        const numberSpawns = tiles.flat().filter(t => t.mapObject === MapObjectType.SpawnPoint).length;
-        return numberSpawns === requiredSpawns;
+    private hasCorrectSpawnPoints(): boolean {
+        return this.toolService.getNumberObject(MapObjectType.SpawnPoint) === 0;
     }
 }

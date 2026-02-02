@@ -1,10 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
-import { MapObjectType, TileType } from '@common/types/map.interface';
+import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
 
-const SMALL = 10;
-const MEDIUM = 15;
-const LARGE = 20;
 const OBJECT_QUANTITY_SMALL = 2;
 const OBJECT_QUANTITY_MEDIUM = 4;
 const OBJECT_QUANTITY_LARGE = 6;
@@ -84,20 +81,22 @@ export class ToolService {
     }
 
     defaultNumbers(): void {
-        if (this.mapService.getSize() === SMALL) {
+        switch (this.mapService.getSize()) {
+        case MapSize.Small:
             this.numberSpawnPoint = OBJECT_QUANTITY_SMALL;
             this.numberHealingShrine = 1;
             this.numberCombatShrine = 1;
-        }
-        if (this.mapService.getSize() === MEDIUM) {
+            break;
+        case MapSize.Medium:
             this.numberSpawnPoint = OBJECT_QUANTITY_MEDIUM;
             this.numberHealingShrine = OBJECT_QUANTITY_SMALL;
             this.numberCombatShrine = OBJECT_QUANTITY_SMALL;
-        }
-        if (this.mapService.getSize() === LARGE) {
+            break;
+        case MapSize.Large:
             this.numberSpawnPoint = OBJECT_QUANTITY_LARGE;
             this.numberHealingShrine = OBJECT_QUANTITY_MEDIUM;
             this.numberCombatShrine = OBJECT_QUANTITY_MEDIUM;
+            break;
         }
     }
 
