@@ -8,6 +8,7 @@ const BASEATTACK = 4;
 const BASEDEFENSE = 4;
 const NBAVATAR = 12;
 const HALFRANDOM = 0.5;
+const MAXNAME_LENGTH = 32;
 
 @Component({
     selector: 'app-character-page',
@@ -129,6 +130,11 @@ export class CharacterPageComponent {
     submitCharacter() {
         if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.diceD6BonusTarget) {
             alert('Veuillez remplir le formulaire au complet!');
+            return;
+        }
+
+        if (this.characterName.value.length > MAXNAME_LENGTH) {
+            alert('Le nom du personnage ne doit pas dépasser 32 caractères!');
             return;
         }
 
