@@ -14,6 +14,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
     constructor(private readonly logger: Logger) {}
 
+    //gateway pour lier admin-page a game-creationpage
+    @SubscribeMessage(ChatEvents.Refresh)
+    refresh(socket: Socket) {
+        socket.broadcast.emit(ChatEvents.Update);
+    }
+
+
+    //gateway par défaut du projet vu en cours
     @SubscribeMessage(ChatEvents.Validate)
     validate(socket: Socket, word: string) {
         socket.emit(ChatEvents.WordValidated, word?.length > WORD_MIN_LENGTH);
@@ -50,8 +58,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
     handleConnection(socket: Socket) {
         this.logger.log(`Connexion par l'utilisateur avec id : ${socket.id}`);
-        // message initial
-        socket.emit(ChatEvents.Hello, 'Hello World!');
     }
 
     handleDisconnect(socket: Socket) {

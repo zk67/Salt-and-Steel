@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppMaterialModule } from '@app/modules/material.module';
 import { GameService } from '@app/services/game.service';
+import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/classes/game';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
 
@@ -17,6 +18,7 @@ export class AdminPageComponent implements OnInit {
     constructor(
         private readonly router: Router,
         private readonly gameService: GameService,
+        private readonly socketService: SocketClientService,
     ) {}
 
     games: Game[] = [];
@@ -32,9 +34,12 @@ export class AdminPageComponent implements OnInit {
     }
 
     toggleVisibility(game: Game): void {
-        if(game._id)
+        if (game._id)
             this.gameService.updateGameVisibility(game._id, !game.visible).subscribe({
-                next: () => this.refresh(),
+                next: () => {
+                    this.refresh();
+                    this.socketService.send('refresh');
+                },
                 error: () => {
                     this.errorMsg = 'Impossible de changer la visibilité.';
                 },
@@ -42,19 +47,22 @@ export class AdminPageComponent implements OnInit {
     }
 
     deleteGame(gameId: string | undefined): void {
-        if(!gameId){
+        if (!gameId) {
             this.errorMsg = 'Id invalide.';
             return;
         }
 
         this.gameService.deleteGame(gameId).subscribe({
-            next: () => this.refresh(),
+            next: () => {
+                this.refresh();
+                this.socketService.send('refresh');
+            },
             error: () => (this.errorMsg = 'Impossible de supprimer le jeu.'),
         });
     }
 
     editGame(gameId: string | undefined): void {
-        if(!gameId){
+        if (!gameId) {
             this.errorMsg = 'Id invalide.';
             return;
         }

@@ -6,7 +6,9 @@
   <div class="page-content">
     <div class="game-list">
       @for (game of games; track game._id) {
+        @if (game.visible){
         <app-game-card [game]="game"></app-game-card>
+        }
       }
     </div>
 

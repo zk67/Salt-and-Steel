@@ -36,6 +36,4 @@ export class GamesService {
   async replaceGame(_id: string, game: Game): Promise<Game> {
     return await this.gameModel.findOneAndReplace({ _id }, game, { new: true }).exec();
   }
-
-
 }
