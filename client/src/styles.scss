@@ -79,3 +79,59 @@ body {
     margin: 0;
     font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
+
+.btn-back {
+  position: fixed;
+  left: 32px;
+  bottom: 24px;
+
+  padding: 16px 22px;
+  border-radius: 999px;
+
+  font-weight: 700;
+  cursor: pointer;
+
+  border: none;
+  background: #362727;
+  color: white;
+}
+
+.btn-back :hover {
+  filter: brightness(0.95);
+}
+
+.btn-primary {
+  padding: 12px 22px;
+  border-radius: 12px;
+
+  font-weight: 800;
+  font-weight: 700;
+
+  cursor: pointer;
+  border: none;
+
+  background: #362727;
+  color: #fff;
+}
+
+.title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 44px;
+    color: #2a1616;
+    margin: 12px 0;
+}
+
+.sous-title {
+    margin-top: 14px;
+    font-size: 22px;
+    font-weight: 500;
+    color: #71563a;
+    margin: 12px 0;
+}
+
+.btn-name {
+    font-size: 20px;
+    font-weight: 700;
+    color :#402e1c;
+}

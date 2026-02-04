@@ -12,6 +12,7 @@ import { MainPageComponent } from '@app/pages/main-page/main-page.component';
 import { MaterialPageComponent } from '@app/pages/material-page/material-page.component';
 import { WaitingPageComponent } from '@app/pages/waiting-page/waiting-page.component';
 import { environment } from './environments/environment';
+import { AdminPageComponent } from '@app/pages/admin-page/admin-page.component';
 
 if (environment.production) {
     enableProdMode();
@@ -28,6 +29,7 @@ const routes: Routes = [
     { path: 'edition', component: EditionPageComponent },
     { path: 'character-form', component: CharacterPageComponent },
     { path: 'waiting', component: WaitingPageComponent },
+    { path: 'admin', component: AdminPageComponent },
     { path: '**', redirectTo: '/home' },
 ];
 

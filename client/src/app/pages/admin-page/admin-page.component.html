@@ -1,0 +1,65 @@
+<div class="games-admin">
+    <header class="admin-header">
+        <div class="header-content">
+            <h1 class="title">Administration des jeux</h1>
+            <h2 class="sous-title">Créez, modifiez ou supprimez des jeux</h2>
+        </div>
+    </header>
+
+    <button class="btn-back" (click)="back()">← Retour</button>
+    
+    <button class="btn-create-game btn-primary" (click)="refresh()">
+                <span class="btn-text">⟳ Rafraîchir</span>
+    </button>
+
+    @if (loading) {
+    <p class="empty-state">Chargement...</p>
+    }
+
+    @if (errorMsg) {
+    <p class="empty-state">{{ errorMsg }}</p>
+    }
+
+    <button class="btn-create-game btn-primary" (click)="createGame()">
+                    <span class="btn-text"> + Créer un jeu</span>
+    </button>
+
+    <section class="list-frame">
+        @if (games.length === 0 && !loading) {
+            <p class="empty-state">Aucun jeu créé</p>
+        } @else {
+        <div class="games-list">
+            @for (game of games; track game._id) {
+            <article class="game-row">
+                
+                <div class="preview">
+                    <img src="assets/placeholder.png" [alt]="'Prévisualisation de ' + game.name" />
+                    @if (game.description.length) {
+                        <div class="tooltip">{{ game.description }}</div>
+                    }
+                </div>
+
+                <div>
+                    <div class="sous-title">{{ game.name }}</div>
+                    <div class="meta">
+                    </div>
+                </div>
+
+                <button
+                    class="btn-visibility btn-name"
+                    type="button"
+                    (click)="toggleVisibility(game)"
+                    [class.is-hidden]="!game.visible">
+                    {{ game.visible ? 'Visible' : 'Caché' }}
+                </button>
+                
+                <button class ="btn-name btn-visibility" type="button" (click)="editGame(game._id)" [disabled]="!game._id"> Modifier</button>  
+                <button class ="btn-name btn-visibility"type="button" (click)="deleteGame(game._id)" [disabled]="!game._id"> Supprimer </button>
+                
+            </article>   
+            }
+        </div>
+        }
+
+    </section>
+</div>
