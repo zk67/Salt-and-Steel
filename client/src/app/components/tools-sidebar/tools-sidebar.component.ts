@@ -54,7 +54,7 @@ export class ToolsSidebarComponent {
     }
 
     async saveMap(): Promise<void> {
-        const game = this.mapService.getGameData() ?? this.buildGame();
+        const game = this.buildGame();
 
         const errors = await this.saveService.validateBeforeSave(game);
         if (errors.length > 0) {
@@ -64,9 +64,6 @@ export class ToolsSidebarComponent {
 
         try {
             if (game._id) {
-                game.map = this.mapService.getMapData();
-                game.name = game.map.name;
-                game.description = game.map.description;
                 await firstValueFrom(this.gameService.replaceGame(game._id, game));
                 alert(`Jeu "${game.name}" modifié avec succès !`);
             } else {
@@ -81,7 +78,12 @@ export class ToolsSidebarComponent {
     }
 
     private buildGame(): Game {
+        const game = this.mapService.getGameData();
         const mapData = this.mapService.getMapData();
+
+        if (game) {
+            return { ...game, map: mapData, name: mapData.name, description: mapData.description};
+        }
 
         let minPlayers: number;
         let maxPlayers: number;
