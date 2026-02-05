@@ -1,39 +1,34 @@
 import { Injectable } from '@angular/core';
-import { MapService } from '@app/services/map/map.service';
 import { TileType, MapObjectType, TileData } from '@common/types/map.interface';
 import { GameService } from './game.service';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { isStringValid } from '@common/classes/utils';
+import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@common/classes/utils';
 import { ToolService } from '@app/services/tool/tool.service';
+import { Game } from '@common/classes/game';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
     providedIn: 'root',
 })
 export class SaveService {
 
-    constructor(private mapService: MapService, private gameService: GameService, private toolService: ToolService) {}
+    constructor(private gameService: GameService, private toolService: ToolService) {}
 
-    async validateBeforeSave(): Promise<string[]> {
-        const tileMap = this.mapService.getTileMap();
-        const size = this.mapService.getSize();
-        const name = this.mapService.getName();
-        const description = this.mapService.getDescription();
+    async validateBeforeSave(game: Game): Promise<string[]> {
         const errors: string[] = [];
 
-        if(!isStringValid(name)){
+        if(!isStringValid(game.map.name)){
             errors.push('Le nom de la carte est invalide.');
         }
 
-        if(!isStringValid(description)){
+        if(!isStringValid(game.map.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)){
             errors.push('La description de la carte est invalide.');
         }
 
-        if (!this.hasEnoughBasicTiles(tileMap, size)) {
+        if (!this.hasEnoughBasicTiles(game.map.tiles, game.map.size)) {
             errors.push('Le nombre de tuiles de terrain doit couvrir plus de la moitié de la zone de jeu.');
         }
 
-        if (!this.isMapAccessible(tileMap, size)) {
+        if (!this.isMapAccessible(game.map.tiles, game.map.size)) {
             errors.push('Certaines tuiles sur le jeu sont inaccessibles.');
         }
 
@@ -41,22 +36,16 @@ export class SaveService {
             errors.push('Le nombre de points de départ ne correspond pas aux exigences.');
         }
 
-        const nameError = await this.validateNameUniqueness(name).toPromise();
-        if (nameError) {
-            errors.push(nameError);
+        if (await this.validateNameUniqueness(game)) {
+            errors.push('Un jeu avec ce nom existe déjà.');
         }
 
         return errors;
     }
 
-
-    private validateNameUniqueness(name: string): Observable<string | null> {
-        return this.gameService.getAllGames().pipe(
-            map((games) => {
-                const exists = games.some(game => game.name === name);
-                return exists ? 'Un jeu avec ce nom existe déjà.' : null;
-            }),
-        );
+    private async validateNameUniqueness(game: Game): Promise<boolean> {
+        const games = await firstValueFrom(this.gameService.getAllGames());
+        return games.some(g => g.name === game.map.name && g._id !== game._id);
     }
 
     private hasEnoughBasicTiles(tiles: TileData[][], size: number): boolean {

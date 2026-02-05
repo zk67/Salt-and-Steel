@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { Game } from '@common/classes/game';
-import { MapData, MapObjectType, TileType } from '@common/types/map.interface';
+import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { MIN_PLAYERS, MAX_PLAYERS_SMALL, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_LARGE } from '@common/const/gameSizeConst';
 
 @Component({
     selector: 'app-tools-sidebar',
@@ -68,46 +70,62 @@ export class ToolsSidebarComponent {
     }
 
     async saveMap(): Promise<void> {
-        const errors = await this.saveService.validateBeforeSave();
+        const game = this.mapService.getGameData() ?? this.buildGame();
+
+        const errors = await this.saveService.validateBeforeSave(game);
         if (errors.length > 0) {
             alert(errors.join('\n'));
             return;
         }
 
-        const game = this.buildGame();
-
-        if (game._id) {
-            this.gameService.replaceGame(game._id, game).subscribe({
-                next: () => {
-                    alert(`Jeu "${game.name}" modifié avec succès !`);
-                    this.router.navigate(['/admin']);
-                },
-                error: (err) => alert('Erreur lors de la modification : ' + JSON.stringify(err)),
-            });
-        } else {
-            this.gameService.addGame(game).subscribe({
-                next: (savedGame) => {
-                    alert(`Jeu "${savedGame.name}" créé avec succès !`);
-                    this.router.navigate(['/admin']);
-                },
-                error: (err) => alert('Erreur lors de la création : ' + JSON.stringify(err)),
-            });
+        try {
+            if (game._id) {
+                game.map = this.mapService.getMapData();
+                game.name = game.map.name;
+                game.description = game.map.description;
+                await firstValueFrom(this.gameService.replaceGame(game._id, game));
+                alert(`Jeu "${game.name}" modifié avec succès !`);
+            } else {
+                const savedGame = await firstValueFrom(this.gameService.addGame(game));
+                alert(`Jeu "${savedGame.name}" créé avec succès !`);
+            }
+            this.router.navigate(['/admin']);
+        } catch (err) {
+            const action = game._id ? 'modification' : 'création';
+            alert(`Erreur lors de la ${action} : ` + JSON.stringify(err));
         }
-
-        // TODO : Image de prévisualisation
     }
 
     private buildGame(): Game {
         const mapData = this.mapService.getMapData();
 
-        const plainMap: MapData = JSON.parse(JSON.stringify(mapData));
+        let minPlayers: number;
+        let maxPlayers: number;
+
+        switch (mapData.size) {
+            case MapSize.Small:
+                minPlayers = MIN_PLAYERS;
+                maxPlayers = MAX_PLAYERS_SMALL;
+                break;
+            case MapSize.Medium:
+                minPlayers = MIN_PLAYERS;
+                maxPlayers = MAX_PLAYERS_MEDIUM;
+                break;
+            case MapSize.Large:
+                minPlayers = MIN_PLAYERS;
+                maxPlayers = MAX_PLAYERS_LARGE;
+                break;
+            default:
+                minPlayers = MIN_PLAYERS;
+                maxPlayers = MAX_PLAYERS_SMALL;
+        }
 
         return {
-            map: plainMap,
+            map: mapData,
             name: mapData.name,
             description: mapData.description,
-            minPlayers: 2,
-            maxPlayers: 4,
+            minPlayers,
+            maxPlayers,
             visible: false,
         };
     }

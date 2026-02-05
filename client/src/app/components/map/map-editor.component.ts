@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
+import { firstValueFrom } from 'rxjs';
 import { GameMode, MapObjectType, MapSize, TileType } from '@common/types/map.interface';
 
 @Component({
@@ -37,6 +39,8 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         public mapService: MapService,
         private toolService: ToolService,
+        private gameService: GameService,
+        private router: Router,
     ) {}
 
     onMouseDown(event: MouseEvent, x: number, y: number): void {
@@ -52,8 +56,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         }
     }
 
-    ngOnInit(): void {
-        // id pas encore implementer
+    async ngOnInit(): Promise<void> {
         const id = this.route.snapshot.queryParams.id;
 
         // permet de gerer le mouse drag + fix quelque bugs
@@ -63,7 +66,15 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         window.addEventListener('contextmenu', this.globalContextMenuListener);
 
         if (id) {
-            // Charger la map du db ici
+            const game = await firstValueFrom(this.gameService.getGame(id));
+            if (!game) {
+                alert('Map introuvable, retour a la page principal.');
+                this.router.navigate(['/admin']);
+                return;
+            }
+
+            this.gridSize = game.map.size;
+            this.mapService.loadFromDB(game);
         } else {
             const sizeParam = Number(this.route.snapshot.queryParams.size);
             let mode = this.route.snapshot.queryParams.mode as GameMode;
@@ -80,10 +91,10 @@ export class MapEditorComponent implements OnInit, OnDestroy {
                 alert('Mode de jeu invalide, mode classique utilise.');
             }
 
-            this.mapService.initializeMap(this.gridSize);
-            this.mapService.setGameMode(mode);
-            this.toolService.defaultNumbers();
+            this.mapService.initializeMap(this.gridSize, mode);
         }
+
+        this.toolService.defaultNumbers();
     }
 
     ngOnDestroy(): void {

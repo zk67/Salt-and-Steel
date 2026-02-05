@@ -15,7 +15,7 @@ export class ToolService {
     private mapObjectType: MapObjectType = MapObjectType.None;
     private toolType: ToolType = ToolType.Tile;
     private numberSpawnPoint = 0;
-    private numberFlag = 1;
+    private numberFlag = 0;
     private numberHealingShrine = 0;
     private numberCombatShrine = 0;
 
@@ -81,22 +81,32 @@ export class ToolService {
     }
 
     defaultNumbers(): void {
+        this.numberFlag = 1; // Pareil pour tous les tailles de carte
+
         switch (this.mapService.getSize()) {
-        case MapSize.Small:
-            this.numberSpawnPoint = OBJECT_QUANTITY_SMALL;
-            this.numberHealingShrine = 1;
-            this.numberCombatShrine = 1;
-            break;
-        case MapSize.Medium:
-            this.numberSpawnPoint = OBJECT_QUANTITY_MEDIUM;
-            this.numberHealingShrine = OBJECT_QUANTITY_SMALL;
-            this.numberCombatShrine = OBJECT_QUANTITY_SMALL;
-            break;
-        case MapSize.Large:
-            this.numberSpawnPoint = OBJECT_QUANTITY_LARGE;
-            this.numberHealingShrine = OBJECT_QUANTITY_MEDIUM;
-            this.numberCombatShrine = OBJECT_QUANTITY_MEDIUM;
-            break;
+            case MapSize.Small:
+                this.numberSpawnPoint = OBJECT_QUANTITY_SMALL;
+                this.numberHealingShrine = 1;
+                this.numberCombatShrine = 1;
+                break;
+            case MapSize.Medium:
+                this.numberSpawnPoint = OBJECT_QUANTITY_MEDIUM;
+                this.numberHealingShrine = OBJECT_QUANTITY_SMALL;
+                this.numberCombatShrine = OBJECT_QUANTITY_SMALL;
+                break;
+            case MapSize.Large:
+                this.numberSpawnPoint = OBJECT_QUANTITY_LARGE;
+                this.numberHealingShrine = OBJECT_QUANTITY_MEDIUM;
+                this.numberCombatShrine = OBJECT_QUANTITY_MEDIUM;
+                break;
+        }
+
+        const gameData = this.mapService.getGameData();
+
+        if(gameData) {
+            gameData.map.tiles.flat().filter(t => t.mapObject !== MapObjectType.None).forEach((tile) => {
+                this.setNumberObject(tile.mapObject);
+            });
         }
     }
 

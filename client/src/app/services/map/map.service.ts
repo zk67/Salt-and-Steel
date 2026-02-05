@@ -1,118 +1,103 @@
 import { Injectable } from '@angular/core';
 import { createTile } from '@common/classes/tile';
 import { GameMode, MapData, MapObjectType, TileData, TileType } from '@common/types/map.interface';
+import { Game } from '@common/classes/game';
 
 @Injectable({
     providedIn: 'root',
 })
 export class MapService {
-    private tileMap: TileData[][] = [];
-    private gameMode: GameMode = GameMode.Classic;
-    private size: number = 0; // Voir si necessaire de garder size
-    private mapId: string = '';
-    private name: string = '';
-    private description: string = '';
-    private isVisible: boolean = false;
+    private mapData: MapData;
+    private gameData: Game | null = null;
 
-    initializeMap(size: number): void {
-        this.size = size;
-        this.mapId = ''; // On peut potentiellement juste utiliser le nom a la place d'un id, car les noms sont uniques
-        this.name = '';
-        this.description = '';
-        this.tileMap = Array.from({ length: size }, () =>
-            Array.from({ length: size }, () => createTile()),
-        );
-        this.isVisible = false;
-    }
-
-    loadFromDB(data: MapData): void {
-        this.mapId = data.id;
-        this.name = data.name;
-        this.description = data.description;
-        this.size = data.size;
-        this.gameMode = data.gameMode;
-        this.tileMap = data.tiles;
-        this.isVisible = data.visible;
-    }
-
-    getMapData(): MapData {
-        return {
-            id: this.mapId,
-            name: this.name,
-            description: this.description,
-            size: this.size,
-            gameMode: this.gameMode,
-            tiles: this.tileMap,
-            visible: this.isVisible,
+    initializeMap(size: number, gameMode: GameMode = GameMode.Classic): void {
+        this.gameData = null;
+        this.mapData = {
+            name: '',
+            description: '',
+            size,
+            gameMode,
+            tiles: Array.from({ length: size }, () =>
+                Array.from({ length: size }, () => createTile()),
+            ),
+            visible: false,
         };
     }
 
-    getMapId(): string {
-        return this.mapId;
+    loadFromDB(gameData: Game): void {
+        this.gameData = gameData;
+        this.mapData = structuredClone(gameData.map);
     }
 
-    setMapId(id: string): void {
-        this.mapId = id;
+    getGameData(): Game | null {
+        return this.gameData;
+    }
+
+    getMapData(): MapData {
+        return this.mapData;
     }
 
     getName(): string {
-        return this.name;
+        return this.mapData.name;
     }
 
     setName(name: string): void {
-        this.name = name;
+        this.mapData.name = name;
     }
 
     getDescription(): string {
-        return this.description;
+        return this.mapData.description;
     }
 
     setDescription(description: string): void {
-        this.description = description;
+        this.mapData.description = description;
     }
 
     getTileMap(): TileData[][] {
-        return this.tileMap;
+        return this.mapData.tiles;
     }
 
     getSize(): number {
-        return this.size;
+        return this.mapData.size;
     }
 
     setTile(x: number, y: number, type: TileType): void {
-        this.tileMap[y][x].tileType = type;
+        this.mapData.tiles[y][x].tileType = type;
     }
 
     getTile(x: number, y: number): TileData {
-        return this.tileMap[y][x];
+        return this.mapData.tiles[y][x];
     }
 
     setMapObject(x: number, y: number, mapObject: MapObjectType): void {
-        this.tileMap[y][x].mapObject = mapObject;
+        this.mapData.tiles[y][x].mapObject = mapObject;
     }
 
     getMapObject(x: number, y: number): MapObjectType {
-        return this.tileMap[y][x].mapObject;
+        return this.mapData.tiles[y][x].mapObject;
     }
 
     setGameMode(mode: GameMode): void {
-        this.gameMode = mode;
+        this.mapData.gameMode = mode;
     }
 
     getGameMode(): GameMode {
-        return this.gameMode;
+        return this.mapData.gameMode;
     }
 
     resetMap(): void {
-        // Ajouter un check ici pour renitialiser a l'etat de la db si ce n'est pas une nouvelle map
-        this.initializeMap(this.size);
+        if (!this.gameData) {
+            this.initializeMap(this.mapData.size, this.mapData.gameMode);
+        } else {
+            this.mapData = structuredClone(this.gameData.map);
+        }
     }
 
     getVisibility(): boolean {
-        return this.isVisible;
+        return this.mapData.visible;
     }
-    
+
     setVisibility(visible: boolean): void {
-        this.isVisible = visible;
+        this.mapData.visible = visible;
     }
 }

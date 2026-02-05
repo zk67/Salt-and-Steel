@@ -31,7 +31,6 @@ export interface TileData {
 }
 
 export interface MapData {
-    id: string;
     name: string;
     description: string;
     size: number;
