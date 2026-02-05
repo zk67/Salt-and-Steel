@@ -1,0 +1,30 @@
+<article class="game-row">
+    <div class="preview">
+        <img [src]="previewSrc" [alt]="'Prévisualisation de ' + game.name" />
+
+        @if (hasDescription) {
+            <div class="tooltip">{{ game.description }}</div>
+        }
+    </div>
+
+    <div class="meta">
+        <p> {{size}}    {{mode}}</p>
+       <!-- ]<p> Modifié le: {{ game.lastModified | date:'yyyy-MM-dd HH:mm' }}</p> -->
+    </div>
+
+    <div class="sous-title">{{ game.name }}</div>
+    
+    <button class="btn-visibility btn-name"
+        (click)="onToggle()"
+        [class.is-hidden]="!game.visible">
+        {{ game.visible ? 'Visible' : 'Caché' }}
+    </button>
+
+    <button class="btn-name" (click)="onEdit()" [disabled]="!game._id">
+        Modifier
+    </button>
+
+    <button class="btn-name" (click)="onDelete()" [disabled]="!game._id">
+        Supprimer
+    </button>
+</article>

@@ -70,48 +70,78 @@ $indigo-pink-theme: mat.m2-define-light-theme(
 }
 
 /* You can add global styles to this file, and also import other style files */
+@font-face {
+  font-family: "Mouse Pro";
+  src: url("../src/assets/fonts/MousePro.woff2") format("woff2"),
+       url("/assets/fonts/mousepro/MousePro.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Mouse Pro";
+  src: url("../src/assets/fonts/MousePro-Bold.woff2") format("woff2"),
+       url("/assets/fonts/mousepro/MousePro-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 html,
 body {
     height: 100%;
+    cursor: url("../src/assets/body/piratehookcursor_32.png") 8 8, auto;
+
 }
+
 body {
     margin: 0;
-    font-family: Roboto, 'Helvetica Neue', sans-serif;
+    font-family: "Mouse Pro", system-ui, sans-serif;
+    font-synthesis: none; 
+    text-align: center;
 }
 
 .btn-back {
-  position: fixed;
-  left: 32px;
-  bottom: 24px;
+    position: fixed;
+    left: 32px;
+    bottom: 24px;
 
-  padding: 16px 22px;
-  border-radius: 999px;
+    padding: 16px 22px;
+    border-radius: 999px;
 
-  font-weight: 700;
-  cursor: pointer;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: "Mouse Pro", system-ui, sans-serif;
+    font-synthesis: none; 
 
-  border: none;
-  background: #362727;
-  color: white;
+
+    border: none;
+    background: #362727;
+    color: white;
 }
 
-.btn-back :hover {
+.btn-back:hover ,.btn-primary:hover{
   filter: brightness(0.95);
+  transform: translateY(-10px);
 }
 
 .btn-primary {
-  padding: 12px 22px;
-  border-radius: 12px;
+    padding: 12px 22px;
+    border-radius: 12px;
 
-  font-weight: 800;
-  font-weight: 700;
+    font-weight: 800;
+    font-weight: 700;
+    font-family: "Mouse Pro", system-ui, sans-serif;
+    font-synthesis: none;
 
-  cursor: pointer;
-  border: none;
 
-  background: #362727;
-  color: #fff;
+
+    cursor: pointer;
+    border: none;
+
+    background: #362727;
+    color: #fff;
 }
 
 .title {
@@ -131,7 +161,8 @@ body {
 }
 
 .btn-name {
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 700;
+    font-family: "Mouse Pro", system-ui, sans-serif;
     color :#402e1c;
 }

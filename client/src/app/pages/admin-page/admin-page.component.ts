@@ -4,12 +4,13 @@ import { Router } from '@angular/router';
 import { AppMaterialModule } from '@app/modules/material.module';
 import { GameService } from '@app/services/game.service';
 import { Game } from '@common/classes/game';
+import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
 
 @Component({
     selector: 'app-admin-page',
     templateUrl: './admin-page.component.html',
     styleUrls: ['./admin-page.component.scss'],
-    imports: [AppMaterialModule, CommonModule],
+    imports: [AppMaterialModule, CommonModule ,GameCreatedComponent],
 })
 
 export class AdminPageComponent implements OnInit {
