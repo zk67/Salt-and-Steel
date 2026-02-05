@@ -1,13 +1,29 @@
-.container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
-.header-item {
-  text-align: center;
-  letter-spacing: 0.5px;
-  color: #2b2116;
+.container {
+    display: flex;
+    flex-direction: column;
+    background-image: url('../../../assets/main-page/backgroundgif.webp');
+    background-size:cover;
+    min-height: 100vh;
+    background-attachment: fixed;
+    background-position: center ;
+}
+
+.title-banner {
+  width: 700px;
+  height: 500px;
+
+  margin: 35px 570px -30px;
+
+  background-image: url('../../../assets/main-page/titlebanner.png');
+  background-repeat: no-repeat;
+  background-position: center -30px ;
+  background-size: 100% auto;
 }
 
 .content {
@@ -15,57 +31,70 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
-}
-
-.image-main {
-  display: block;
-  width: min(350px, 90vw); 
+  justify-content :flex-start;
 }
 
 .buttons {
-  display: flex;
+  width: 600px;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: min(360px, 90vw);
+  gap: 14px;
+  border: none;
+  background: transparent;
+}
+
+#Join, #Create,#admin {
+  width: 550px;
+  height: 100px;
+  background-size: 100% 100%;
+}
+
+#Join{
+  background-image: url('../../../assets/main-page/join.png'); 
+}
+
+#Create{
+  background-image: url('../../../assets/main-page/create.png'); 
+}
+
+#admin{
+  background-image: url('../../../assets/main-page/admin.png'); 
 }
 
 .button {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #6b4b2a;
-  background: #fff7ea;
-  color: #2b2116;
-  cursor: pointer;
-  font-weight: 600;
+  border: none;
+  background: transparent;
 }
 
 .button:hover:enabled {
-  background: #f1e3cc;
+  filter: brightness(1.06) contrast(1.02);
+  transform: translateY(-7px);
 }
 
-.button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.button:active:enabled {
+  filter: brightness(0.95) contrast(1.02);
+}
+
+.button:focus-visible {
+  outline: 3px solid rgba(245, 199, 94, 0.9);
+  outline-offset: 4px;
 }
 
 .footer-item {
   text-align: center;
   padding-top: 18px;
-  border-top: 1px solid #d8c7ab;
 }
 
 .team-name {
   margin: 6px 0;
-  color: #2b2116; 
+  color: #053219; 
 }
 
 .footer-text {
   margin: 0;
   font-size: 0.9rem;
+  font-weight: 900;
   opacity: 0.85;
-  color: #3c2d1b; 
+  color: #2a805e; 
 }
+
+
