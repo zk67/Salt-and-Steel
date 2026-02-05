@@ -97,4 +97,7 @@ html, body {
   color: #2a805e; 
 }
 
-
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
