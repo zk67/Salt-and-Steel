@@ -14,7 +14,7 @@ export class GameCardComponent {
 
   constructor(private router: Router) {}
   handleClick() {
-    this.router.navigate(['/character-from']);
+    this.router.navigate(['/character-form']);
     this.click.emit();
   }
 }
