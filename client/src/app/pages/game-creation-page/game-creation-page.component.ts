@@ -68,7 +68,6 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-
   changeGameVisibility(_id: string, visibility: boolean): void {
     if (!this.games.find(game => game._id === _id)) return;
 
@@ -76,6 +75,4 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
       this.getAllGames();
     });
   }
-
-
 }
