@@ -18,8 +18,6 @@ import { MIN_PLAYERS, MAX_PLAYERS_SMALL, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_LARGE }
     styleUrls: ['./tools-sidebar.component.scss'],
 })
 export class ToolsSidebarComponent {
-    placementOptionsOpen = false;
-    textOptionsOpen = false;
 
     // Pour le html
     tileType = TileType;
@@ -33,20 +31,6 @@ export class ToolsSidebarComponent {
         private saveService: SaveService,
         private gameService: GameService,
     ) {}
-
-    togglePlacementOptions(): void {
-        this.placementOptionsOpen = !this.placementOptionsOpen;
-        if (this.placementOptionsOpen) {
-            this.textOptionsOpen = false;
-        }
-    }
-
-    toggleTextOptions(): void {
-        this.textOptionsOpen = !this.textOptionsOpen;
-        if (this.textOptionsOpen) {
-            this.placementOptionsOpen = false;
-        }
-    }
 
     selectTile(type: TileType): void {
         this.toolService.setTileType(type);

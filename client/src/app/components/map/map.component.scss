@@ -1,4 +1,5 @@
 .map-grid {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(var(--grid-size), 1fr);
     gap: 2px;
@@ -9,27 +10,38 @@
 }
 
 .tile {
+    position: relative;
     aspect-ratio: 1;
     background-color: white;
 
     &[data-tile-type="Basic"] {
-        background-color: #5e3010;
+        background-image: url("/assets/tiles/basic.png");
+        background-size: cover;
+        background-position: center;
     }
 
     &[data-tile-type="Water"] {
-        background-color: #2854d9;
+        background-image: url("/assets/tiles/water.png");
+        background-size: cover;
+        background-position: center;
     }
 
     &[data-tile-type="Ice"] {
-        background-color: #44d7ff;
+        background-image: url("/assets/tiles/ice.png");
+        background-size: cover;
+        background-position: center;
     }
 
     &[data-tile-type="Wall"] {
-        background-color: #2d2d2d;
+        background-image: url("/assets/tiles/wall.png");
+        background-size: cover;
+        background-position: center;
     }
 
     &[data-tile-type="Door"] {
-        background-color: #9b4e16;
+        background-image: url("/assets/tiles/door.png");
+        background-size: cover;
+        background-position: center;
     }
 
     &[data-object="SpawnPoint"] {
@@ -55,8 +67,6 @@
 
     &[data-object="CombatShrine"] {
         background-image: url("/assets/objects/combat.png"); 
-        //background-image: url(''); quand on aura une image
-        background-color: #5900ff;
         background-size: 80%;
         background-repeat: no-repeat;
         background-position: center;
@@ -69,4 +79,26 @@
         border: 2px solid #fff;
         cursor: pointer;
     }
+}
+
+.tile::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #353535;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 2000;
+}
+
+.tile[data-tooltip]:hover::after {
+    opacity: 1;
 }

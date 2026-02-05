@@ -4,6 +4,7 @@
             <div class="tile"
                  [attr.data-tile-type]="tileType[tile.tileType]"
                  [attr.data-object]="mapObjectType[tile.mapObject]"
+                 [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                  (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
                  (mouseenter)="onMouseEnter($event, colIndex, rowIndex)">
             </div>

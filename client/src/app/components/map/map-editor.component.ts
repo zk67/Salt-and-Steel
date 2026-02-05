@@ -103,4 +103,19 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         window.removeEventListener('dragstart', this.globalDragStartListener);
         window.removeEventListener('contextmenu', this.globalContextMenuListener);
     }
+
+    getObjectDescription(objectType: number): string {
+        switch (objectType) {
+            case this.mapObjectType.SpawnPoint:
+                return 'TODO: description du point de départ';
+            case this.mapObjectType.Flag:
+                return 'TODO: description du drapeau';
+            case this.mapObjectType.HealingShrine:
+                return 'TODO: description du sanctuaire de soin';
+            case this.mapObjectType.CombatShrine:
+                return 'TODO: description du sanctuaire de combat';
+            default:
+                return '';
+        }
+    }
 }
