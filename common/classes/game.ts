@@ -7,5 +7,6 @@ export interface Game {
     minPlayers: number;
     maxPlayers: number;
     visible: boolean;
-    imageUrl?: string;
+    imageUrl: string;
+    date: Date;
 }

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppMaterialModule } from '@app/modules/material.module';
-import { GameService } from '@app/services/game.service';
+import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/classes/game';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
@@ -17,7 +17,7 @@ import { GameCreatedComponent } from '@app/components/game-created/game-created.
 export class AdminPageComponent implements OnInit {
     constructor(
         private readonly router: Router,
-        private readonly gameService: GameService,
+        private readonly saveService: SaveService,
         private readonly socketService: SocketClientService,
     ) {}
 
@@ -35,7 +35,7 @@ export class AdminPageComponent implements OnInit {
 
     toggleVisibility(game: Game): void {
         if (game._id)
-            this.gameService.updateGameVisibility(game._id, !game.visible).subscribe({
+            this.saveService.updateGameVisibility(game._id, !game.visible).subscribe({
                 next: () => {
                     this.refresh();
                     this.socketService.send('refresh');
@@ -52,7 +52,7 @@ export class AdminPageComponent implements OnInit {
             return;
         }
 
-        this.gameService.deleteGame(gameId).subscribe({
+        this.saveService.deleteGame(gameId).subscribe({
             next: () => {
                 this.refresh();
                 this.socketService.send('refresh');
@@ -74,7 +74,7 @@ export class AdminPageComponent implements OnInit {
         this.loading = true;
         this.errorMsg = '';
 
-        this.gameService.getAllGames().subscribe({
+        this.saveService.getAllGames().subscribe({
             next: (games) => {
                 this.games = games;
                 this.loading = false;

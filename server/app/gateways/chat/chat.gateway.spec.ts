@@ -87,6 +87,7 @@ describe('ChatGateway', () => {
                 visible: true,
                 map: undefined,
                 imageUrl: undefined,
+                date: new Date(),
             };
 
             gateway.notifyElementAdded(game);

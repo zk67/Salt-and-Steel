@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
+import { SaveService } from '@app/services/save.service';
 import { MapService } from '@app/services/map/map.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { firstValueFrom } from 'rxjs';
@@ -39,7 +39,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         public mapService: MapService,
         private toolService: ToolService,
-        private gameService: GameService,
+        private saveService: SaveService,
         private router: Router,
     ) {}
 
@@ -66,7 +66,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         window.addEventListener('contextmenu', this.globalContextMenuListener);
 
         if (id) {
-            const game = await firstValueFrom(this.gameService.getGame(id));
+            const game = await firstValueFrom(this.saveService.getGame(id));
             if (!game) {
                 alert('Map introuvable, retour a la page principal.');
                 this.router.navigate(['/admin']);

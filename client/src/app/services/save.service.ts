@@ -1,26 +1,28 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { TileType, MapObjectType, TileData } from '@common/types/map.interface';
-import { GameService } from './game.service';
-import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@common/classes/utils';
 import { ToolService } from '@app/services/tool/tool.service';
 import { Game } from '@common/classes/game';
-import { firstValueFrom } from 'rxjs';
+import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@common/classes/utils';
+import { MapObjectType, TileData, TileType } from '@common/types/map.interface';
+import { firstValueFrom, Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
     providedIn: 'root',
 })
 export class SaveService {
-
-    constructor(private gameService: GameService, private toolService: ToolService) {}
+    private readonly baseUrl: string = environment.serverUrl;
+    constructor(private toolService: ToolService, private readonly http: HttpClient) {}
 
     async validateBeforeSave(game: Game): Promise<string[]> {
         const errors: string[] = [];
 
-        if(!isStringValid(game.map.name)){
+        if (!isStringValid(game.map.name)) {
             errors.push('Le nom de la carte est invalide.');
         }
 
-        if(!isStringValid(game.map.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)){
+        if (!isStringValid(game.map.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)) {
             errors.push('La description de la carte est invalide.');
         }
 
@@ -44,12 +46,12 @@ export class SaveService {
     }
 
     private async validateNameUniqueness(game: Game): Promise<boolean> {
-        const games = await firstValueFrom(this.gameService.getAllGames());
+        const games = await firstValueFrom(this.getAllGames());
         return games.some(g => g.name === game.map.name && g._id !== game._id);
     }
 
     private hasEnoughBasicTiles(tiles: TileData[][], size: number): boolean {
-        const numberTiles = tiles.flat().filter(t => t.tileType === TileType.Basic).length;
+        const numberTiles = tiles.flat().filter(t => t.tileType !== TileType.Wall).length;
         return numberTiles >= (size * size) / 2;
     }
 
@@ -114,5 +116,34 @@ export class SaveService {
 
     private hasCorrectSpawnPoints(): boolean {
         return this.toolService.getNumberObject(MapObjectType.SpawnPoint) === 0;
+    }
+
+    getAllGames(): Observable<Game[]> {
+        return this.http.get<Game[]>(`${this.baseUrl}/games`).pipe(catchError(this.handleError<Game[]>('getAllGames')));
+    }
+
+    addGame(game: Game): Observable<Game> {
+        return this.http.post<Game>(`${this.baseUrl}/games`, game).pipe(catchError(this.handleError<Game>('addGame')));
+    }
+
+    replaceGame(_id: string, game: Game): Observable<Game> {
+        return this.http.put<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('replaceGame')));
+    }
+
+    deleteGame(_id: string): Observable<Game> {
+        return this.http.delete<Game>(`${this.baseUrl}/games/${_id}`).pipe(catchError(this.handleError<Game>('deleteGame')));
+    }
+
+    getGame(_id: string): Observable<Game> {
+        return this.http.get<Game>(`${this.baseUrl}/games/${_id}`).pipe(catchError(this.handleError<Game>('getGame')));
+    }
+
+    updateGameVisibility(_id: string, visibility: boolean): Observable<Game> {
+        const game: Partial<Game> = { visible: visibility };
+        return this.http.patch<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('patchGame')));
+    }
+
+    private handleError<T>(request: string, result?: T): (error: Error) => Observable<T> {
+        return () => of(result as T);
     }
 }

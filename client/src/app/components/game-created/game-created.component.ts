@@ -1,12 +1,14 @@
 import { Game } from '@common/classes/game';
 import { Output ,Input , Component, EventEmitter} from '@angular/core';
 import { MapSize } from '@common/types/map.interface';
+import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-game-created',
     standalone: true,
     templateUrl: './game-created.component.html',
     styleUrls: ['./game-created.component.scss'],
+    imports: [CommonModule],
 })
 
 export class GameCreatedComponent{

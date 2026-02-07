@@ -25,9 +25,11 @@ export class Game {
     @Prop({ required: true })
     visible: boolean;
 
-    @Prop({ required: false })
-    imageUrl?: string;
+    @Prop({ required: true })
+    imageUrl: string;
 
+    @Prop({ required: true})
+    date: Date;
 }
 export const gameSchema = SchemaFactory.createForClass(Game);
 
