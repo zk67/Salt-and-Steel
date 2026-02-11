@@ -64,6 +64,7 @@ export class ToolsSidebarComponent {
         game.imageUrl = await this.mapPreviewService.generatePreview(this.mapService.getMapData());
         game.date = new Date();
         try {
+
             if (game._id) {
                 await firstValueFrom(this.saveService.replaceGame(game._id, game));
                 alert(`Jeu "${game.name}" modifié avec succès !`);

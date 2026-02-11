@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { enableProdMode, enableProfiling, provideZoneChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { Routes, provideRouter, withHashLocation } from '@angular/router';
+import { AdminPageComponent } from '@app/pages/admin-page/admin-page.component';
 import { AppComponent } from '@app/pages/app/app.component';
 import { CharacterPageComponent } from '@app/pages/character-page/character-page.component';
 import { EditionPageComponent } from '@app/pages/edition-page/edition-page.component';
@@ -11,7 +12,6 @@ import { MainPageComponent } from '@app/pages/main-page/main-page.component';
 import { MaterialPageComponent } from '@app/pages/material-page/material-page.component';
 import { WaitingPageComponent } from '@app/pages/waiting-page/waiting-page.component';
 import { environment } from './environments/environment';
-import { AdminPageComponent } from '@app/pages/admin-page/admin-page.component';
 
 if (environment.production) {
     enableProdMode();

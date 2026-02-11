@@ -1,20 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
 import { AppMaterialModule } from '@app/modules/material.module';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/classes/game';
-import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
 
 @Component({
     selector: 'app-admin-page',
     templateUrl: './admin-page.component.html',
     styleUrls: ['./admin-page.component.scss'],
-    imports: [AppMaterialModule, CommonModule ,GameCreatedComponent],
+    imports: [AppMaterialModule, CommonModule, GameCreatedComponent],
 })
 
 export class AdminPageComponent implements OnInit {
+    private refreshListener: () => void;
+
     constructor(
         private readonly router: Router,
         private readonly saveService: SaveService,
@@ -88,5 +90,11 @@ export class AdminPageComponent implements OnInit {
 
     ngOnInit(): void {
         this.refresh();
+        this.refreshListener = () => {
+            this.gameService.getAllGames().subscribe(games => {
+                this.games = games;
+            });
+            this.socketService.on<Game>('update', this.refreshListener);
+        };
     }
 }

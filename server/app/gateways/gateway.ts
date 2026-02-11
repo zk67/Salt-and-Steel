@@ -1,22 +1,21 @@
-import { Game } from '@app/database/game/game.schema';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { PRIVATE_ROOM_ID } from './chat.gateway.constants';
-import { ChatEvents } from './chat.gateway.events';
+import { PRIVATE_ROOM_ID } from './gateway.constants';
+import { GatewayEvents } from './gateway.events';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer() private server: Server;
 
     private readonly room = PRIVATE_ROOM_ID;
 
     constructor(private readonly logger: Logger) {}
 
-    @SubscribeMessage(ChatEvents.Refresh)
+    @SubscribeMessage(GatewayEvents.Refresh)
     refresh(socket: Socket) {
-        socket.broadcast.emit(ChatEvents.Update);
+        socket.broadcast.emit(GatewayEvents.Update);
     }
 
     handleConnection(socket: Socket) {
@@ -25,9 +24,5 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     handleDisconnect(socket: Socket) {
         this.logger.log(`Déconnexion par l'utilisateur avec id : ${socket.id}`);
-    }
-
-    notifyElementAdded(element: Game) {
-        this.server.emit('element-added', element);
     }
 }
