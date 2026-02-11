@@ -1,5 +1,6 @@
-import { MapData, MapObjectType, TileType} from '@common/types/map.interface';
+import { MapObjectType, TileType} from '@common/types/map.interface';
 import { Injectable } from '@angular/core';
+import { Game } from '@common/classes/game';
 
 @Injectable({
     providedIn: 'root',
@@ -44,7 +45,7 @@ export class MapPreviewService {
         return p;
     }
 
-    async generatePreview(map:MapData ,pixelSize: number = this.previewSize): Promise<string> {
+    async generatePreview(map:Game ,pixelSize: number = this.previewSize): Promise<string> {
 
         const size = map.size;
 
@@ -103,7 +104,7 @@ export class MapPreviewService {
                     const objImg = await getObjImg(obj);
                     if (objImg) {
                         //marge pour que l'objet soit un peu plus petit a changer si juge necessaire.
-                        const pad = Math.floor(cell * this.nombreMajore); 
+                        const pad = Math.floor(cell * this.nombreMajore);
                         ctx.drawImage( objImg,x * cell + pad,y * cell + pad,cell - 2 * pad, cell - 2 * pad);
                     }
                 }

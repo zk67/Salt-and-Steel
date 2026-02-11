@@ -29,6 +29,7 @@ describe('GameCreationPageComponent', () => {
     beforeEach(async () => {
         saveServiceSpy = jasmine.createSpyObj<SaveService>('SaveService', [
             'getAllGames',
+            'getAllVisibleGames',
         ]);
 
         socketServiceSpy = jasmine.createSpyObj<SocketClientService>('SocketClientService', [
@@ -37,6 +38,7 @@ describe('GameCreationPageComponent', () => {
         ]);
 
         saveServiceSpy.getAllGames.and.returnValue(of(mockGames));
+        saveServiceSpy.getAllVisibleGames.and.returnValue(of(mockGames));
 
         await TestBed.configureTestingModule({
             imports: [GameCreationPageComponent],
@@ -53,7 +55,7 @@ describe('GameCreationPageComponent', () => {
     });
 
     it('devrait afficher tous les jeux', () => {
-        expect(saveServiceSpy.getAllGames).toHaveBeenCalled();
+        expect(saveServiceSpy.getAllVisibleGames).toHaveBeenCalled();
         expect(component.games).toEqual(mockGames);
     });
 

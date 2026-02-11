@@ -5,9 +5,7 @@ import { SaveService } from '@app/services/save.service';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { Game } from '@common/classes/game';
-import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@common/const/gameSizeConst';
-import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { MapObjectType, TileType } from '@common/types/map.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -53,7 +51,7 @@ export class ToolsSidebarComponent {
     }
 
     async saveMap(): Promise<void> {
-        const game = this.buildGame();
+        const game = this.mapService.getGameData();
 
         const errors = await this.saveService.validateBeforeSave(game);
         if (errors.length > 0) {
@@ -61,7 +59,7 @@ export class ToolsSidebarComponent {
             return;
         }
 
-        game.imageUrl = await this.mapPreviewService.generatePreview(this.mapService.getMapData());
+        game.imageUrl = await this.mapPreviewService.generatePreview(game);
         game.date = new Date();
         try {
 
@@ -78,48 +76,6 @@ export class ToolsSidebarComponent {
             alert(`Erreur lors de la ${action} : ` + JSON.stringify(err));
         }
     }
-
-    private buildGame(): Game {
-        const game = this.mapService.getGameData();
-        const mapData = this.mapService.getMapData();
-
-        if (game) {
-            return { ...game, map: mapData, name: mapData.name, description: mapData.description };
-        }
-
-        let minPlayers: number;
-        let maxPlayers: number;
-
-        switch (mapData.size) {
-            case MapSize.Small:
-                minPlayers = MIN_PLAYERS;
-                maxPlayers = MAX_PLAYERS_SMALL;
-                break;
-            case MapSize.Medium:
-                minPlayers = MIN_PLAYERS;
-                maxPlayers = MAX_PLAYERS_MEDIUM;
-                break;
-            case MapSize.Large:
-                minPlayers = MIN_PLAYERS;
-                maxPlayers = MAX_PLAYERS_LARGE;
-                break;
-            default:
-                minPlayers = MIN_PLAYERS;
-                maxPlayers = MAX_PLAYERS_SMALL;
-        }
-
-        return {
-            map: mapData,
-            name: mapData.name,
-            description: mapData.description,
-            minPlayers,
-            maxPlayers,
-            visible: false,
-            imageUrl: '',
-            date: new Date(),
-        };
-    }
-
 
     goToMenu(): void {
         this.router.navigate(['/home']);

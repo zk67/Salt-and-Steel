@@ -1,103 +1,102 @@
 import { Injectable } from '@angular/core';
 import { createTile } from '@common/classes/tile';
-import { GameMode, MapData, MapObjectType, TileData, TileType } from '@common/types/map.interface';
+import { GameMode, MapObjectType, TileData, TileType } from '@common/types/map.interface';
 import { Game } from '@common/classes/game';
+import { getMinMaxPlayers } from '@app/classes/gameUtils';
 
 @Injectable({
     providedIn: 'root',
 })
 export class MapService {
-    private mapData: MapData;
-    private gameData: Game | null = null;
+    private game: Game;
+    private originalGame: Game | null = null;
 
     initializeMap(size: number, gameMode: GameMode = GameMode.Classic): void {
-        this.gameData = null;
-        this.mapData = {
+        this.game = {
             name: '',
             description: '',
             size,
             gameMode,
+            ...getMinMaxPlayers(size),
             tiles: Array.from({ length: size }, () =>
                 Array.from({ length: size }, () => createTile()),
             ),
             visible: false,
+            date: new Date(),
+            imageUrl: '',
         };
     }
 
     loadFromDB(gameData: Game): void {
-        this.gameData = gameData;
-        this.mapData = structuredClone(gameData.map);
+        this.game = gameData;
+        this.originalGame = structuredClone(gameData);
     }
 
-    getGameData(): Game | null {
-        return this.gameData;
-    }
-
-    getMapData(): MapData {
-        return this.mapData;
+    getGameData(): Game {
+        return this.game;
     }
 
     getName(): string {
-        return this.mapData.name;
+        if (!this.game) {
+            return '';
+        }
+
+        return this.game.name;
     }
 
     setName(name: string): void {
-        this.mapData.name = name;
+        this.game.name = name;
     }
 
     getDescription(): string {
-        return this.mapData.description;
+        if (!this.game) {
+            return '';
+        }
+
+        return this.game.description;
     }
 
     setDescription(description: string): void {
-        this.mapData.description = description;
+        this.game.description = description;
     }
 
     getTileMap(): TileData[][] {
-        return this.mapData.tiles;
+        return this.game.tiles;
     }
 
     getSize(): number {
-        return this.mapData.size;
+        return this.game.size;
     }
 
     setTile(x: number, y: number, type: TileType): void {
-        this.mapData.tiles[y][x].tileType = type;
+        this.game.tiles[y][x].tileType = type;
     }
 
     getTile(x: number, y: number): TileData {
-        return this.mapData.tiles[y][x];
+        return this.game.tiles[y][x];
     }
 
     setMapObject(x: number, y: number, mapObject: MapObjectType): void {
-        this.mapData.tiles[y][x].mapObject = mapObject;
+        this.game.tiles[y][x].mapObject = mapObject;
     }
 
     getMapObject(x: number, y: number): MapObjectType {
-        return this.mapData.tiles[y][x].mapObject;
-    }
-
-    setGameMode(mode: GameMode): void {
-        this.mapData.gameMode = mode;
-    }
-
-    getGameMode(): GameMode {
-        return this.mapData.gameMode;
+        return this.game.tiles[y][x].mapObject;
     }
 
     resetMap(): void {
-        if (!this.gameData) {
-            this.initializeMap(this.mapData.size, this.mapData.gameMode);
+        if (!this.originalGame) {
+            this.initializeMap(this.game.size, this.game.gameMode);
         } else {
-            this.mapData = structuredClone(this.gameData.map);
+            this.game = structuredClone(this.originalGame);
         }
     }
 
     getVisibility(): boolean {
-        return this.mapData.visible;
+        return this.game.visible;
     }
 
     setVisibility(visible: boolean): void {
-        this.mapData.visible = visible;
+        this.game.visible = visible;
     }
 }

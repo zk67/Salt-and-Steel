@@ -38,7 +38,7 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
   }
 
   getAllGames(): void {
-    this.saveService.getAllGames().subscribe(games => {
+    this.saveService.getAllVisibleGames().subscribe(games => {
       this.games = games;
     });
   }

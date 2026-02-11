@@ -17,7 +17,11 @@ export class GamesService {
   }
 
   async getAllGames(): Promise<Game[]> {
-    return await this.gameModel.find().exec();
+    return await this.gameModel.find().select('-tiles -minPlayers -maxPlayers').exec();
+  }
+
+  async getVisibleGames(): Promise<Game[]> {
+    return await this.gameModel.find({ visible: true }).select('-tiles -visible -gameMode -size').exec();
   }
 
   async getOneGame(_id: string): Promise<Game> {

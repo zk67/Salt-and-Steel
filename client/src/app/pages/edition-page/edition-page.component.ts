@@ -6,7 +6,6 @@ import { MapEditorComponent } from '@app/components/map/map-editor.component';
     selector: 'app-edition-page',
     templateUrl: './edition-page.component.html',
     styleUrls: ['./edition-page.component.scss'],
-    standalone: true,
     imports: [ToolsSidebarComponent, MapEditorComponent],
 })
 export class EditionPageComponent {}

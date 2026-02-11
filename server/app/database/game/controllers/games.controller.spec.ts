@@ -9,15 +9,15 @@ import { GamesController } from './games.controller';
  * Description:
  * Dans ce fichier on vérifie la bonne reception des requêtes par le serveur, leur traitement adéquat,
  * les réponses serveur ainsi que la communication contoller <--> service.
- * 
+ *
  * Fonctionnement:
  * 1) On instancie un serveur NestJS 'app' qui va permettre d'envoyer des requêtes directement à notre serveur.
- * Dans ces tests le controller est tester de facon implicite, si le serveur répond correctement et que les methodes du services 
+ * Dans ces tests le controller est tester de facon implicite, si le serveur répond correctement et que les methodes du services
  * sont correctement appelée avec les bon arguements alors le controller est tout bon.
- * 
+ *
  * 2) Pour chaque methode du controller à tester on formule une requête correspondante, on observe ensuite les réponses,
  * les codes de retours, les arguments passés aux methodes du services et les objets retournés par ces mêmes méthodes.
- *  
+ *
  */
 
 describe('GamesController', () => {
@@ -31,6 +31,7 @@ describe('GamesController', () => {
     const mockGamesService = {
         addGame: jest.fn(),
         getAllGames: jest.fn(),
+        getVisibleGames: jest.fn(),
         getOneGame: jest.fn(),
         updateGame: jest.fn(),
         deleteGame: jest.fn(),
@@ -70,6 +71,14 @@ describe('GamesController', () => {
 
         const response = await request(app.getHttpServer()).get('/games').expect(OK);
         expect(service.getAllGames).toHaveBeenCalled();
+        expect(response.body).toEqual([mockGame]);
+    });
+
+    it('La requête GET /games/visible devrait appeler getVisibleGames() du service et renvoyer les games visibles', async () => {
+        jest.spyOn(mockGamesService, 'getVisibleGames').mockResolvedValue([mockGame]);
+
+        const response = await request(app.getHttpServer()).get('/games/visible').expect(OK);
+        expect(service.getVisibleGames).toHaveBeenCalled();
         expect(response.body).toEqual([mockGame]);
     });
 

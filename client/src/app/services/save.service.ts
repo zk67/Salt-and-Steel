@@ -18,19 +18,19 @@ export class SaveService {
     async validateBeforeSave(game: Game): Promise<string[]> {
         const errors: string[] = [];
 
-        if (!isStringValid(game.map.name)) {
+        if(!isStringValid(game.name)){
             errors.push('Le nom de la carte est invalide.');
         }
 
-        if (!isStringValid(game.map.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)) {
+        if(!isStringValid(game.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)){
             errors.push('La description de la carte est invalide.');
         }
 
-        if (!this.hasEnoughBasicTiles(game.map.tiles, game.map.size)) {
+        if (!this.hasEnoughBasicTiles(game.tiles, game.size)) {
             errors.push('Le nombre de tuiles de terrain doit couvrir plus de la moitié de la zone de jeu.');
         }
 
-        if (!this.isMapAccessible(game.map.tiles, game.map.size)) {
+        if (!this.isMapAccessible(game.tiles, game.size)) {
             errors.push('Certaines tuiles sur le jeu sont inaccessibles.');
         }
 
@@ -47,7 +47,7 @@ export class SaveService {
 
     private async validateNameUniqueness(game: Game): Promise<boolean> {
         const games = await firstValueFrom(this.getAllGames());
-        return games.some(g => g.name === game.map.name && g._id !== game._id);
+        return games.some(g => g.name === game.name && g._id !== game._id);
     }
 
     private hasEnoughBasicTiles(tiles: TileData[][], size: number): boolean {
@@ -120,6 +120,10 @@ export class SaveService {
 
     getAllGames(): Observable<Game[]> {
         return this.http.get<Game[]>(`${this.baseUrl}/games`).pipe(catchError(this.handleError<Game[]>('getAllGames')));
+    }
+
+    getAllVisibleGames(): Observable<Game[]> {
+        return this.http.get<Game[]>(`${this.baseUrl}/games/visible`).pipe(catchError(this.handleError<Game[]>('getVisibleGames')));
     }
 
     addGame(game: Game): Observable<Game> {

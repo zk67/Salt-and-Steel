@@ -29,12 +29,3 @@ export interface TileData {
     tileType: TileType;
     mapObject: MapObjectType;
 }
-
-export interface MapData {
-    name: string;
-    description: string;
-    size: number;
-    gameMode: GameMode;
-    tiles: TileData[][];
-    visible: boolean;
-}

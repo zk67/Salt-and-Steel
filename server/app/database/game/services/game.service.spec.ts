@@ -8,19 +8,19 @@ import { GamesService } from './game.service';
  * Description:
  * Ce fichier permet de tester les méthodes du service responsables de l'ajout, la récupération, la modification et la supression
  * des games en simulant l'accès à la base de donnée.
- * 
+ *
  * Fonctionnement:
  * 1) on déclare l'objet service à tester, le model qui représente le model mongoose pour le schéma de Game ainsi que son
  *    mockGameModel en plus de l'objet mockGame.
- * 
+ *
  * 2) dans beforeEach on crée un module de test et on récupere de ce module les objets service et model avant chaque test
  * unitaire
- * 
+ *
  * 3) dans afterEach on s'assure de nettoyer les mocks pour éviter que les tests s'affectent entre eux
- * 
+ *
  * 4) on teste chaque fonction de l'objet service une par une, en vérifiant qu'elles appellent les bonnes fonctions du faux model
  *    mongoose, qu'elles lui transmettent les bonnes données et qu'elles retournent les bonnes données aussi.
- * 
+ *
  */
 
 describe('GamesService', () => {
@@ -42,8 +42,7 @@ describe('GamesService', () => {
     function execMockFunction<T>(arg: T) {
         const execSpy = jest.fn().mockResolvedValue(arg);
 
-
-        const query = { exec: execSpy } as unknown as Query<T[], T>;
+        const query = { exec: execSpy, select: jest.fn().mockReturnThis() } as unknown as Query<T[], T>;
         return { execSpy, query };
     }
 
@@ -88,6 +87,17 @@ describe('GamesService', () => {
 
         expect(result).toEqual([mockGame]);
         expect(model.find).toHaveBeenCalled();
+        expect(execSpy).toHaveBeenCalled();
+    });
+
+    it('getVisibleGames devrait appeler find avec visible:true et retourner les games visibles', async () => {
+        const { execSpy, query } = execMockFunction<Game[]>([mockGame]);
+        jest.spyOn(model, 'find').mockReturnValue(query);
+
+        const result = await service.getVisibleGames();
+
+        expect(result).toEqual([mockGame]);
+        expect(model.find).toHaveBeenCalledWith({ visible: true });
         expect(execSpy).toHaveBeenCalled();
     });
 
