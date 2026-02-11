@@ -147,7 +147,7 @@ export class SaveService {
         return this.http.patch<Game>(`${this.baseUrl}/games/${_id}`, game).pipe(catchError(this.handleError<Game>('patchGame')));
     }
 
-    private handleError<T>(request: string, result?: T): (error: Error) => Observable<T> {
+    private handleError<T>(request: string): (error: Error) => Observable<T> {
         return (error: Error) => {
             throw new Error(`Erreur lors de la requête ${request}: ${error.message}`);
         };
