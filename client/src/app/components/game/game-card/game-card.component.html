@@ -1,16 +1,16 @@
-<div class="game-card" (click)="handleClick()">
-  <div class="game-image">
-    @if (game.imageUrl){
-     <img [src]="game.imageUrl" [alt]="game.name" />
-    }@else {
-      <p>image</p>
-    }
+<article class="game-row" (click)="handleClick()">
+  <div class="top">
+    <div class="preview-wrap">
+        <img [src]="previewSrc" [alt]="'Prévisualisation de ' + game.name" />
+    </div>
+    @if (hasDescription) {
+        <div class="desc-panel">{{ game.description }}</div>
+    }    
   </div>
 
-  <div class="game-info">
+  <div class="meta">
     <h2 class="game-name">{{ game.name }}</h2>
-    <p class="game-description">{{ game.description }}</p>
     <p class="game-players">Max Joueurs : {{ game.maxPlayers }}</p>
     <p class="game-players">Min Joueurs : {{ game.minPlayers }}</p>
   </div>
-</div>
+</article>

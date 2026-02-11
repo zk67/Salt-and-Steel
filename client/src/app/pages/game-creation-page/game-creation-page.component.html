@@ -1,17 +1,24 @@
-<div class="page-container">
-  <header class="page-header">
-    <h1>Liste des jeux</h1>
-  </header>
+<div class="games-create">
+    <header class="create-header">
+        <div class="create-header-content">
+            <h1 class="title">Liste des jeux </h1>
+            <h2 class="sous-title">Choisisez un jeu </h2>
+        </div>
+    </header>
 
-  <div class="page-content">
-    <div class="game-list">
-      @for (game of games; track game._id) {
-        <app-game-card [game]="game"></app-game-card>
+    <button class="btn-back" routerLink="/">← Retour</button>
+
+    <section class="list-frame">
+      @if (games.length === 0 ) {
+          <p class="empty-state">Aucun jeu créé</p>
+      } @else {
+          <div class="games-list">
+          @for (game of games; track game._id) {
+            @if (game.visible){
+            <app-game-card [game]="game"></app-game-card>
+            }
+          }
+        </div>
       }
-    </div>
-
-    <div class="buttons">
-      <button class="button" routerLink="/">Retour</button>
-    </div>
-  </div>
+    </section>
 </div>

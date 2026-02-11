@@ -1,20 +1,21 @@
 <article class="game-row">
-    <div class="preview">
-        <img [src]="previewSrc" [alt]="'Prévisualisation de ' + game.name" />
+    <div class="top">
+        <div class="preview-wrap">
+            <img [src]="previewSrc" [alt]="'Prévisualisation de ' + game.name" />
+        </div>
 
         @if (hasDescription) {
-            <div class="tooltip">{{ game.description }}</div>
+            <div class="desc-panel">{{ game.description }}</div>
         }
     </div>
 
     <div class="meta">
+        <h2 class="game-name">{{ game.name }}</h2>
         <p> {{size}}    {{mode}}</p>
         <p> Modifié le: {{ game.date | date:'yyyy-MM-dd HH:mm' }}</p>
     </div>
-
-    <div class="sous-title">{{ game.name }}</div>
-    
-    <button class="btn-visibility btn-name"
+    <div class="button-action">
+    <button class="btn-name"
         (click)="onToggle()"
         [class.is-hidden]="!game.visible">
         {{ game.visible ? 'Visible' : 'Caché' }}
@@ -27,4 +28,5 @@
     <button class="btn-name" (click)="onDelete()" [disabled]="!game._id">
         Supprimer
     </button>
+    </div>
 </article>

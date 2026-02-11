@@ -92,7 +92,9 @@ html,
 body {
     height: 100%;
     cursor: url("../src/assets/body/piratehookcursor_32.png") 8 8, auto;
-
+    
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 body {

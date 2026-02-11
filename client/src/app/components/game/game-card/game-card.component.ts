@@ -16,4 +16,15 @@ export class GameCardComponent {
     this.router.navigate(['/character-form']);
     this.click.emit();
   }
+
+  get previewSrc() {
+    if (this.game.imageUrl){
+        return this.game.imageUrl;
+    }
+    return '';
+  }
+    
+  get hasDescription(): boolean{
+    return  !!this.game.description.trim();
+  }
 }

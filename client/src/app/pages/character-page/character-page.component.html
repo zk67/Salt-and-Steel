@@ -1,60 +1,213 @@
-<div class="page-background">
-  <div class="justified">
-      <h1 class="header-item">Création de personnage</h1>
-      <div class="field">
-          <label for="characterName">Nom du personnage: </label>
-          <input id="characterName" type="text" [formControl]="characterName" />
-      </div>
-  </div>
+<div class="pirate-scene">
+  <div class="hud">
+    <header class="hud__header">
+      <h1 class="title">Création de personnage</h1>
+      <p class="subtitle">Choisis ton visage, ajuste tes attributs… et hisse les voiles.</p>
+    </header>
 
-  <h3 class="justified">Choisissez un avatar</h3>
-  <div class="avatar-wrapper">
-      <div class="avatar-grid">
+    <main class="layout-3">
+      <section class="panel panel-wood ">
+        <h2 class="panel-title">Création de personnage</h2>
+
+        <div class="field">
+          <label  for="characterName">Nom du personnage</label>
+          <div class="engraved">
+            <input
+              id="characterName"
+              class="input-engraved"
+              type="text"
+              [formControl]="characterName"
+              maxlength="32"
+              placeholder="Capitaine sans nom…"
+            />
+          </div>
+        </div>
+
+        <h3 class="panel-subtitle">Choisissez un avatar</h3>
+        <div class="avatar-grid" role="list">
           @for (a of avatars; track a) {
-              <img
-              [src]="a"
-              [alt]="'Avatar ' + a"
-              class="avatar"
+            <button
+              type="button"
+              class="avatar-medallion"
+              role="listitem"
               [class.selected]="avatar.value === a"
               (click)="selectAvatar(a)"
-              />
+            >
+              <img [src]="a" [alt]="'Avatar ' + a" class="avatar" />
+              <span class="avatar-stamp" aria-hidden="true">SÉLECTIONNÉ</span>
+            </button>
           }
-      </div>
-  </div>
+        </div>
+      </section>
 
-  <div class="stat-row">
-    <span>Vie (nombre de points de vie du personnage) : {{ life.value }}</span>
-    <button class="statButton" (click)="toggleBonus('life')" [class.active]="bonusTarget === 'life'">
-      +2
-    </button>
-  </div>
+      <section class="panel panel-wood">
+        <h2 class="panel-title">Attributs</h2>
+        <div class="panel-hint">Choisis 1 bonus (+2 Vie ou +2 Rapidité) et assigne le D6 (l'autre reçoit le D4).</div>
+        <div class="stat" >
+          <div class="stat-meta">
+            <div class="stat-label">
+              <span class="stat-icon stat-icon--life" aria-hidden="true"></span>
+              Vie
+            </div>
+            <div class="stat-desc">{{ statDescriptions.life }}</div>
+          </div>
 
-  <div class="stat-row">
-    <span>Rapidité (détermine l'ordre des tours et correspond aussi aux points de mouvement par tour d'un personnage) : {{ speed.value }}</span>
-    <button class="statButton" (click)="toggleBonus('speed')" [class.active]="bonusTarget === 'speed'">
-      +2
-    </button>
-  </div>
+          <div class="stat-value">
+            {{ life.value }}
+            @if (bonusTarget.value === 'life') {
+              <span class="badge badge--bonus">+2</span>
+            }
+          </div>
 
-  <div class="stat-row">
-    <span>Attaque (la force avec laquelle une attaque est faite sur l'adversaire) : {{ attack.value }}</span>
-    <button class="statButton" (click)="toggleDiceBonus('attack')" [class.active]="diceD6BonusTarget === 'attack'">
-      D6
-    </button>
-  </div>
+          <button
+            type="button"
+            class="btn btn--brass btn--toggle"
+            [class.selected]="bonusTarget.value === 'life'"
+            (click)="toggleBonus('life')"
+          >
+            Bonus +2
+          </button>
+        </div>
 
-  <div class="stat-row">
-    <span>Defence (la capacité à bloquer l'attaque d'un adversaire) : {{ defense.value }}</span>
-    <button class="statButton" (click)="toggleDiceBonus('defense')" [class.active]="diceD6BonusTarget === 'defense'">
-      D6
-    </button>
-  </div>
+        <div class="stat">
+          <div class="stat-meta">
+            <div class="stat-label">
+              <span class="stat-icon stat-icon--speed" aria-hidden="true"></span>
+              Rapidité
+            </div>
+            <div class="stat-desc">{{ statDescriptions.speed }}</div>
+          </div>
 
-  <div class="justified">
-      <button (click)="randomizeStats()">Randomiser personnage</button>
-  </div>
+          <div class="stat-value">
+            {{ speed.value }}
+            @if (bonusTarget.value === 'speed') {
+              <span class="badge badge--bonus">+2</span>
+            }
+          </div>
 
-  <div class="justified">
-      <button (click)="submitCharacter()">Créer personnage</button>
+          <button
+            type="button"
+            class="btn btn--brass btn--toggle"
+            [class.selected]="bonusTarget.value === 'speed'"
+            (click)="toggleBonus('speed')"
+          >
+            Bonus +2
+          </button>
+        </div>
+
+        <div class="stat">
+          <div class="stat-meta">
+            <div class="stat-label">
+              <span class="stat-icon stat-icon--attack" aria-hidden="true"></span>
+              Attaque
+            </div>
+            <div class="stat-desc">{{ statDescriptions.attack }}</div>
+          </div>
+
+          <div class="stat-value">
+            {{ attack.value }}
+            <span
+              class="die-badge"
+              [class.die-badge--d6]="getDieFor('attack') === 'd6'"
+              [class.die-badge--d4]="getDieFor('attack') === 'd4'"
+              [class.die-badge--none]="getDieFor('attack') === 'none'"
+            >
+              {{ getDieLabel('attack') }}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn--brass btn--toggle"
+            [class.selected]="d6Target.value === 'attack'"
+            (click)="toggleDiceBonus('attack')"
+          >
+            D6
+          </button>
+        </div>
+
+        <div class="stat">
+          <div class="stat-meta">
+            <div class="stat-label">
+              <span class="stat-icon stat-icon--defense" aria-hidden="true"></span>
+              Défense
+            </div>
+            <div class="stat-desc">{{ statDescriptions.defense }}</div>
+          </div>
+
+          <div class="stat-value">
+            {{ defense.value }}
+            <span
+              class="die-badge"
+              [class.die-badge--d6]="getDieFor('defense') === 'd6'"
+              [class.die-badge--d4]="getDieFor('defense') === 'd4'"
+              [class.die-badge--none]="getDieFor('defense') === 'none'"
+            >
+              {{ getDieLabel('defense') }}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn--brass btn--toggle"
+            [class.selected]="d6Target.value === 'defense'"
+            (click)="toggleDiceBonus('defense')"
+          >
+            D6
+          </button>
+        </div>
+
+      </section>
+
+      <aside class="panel panel-wood">
+        <div class="showcase">
+          <div class="showcase__frame">
+            <img
+              class="pirate-sprite"
+              [src]="avatar.value || 'assets/avatars/avatar-1.png'"
+              alt="Aperçu du personnage"
+            />
+          </div>
+        </div>
+
+        <section class="sheet">
+          <h2 class="panel-title">Fiche du pirate</h2>
+          <div class="sheet-row">
+            <span >Nom</span>
+            <span class="sheet-value">{{ characterName.value || '???' }}</span>
+          </div>
+          <div class="sheet-row">
+            <span >Titre</span>
+            <span class="sheet-value">{{ pirateTitle }}</span>
+          </div>
+          <div class="sheet-row">
+            <span >Bonus</span>
+            <span class="sheet-value">{{ bonusSummary }}</span>
+          </div>
+          <div class="sheet-row">
+            <span >Dés</span>
+            <span class="sheet-value">{{ getDieSummary() }}</span>
+          </div>
+          <div class="sheet-description">
+            {{ pirateDescription }}
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="actions">
+      <button type="button" class="btn btn--random" (click)="randomizeStats()">
+        🎲 Générer un personnage aléatoire
+      </button>
+
+      <button
+        type="button"
+        class="btn btn--primary"
+        (click)="submitCharacter()"
+      >
+        ⚓ Créer personnage
+      </button>
+
+    </footer>
   </div>
 </div>
