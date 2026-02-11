@@ -5,6 +5,7 @@
                  [attr.data-tile-type]="tileType[tile.tileType]"
                  [attr.data-object]="mapObjectType[tile.mapObject]"
                  [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
+                 [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'"
                  (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
                  (mouseenter)="onMouseEnter($event, colIndex, rowIndex)">
             </div>
