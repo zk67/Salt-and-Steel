@@ -42,37 +42,4 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
       this.games = games;
     });
   }
-
-  addGame(game: Game): void {
-    if (this.games.some(x => x._id === game._id)) return;
-
-    this.saveService.addGame(game).subscribe(() => {
-      this.getAllGames();
-    });
-  }
-
-  getGame(_id: string): void {
-    if (this.games.some(x => x._id === _id)) return;
-
-    this.saveService.getGame(_id).subscribe(oneGame => {
-      this.games.push(oneGame);
-    });
-  }
-
-  deleteGame(_id: string): void {
-    const y = this.games.find((x) => x._id === _id);
-    if (y && !this.games.some(x => x._id === y._id)) return;
-
-    this.saveService.deleteGame(_id).subscribe(() => {
-      this.getAllGames();
-    });
-  }
-
-  changeGameVisibility(_id: string, visibility: boolean): void {
-    if (!this.games.find(game => game._id === _id)) return;
-
-    this.saveService.updateGameVisibility(_id, visibility).subscribe(() => {
-      this.getAllGames();
-    });
-  }
 }
