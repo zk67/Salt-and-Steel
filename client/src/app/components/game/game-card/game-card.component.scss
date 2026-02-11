@@ -12,6 +12,11 @@
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+    .game-info {
+      .game-description {
+      display: block;
+      }
+    }
   }
 
   .game-image {
@@ -47,6 +52,7 @@
       color: #cccccc;
       margin: 0 0 10px 0;
       line-height: 1.3;
+      display: none;
     }
 
     .game-players {
@@ -55,5 +61,5 @@
       font-style: italic;
       margin: 0;
     }
-  }
+  }  
 }

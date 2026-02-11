@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save.service';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
+import { MapService } from '@app/services/map/map.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { Game } from '@common/classes/game';
+import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@common/const/gameSizeConst';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
-import { MIN_PLAYERS, MAX_PLAYERS_SMALL, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_LARGE } from '@common/const/gameSizeConst';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-tools-sidebar',
