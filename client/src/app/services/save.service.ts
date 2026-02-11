@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ToolService } from '@app/services/tool/tool.service';
-import { Game } from '@common/classes/game';
-import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@common/classes/utils';
+import { Game } from '@app/interfaces/game';
+import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@app/utils/validation';
 import { MapObjectType, TileData, TileType } from '@common/types/map.interface';
-import { firstValueFrom, Observable, of } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
@@ -148,6 +148,8 @@ export class SaveService {
     }
 
     private handleError<T>(request: string, result?: T): (error: Error) => Observable<T> {
-        return () => of(result as T);
+        return (error: Error) => {
+            throw new Error(`Erreur lors de la requête ${request}: ${error.message}`);
+        };
     }
 }

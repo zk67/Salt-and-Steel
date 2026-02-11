@@ -4,10 +4,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/
 
 @Controller('games')
 export class GamesController {
-    private gamesService: GamesService;
-    constructor(gamesService: GamesService) {
-        this.gamesService = gamesService;
-    }
+    constructor(private readonly gamesService: GamesService) {}
 
     @Post()
     addGame(@Body() game: Game) {

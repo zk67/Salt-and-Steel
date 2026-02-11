@@ -15,8 +15,8 @@ describe('AppController (e2e)', () => {
         await app.init();
     });
 
-    // Making sure our server starts well and we are able to get the date
-    it('GET /date', async () => {
-        return request(app.getHttpServer()).get('/date').expect(HttpStatus.OK);
+    // Vérifier que le serveur démarre bien et que la route /games est accessible
+    it('GET /api/games', async () => {
+        return request(app.getHttpServer()).get('/api/games').expect(HttpStatus.OK);
     });
 });

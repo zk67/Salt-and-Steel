@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Router } from '@angular/router';
-import { Game } from '@common/classes/game';
+import { Game } from '@app/interfaces/game';
 
 @Component({
   selector: 'app-game-card',

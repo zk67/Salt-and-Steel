@@ -4,30 +4,29 @@ import { environment } from 'src/environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SocketClientService {
+    private socket: Socket;
 
-  socket: Socket;
+    isSocketAlive(): boolean {
+        return this.socket && this.socket.connected;
+    }
 
-  isSocketAlive() {
-    return this.socket && this.socket.connected;
-  }
+    connect(): void {
+        this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
+    }
 
-  connect() {
-    this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
-  }
+    disconnect(): void {
+        this.socket.disconnect();
+    }
 
-  disconnect() {
-    this.socket.disconnect();
-  }
+    on<T>(event: string, action: (data: T) => void): void {
+        this.socket.on(event, action);
+    }
 
-  on<T>(event: string, action: (data: T) => void): void {
-    this.socket.on(event, action);
-  }
+    off<T>(event: string, action: (data: T) => void): void {
+        this.socket.off(event, action);
+    }
 
-  off<T>(event: string, action: (data: T) => void): void {
-    this.socket.off(event, action);
-  }
-
-  send<T>(event: string, data?: T, callback?: () => void): void {
-    this.socket.emit(event, ...([data, callback].filter(x => x)));
-  }
+    send<T>(event: string, data?: T, callback?: () => void): void {
+        this.socket.emit(event, ...([data, callback].filter((x) => x)));
+    }
 }
