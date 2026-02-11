@@ -11,9 +11,9 @@ const OBJECT_QUANTITY_LARGE = 6;
     providedIn: 'root',
 })
 export class ToolService {
-    private tileType: TileType = TileType.Water;
+    private tileType: TileType = TileType.Basic;
     private mapObjectType: MapObjectType = MapObjectType.None;
-    private toolType: ToolType = ToolType.Tile;
+    private toolType: ToolType = ToolType.None;
     private numberSpawnPoint = 0;
     private numberFlag = 0;
     private numberHealingShrine = 0;
@@ -52,8 +52,8 @@ export class ToolService {
     }
 
     place(x: number, y: number): void {
+        if (this.toolType === ToolType.None) return;
         const tile = this.mapService.getTile(x, y);
-        if (!tile) return;
 
         if (this.toolType === ToolType.Tile) {
             if (this.tileType === TileType.Wall) {
@@ -103,7 +103,7 @@ export class ToolService {
 
         const gameData = this.mapService.getGameData();
 
-        if(gameData) {
+        if (gameData) {
             gameData.map.tiles.flat().filter(t => t.mapObject !== MapObjectType.None).forEach((tile) => {
                 this.setNumberObject(tile.mapObject);
             });
@@ -131,6 +131,7 @@ export class ToolService {
 }
 
 export enum ToolType {
+    None,
     Tile,
     Object,
 }

@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { SaveService } from '@app/services/save.service';
 import { MapService } from '@app/services/map/map.service';
+import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { firstValueFrom } from 'rxjs';
 import { GameMode, MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-map-editor',
@@ -107,13 +107,9 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     getObjectDescription(objectType: number): string {
         switch (objectType) {
             case this.mapObjectType.SpawnPoint:
-                return 'TODO: description du point de départ';
+                return 'Point de départ des joueurs';
             case this.mapObjectType.Flag:
-                return 'TODO: description du drapeau';
-            case this.mapObjectType.HealingShrine:
-                return 'TODO: description du sanctuaire de soin';
-            case this.mapObjectType.CombatShrine:
-                return 'TODO: description du sanctuaire de combat';
+                return 'Drapeau - Objectif à capturer';
             default:
                 return '';
         }
