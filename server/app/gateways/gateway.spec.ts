@@ -1,8 +1,8 @@
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Socket } from 'socket.io';
 import { Gateway } from './gateway';
-import { GatewayEvents } from './gateway.events';
 
 /**
  * Description:
@@ -35,12 +35,7 @@ describe('ChatGateway', () => {
         log: jest.fn(),
     };
 
-    const mockSocket = {
-        id: 'socket-id',
-        broadcast: {
-            emit: jest.fn(),
-        },
-    } as unknown as Socket;
+    const mockSocket = { id: 'socket-id', broadcast: { emit: jest.fn() } } as unknown as Socket;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({

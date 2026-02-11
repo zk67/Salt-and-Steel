@@ -1,5 +1,5 @@
-import { Game } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
+import { Game } from '@common/classes/game';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 
 @Controller('games')

@@ -27,10 +27,7 @@ describe('GamesService', () => {
     let service: GamesService;
     let model: Model<Game>;
 
-    const mockGame = {
-        name: 'Test game',
-        genre: 'Aventure',
-    } as unknown as Game;
+    const mockGame = { name: 'Test game' } as Game;
 
     const mockGameModel = {
         create: jest.fn().mockResolvedValue({ _id: '1', mockGame }),
@@ -44,6 +41,8 @@ describe('GamesService', () => {
 
     function execMockFunction<T>(arg: T) {
         const execSpy = jest.fn().mockResolvedValue(arg);
+
+
         const query = { exec: execSpy } as unknown as Query<T[], T>;
         return { execSpy, query };
     }

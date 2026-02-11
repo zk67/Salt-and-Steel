@@ -1,10 +1,10 @@
-import { AppModule } from '@app/database/game/game.module';
+import { GamesModule } from '@app/database/game/game.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 const bootstrap = async () => {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(GamesModule);
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe());
     app.enableCors();

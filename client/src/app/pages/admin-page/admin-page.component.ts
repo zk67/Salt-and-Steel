@@ -91,10 +91,10 @@ export class AdminPageComponent implements OnInit {
     ngOnInit(): void {
         this.refresh();
         this.refreshListener = () => {
-            this.gameService.getAllGames().subscribe(games => {
+            this.saveService.getAllGames().subscribe(games => {
                 this.games = games;
             });
-            this.socketService.on<Game>('update', this.refreshListener);
         };
+        this.socketService.on<Game>('update', this.refreshListener);
     }
 }
