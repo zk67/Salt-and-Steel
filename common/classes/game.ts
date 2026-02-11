@@ -1,7 +1,6 @@
-import { MapData } from "@common/types/map.interface";
+import { GameMode, TileData } from "@common/types/map.interface";
 export interface Game {
-    _id?: string,
-    map: MapData;
+    _id?: string;
     name: string;
     description: string;
     minPlayers: number;
@@ -9,4 +8,7 @@ export interface Game {
     visible: boolean;
     imageUrl: string;
     date: Date;
+    size: number;
+    gameMode: GameMode;
+    tiles: TileData[][];
 }

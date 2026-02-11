@@ -19,6 +19,11 @@ export class GamesController {
         return this.gamesService.getAllGames();
     }
 
+    @Get('visible')
+    getVisibleGames() {
+        return this.gamesService.getVisibleGames();
+    }
+
     @Get(':id')
     getOneGame(@Param('id') _id: string) {
         return this.gamesService.getOneGame(_id);

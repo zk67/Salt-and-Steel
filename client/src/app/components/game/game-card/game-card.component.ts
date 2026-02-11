@@ -4,7 +4,6 @@ import { Game } from '@common/classes/game';
 
 @Component({
   selector: 'app-game-card',
-  standalone: true,
   templateUrl: './game-card.component.html',
   styleUrl: './game-card.component.scss',
 })

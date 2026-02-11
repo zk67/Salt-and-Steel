@@ -1,14 +1,16 @@
 <div class="map-grid" [style.--grid-size]="gridSize">
-    @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
-        @for (tile of row; track $index; let colIndex = $index) {
-            <div class="tile"
-                 [attr.data-tile-type]="tileType[tile.tileType]"
-                 [attr.data-object]="mapObjectType[tile.mapObject]"
-                 [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
-                 [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'"
-                 (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
-                 (mouseenter)="onMouseEnter($event, colIndex, rowIndex)">
-            </div>
+    @if (readyToLoad) {
+        @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
+            @for (tile of row; track $index; let colIndex = $index) {
+                <div class="tile"
+                    [attr.data-tile-type]="tileType[tile.tileType]"
+                    [attr.data-object]="mapObjectType[tile.mapObject]"
+                    [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
+                    [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'"
+                    (mousedown)="onMouseDown($event, colIndex, rowIndex); $event.preventDefault()"
+                    (mouseenter)="onMouseEnter($event, colIndex, rowIndex)">
+                </div>
+            }
         }
     }
 </div>

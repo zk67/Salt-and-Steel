@@ -35,44 +35,39 @@ describe('SaveService', () => {
 
     const validGame = (): Game => ({
         _id: '1',
-        map: {
-            name: 'Map',
-            description: 'desc',
-            size: SIZE_4,
-            gameMode: GameMode.Classic,
-            tiles: Array.from({ length: SIZE_4 }, () =>
-                Array.from({ length: SIZE_4 }, () => ({ tileType: TileType.Basic, mapObject: MapObjectType.None })),
-            ),
-            visible: true,
-        },
-        name: 'G',
-        description: 'd',
+        tiles: Array.from({ length: SIZE_4 }, () =>
+            Array.from({ length: SIZE_4 }, () => ({ tileType: TileType.Basic, mapObject: MapObjectType.None })),
+        ),
+        name: 'Game',
+        description: 'desc',
         minPlayers: 1,
         maxPlayers: 2,
         visible: true,
         imageUrl: '',
+        size: SIZE_4,
+        gameMode: GameMode.Classic,
         date: new Date(),
     });
 
     it('validateBeforeSave — nom, description et unicité signalés', async () => {
         const g = validGame();
-        g.map.name = '';
-        g.map.description = '';
+        g.name = '';
+        g.description = '';
         toolSpy.getNumberObject.and.returnValue(0);
 
         const promise = service.validateBeforeSave(g);
         const req = httpMock.expectOne(`${base}/games`);
-        req.flush([{ ...g, _id: '2', map: { ...g.map, name: 'Other' } }]);
+        req.flush([{ ...g, _id: '2', name: 'Other', tiles: g.tiles }]);
         const errors = await promise;
         expect(errors).toContain('Le nom de la carte est invalide.');
         expect(errors).toContain('La description de la carte est invalide.');
     });
 
     it('validateNameUniqueness — vrai/faux', async () => {
-        const g = validGame(); g._id = '1'; g.map.name = 'Same';
+        const g = validGame(); g._id = '1'; g.name = 'Same';
         const p = service['validateNameUniqueness'](g);
         const req = httpMock.expectOne(`${base}/games`);
-        req.flush([{ ...g, _id: '2', name: g.map.name, map: { ...g.map } }]);
+        req.flush([{ ...g, _id: '2', name: g.name, tiles: g.tiles }]);
         expect(await p).toBeTrue();
 
         const p2 = service['validateNameUniqueness'](g);
@@ -129,6 +124,9 @@ describe('SaveService', () => {
         service.getAllGames().subscribe(res => expect(res).toEqual([g]));
         httpMock.expectOne(`${base}/games`).flush([g]);
 
+        service.getAllVisibleGames().subscribe(res => expect(res).toEqual([g]));
+        httpMock.expectOne(`${base}/games/visible`).flush([g]);
+
         service.addGame(g).subscribe(res => expect(res._id).toBeDefined());
         const post = httpMock.expectOne(`${base}/games`);
         expect(post.request.method).toBe('POST'); post.flush({ ...g, _id: 'x' });
@@ -156,7 +154,7 @@ describe('SaveService', () => {
     });
 
     it('validateBeforeSave — nom invalide seulement', async () => {
-        const g = validGame(); g.map.name = '';
+        const g = validGame(); g.name = '';
         toolSpy.getNumberObject.and.returnValue(0);
         const p = service.validateBeforeSave(g);
         const req = httpMock.expectOne(`${base}/games`); req.flush([]);
@@ -166,7 +164,7 @@ describe('SaveService', () => {
     });
 
     it('validateBeforeSave — description invalide seulement', async () => {
-        const g = validGame(); g.map.description = '';
+        const g = validGame(); g.description = '';
         toolSpy.getNumberObject.and.returnValue(0);
         const p = service.validateBeforeSave(g);
         const req = httpMock.expectOne(`${base}/games`); req.flush([]);
@@ -177,7 +175,7 @@ describe('SaveService', () => {
 
     it('validateBeforeSave — tuiles de base insuffisantes seulement', async () => {
         const g = validGame();
-        g.map.size = SIZE_4;
+        g.size = SIZE_4;
 
         const tiles: TileData[][] = Array.from({ length: SIZE_4 }, () =>
             Array.from({ length: SIZE_4 }, () => ({ tileType: TileType.Wall, mapObject: MapObjectType.None })),
@@ -186,7 +184,7 @@ describe('SaveService', () => {
         for (let c = 0; c < SIZE_4; c++) tiles[0][c].tileType = TileType.Basic;
         for (let c = 0; c < SIZE_3; c++) tiles[1][c].tileType = TileType.Basic;
 
-        g.map.tiles = tiles;
+        g.tiles = tiles;
         toolSpy.getNumberObject.and.returnValue(0);
 
         const p = service.validateBeforeSave(g);
@@ -201,19 +199,17 @@ describe('SaveService', () => {
 
     it('validateBeforeSave — carte inaccessible seulement', async () => {
         const g = validGame();
-        g.map.size = SIZE_4;
+        g.size = SIZE_4;
 
         const tiles: TileData[][] = Array.from({ length: SIZE_4 }, () =>
             Array.from({ length: SIZE_4 }, () => ({ tileType: TileType.Wall, mapObject: MapObjectType.None })),
         );
 
-        // top cluster
         for (let c = 0; c < SIZE_4; c++) tiles[0][c].tileType = TileType.Basic;
         for (let c = 0; c < SIZE_4; c++) tiles[1][c].tileType = TileType.Wall;
-        // bottom cluster
         for (let c = 0; c < SIZE_4; c++) tiles[3][c].tileType = TileType.Basic;
 
-        g.map.tiles = tiles;
+        g.tiles = tiles;
         toolSpy.getNumberObject.and.returnValue(0);
 
         const p = service.validateBeforeSave(g);
@@ -234,11 +230,11 @@ describe('SaveService', () => {
     });
 
     it('validateBeforeSave — nom déjà existant', async () => {
-        const g = validGame(); g._id = '1'; g.map.name = 'Dup';
+        const g = validGame(); g._id = '1'; g.name = 'Dup';
         toolSpy.getNumberObject.and.returnValue(0);
         const p = service.validateBeforeSave(g);
         const req = httpMock.expectOne(`${base}/games`);
-        req.flush([{ ...g, _id: '2', name: 'Dup', map: { ...g.map, name: 'Dup' } }]);
+        req.flush([{ ...g, _id: '2', name: 'Dup', tiles: g.tiles }]);
         const errors = await p;
         expect(errors).toContain('Un jeu avec ce nom existe déjà.');
     });

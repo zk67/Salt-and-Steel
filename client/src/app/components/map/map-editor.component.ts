@@ -13,6 +13,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class MapEditorComponent implements OnInit, OnDestroy {
     gridSize: MapSize = MapSize.Small;
+    readyToLoad: boolean = false;
 
     private isMouseDown: boolean = false; // Pour gerer le mouse drag
 
@@ -73,7 +74,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.gridSize = game.map.size;
+            this.gridSize = game.size;
             this.mapService.loadFromDB(game);
         } else {
             const sizeParam = Number(this.route.snapshot.queryParams.size);
@@ -95,6 +96,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         }
 
         this.toolService.defaultNumbers();
+        this.readyToLoad = true;
     }
 
     ngOnDestroy(): void {

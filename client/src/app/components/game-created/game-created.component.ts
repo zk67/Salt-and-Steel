@@ -24,17 +24,17 @@ export class GameCreatedComponent{
         }
         return '';
     }
-    
+
     get hasDescription(): boolean{
         return  !!this.game.description.trim();
     }
 
     get size(){
-        return MapSize[this.game.map.size];
+        return MapSize[this.game.size];
     }
-    
+
     get mode(){
-        return this.game.map.gameMode;
+        return this.game.gameMode;
     }
 
     onToggle(): void {

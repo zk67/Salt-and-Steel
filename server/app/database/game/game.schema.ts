@@ -1,15 +1,21 @@
-import { MapData } from '@common/types/map.interface';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { GameMode, TileData } from '@common/types/map.interface';
+
 
 @Schema()
 export class Game {
-
-    @Prop({ type: Object, required: false })
-    map: MapData;
+    @Prop({ required: true })
+    tiles: TileData[][];
 
     @Prop({ required: true })
     name: string;
+
+    @Prop({ required: true })
+    size: number;
+
+    @Prop({ required: true })
+    gameMode: GameMode;
 
     @Prop({ required: true })
     description: string;

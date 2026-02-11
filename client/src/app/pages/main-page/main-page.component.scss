@@ -91,10 +91,11 @@ html, body {
 
 .footer-text {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   font-weight: 900;
   opacity: 0.85;
-  color: #2a805e; 
+  text-shadow: -1px 0 black, 0 2px black, 2px 0 black, 0 -1px black;
+  color: #ffffff;
 }
 
 button:disabled {
