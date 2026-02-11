@@ -5,7 +5,6 @@ import { MapSize } from '@common/types/map.interface';
 
 @Component({
     selector: 'app-game-created',
-    standalone: true,
     templateUrl: './game-created.component.html',
     styleUrls: ['./game-created.component.scss'],
     imports: [CommonModule],
