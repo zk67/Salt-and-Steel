@@ -1,5 +1,5 @@
-import { Game } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
+import { Game } from '@common/classes/game';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
@@ -26,10 +26,7 @@ describe('GamesController', () => {
     const OK = 200;
     const CREATED = 201;
 
-    const mockGame: Game = {
-        _id: 'gameId',
-        name: 'Test game',
-    } as unknown as Game;
+    const mockGame: Game = { _id: '22', name: 'Test game' } as Game;
 
     const mockGamesService = {
         addGame: jest.fn(),

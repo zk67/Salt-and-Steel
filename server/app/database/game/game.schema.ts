@@ -2,8 +2,6 @@ import { MapData } from '@common/types/map.interface';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type GameDocument = Game & Document;
-
 @Schema()
 export class Game {
 
@@ -28,8 +26,9 @@ export class Game {
     @Prop({ required: true })
     imageUrl: string;
 
-    @Prop({ required: true})
+    @Prop({ required: true })
     date: Date;
 }
+export type GameDocument = Game & Document;
 export const gameSchema = SchemaFactory.createForClass(Game);
 

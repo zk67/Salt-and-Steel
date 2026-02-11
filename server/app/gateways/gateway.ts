@@ -1,8 +1,8 @@
+import { PRIVATE_ROOM_ID } from '@common/types/gateway.constants';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { PRIVATE_ROOM_ID } from './gateway.constants';
-import { GatewayEvents } from './gateway.events';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
