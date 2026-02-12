@@ -148,7 +148,10 @@ describe('SaveService', () => {
         expect(patch.request.method).toBe('PATCH'); expect(patch.request.body).toEqual({ visible: true });
         patch.flush(g);
 
-        service.getAllGames().subscribe(res => expect(res).toBeUndefined());
+        service.getAllGames().subscribe({
+            next: () => fail('devrait lancer une erreur'),
+            error: (err) => expect(err.message).toContain('Erreur lors de la requête getAllGames'),
+        });
         const errReq = httpMock.expectOne(`${base}/games`);
         errReq.error(new ErrorEvent('err'));
     });
