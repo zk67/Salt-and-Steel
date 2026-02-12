@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ToolService } from '@app/services/tool/tool.service';
-import { Game } from '@app/interfaces/game';
+import { Game } from '@common/types/game.interface';
 import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@app/utils/validation';
 import { MapObjectType, TileData, TileType } from '@common/types/map.interface';
 import { firstValueFrom, Observable } from 'rxjs';

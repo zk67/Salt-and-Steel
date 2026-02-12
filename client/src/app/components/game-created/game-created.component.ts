@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Game } from '@app/interfaces/game';
+import { Game } from '@common/types/game.interface';
 import { MapSize } from '@common/types/map.interface';
 
 @Component({

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MapObjectType, TileType } from '@common/types/map.interface';
-import { Game } from '@app/interfaces/game';
+import { Game } from '@common/types/game.interface';
 
 const DEFAULT_PREVIEW_SIZE = 256;
 const OBJECT_PADDING_RATIO = 0.15;
