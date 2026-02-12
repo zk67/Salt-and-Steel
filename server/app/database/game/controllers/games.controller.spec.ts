@@ -1,4 +1,5 @@
 import { GamesService } from '@app/database/game/services/game.service';
+import { Gateway } from '@app/gateways/gateway';
 import { Game } from '@common/types/game.interface';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -38,10 +39,17 @@ describe('GamesController', () => {
         replaceGame: jest.fn(),
     };
 
+    const mockGateway = {
+        broadcastUpdate: jest.fn(),
+    };
+
     beforeAll(async () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [GamesController],
-            providers: [{ provide: GamesService, useValue: mockGamesService }],
+            providers: [
+                { provide: GamesService, useValue: mockGamesService },
+                { provide: Gateway, useValue: mockGateway },
+            ],
         }).compile();
 
         app = module.createNestApplication();

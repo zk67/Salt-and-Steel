@@ -1,7 +1,7 @@
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { Gateway } from './gateway';
 
 /**
@@ -36,6 +36,7 @@ describe('ChatGateway', () => {
     };
 
     const mockSocket = { id: 'socket-id', broadcast: { emit: jest.fn() } } as unknown as Socket;
+    const mockServer = { emit: jest.fn() } as unknown as Server;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -44,17 +45,17 @@ describe('ChatGateway', () => {
 
         gateway = module.get<Gateway>(Gateway);
         logger = module.get<Logger>(Logger);
+        Reflect.set(gateway, 'server', mockServer);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    describe('refresh', () => {
-        it('devrait levée un Evenement de rafraichissement de la liste de partie', () => {
-
-            gateway.refresh(mockSocket);
-            expect(mockSocket.broadcast.emit).toHaveBeenCalledWith(GatewayEvents.Update);
+    describe('broadcastUpdate', () => {
+        it('devrait émettre un événement update à tous les clients', () => {
+            gateway.broadcastUpdate();
+            expect(mockServer.emit).toHaveBeenCalledWith(GatewayEvents.Update);
         });
     });
 

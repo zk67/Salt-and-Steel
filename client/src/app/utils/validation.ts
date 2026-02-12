@@ -1,4 +1,4 @@
-export const MAX_NAME_LENGTH = 20;
+export const MAX_NAME_LENGTH = 30;
 export const MAX_DESCRIPTION_LENGTH = 100;
 export const MIN_NAME_LENGTH = 3;
 
@@ -7,8 +7,8 @@ export function isStringValid(s: string, minLength: number = MIN_NAME_LENGTH, ma
 
     if (s.length < minLength || s.length > maxLength) return false;
 
-    // permet seulement les lettres, chiffres, espaces, tirets et underscores
-    if (!/^[\w\- ]+$/u.test(s)) return false;
+    // permet les lettres (y compris accentuées), chiffres, espaces, tirets, underscores et apostrophes
+    if (!/^[\p{L}\d\-_ '\u2019]+$/u.test(s)) return false;
 
     return true;
 }
