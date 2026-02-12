@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { GameCardComponent } from './game-card.component';
 
 /*

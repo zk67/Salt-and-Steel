@@ -1,7 +1,7 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ToolService } from '@app/services/tool/tool.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { GameMode, MapObjectType, TileData, TileType } from '@common/types/map.interface';
 import { SaveService } from './save.service';
 
@@ -270,11 +270,8 @@ describe('SaveService', () => {
         expect(result).toBeFalse();
     });
 
-    it('handleError renvoie la valeur par défaut fournie', done => {
-        const def = { a: 1 };
-        const h = service['handleError']('x', def);
-        h(new Error('e')).subscribe(res => {
-            expect(res).toEqual(def); done();
-        });
+    it('handleError lance une erreur avec le message approprié', () => {
+        const h = service['handleError']<Game>('getAllGames');
+        expect(() => h(new Error('Network error'))).toThrowError('Erreur lors de la requête getAllGames: Network error');
     });
 });

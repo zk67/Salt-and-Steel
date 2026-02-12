@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { of } from 'rxjs';
 import { GameCreationPageComponent } from './game-creation-page.component';
 
