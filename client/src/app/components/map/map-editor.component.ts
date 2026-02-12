@@ -55,8 +55,13 @@ export class MapEditorComponent implements OnInit, OnDestroy {
 
     // Permet de gerer le mouse drag
     onMouseEnter(event: MouseEvent, x: number, y: number): void {
-        if (this.isMouseDown && (this.toolService.getToolType() !== ToolType.Object || (this.mouseButton === 2 && !event.shiftKey))) {
-            this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
+        if (this.isMouseDown) {
+            const isObjectTool = this.toolService.getToolType() === ToolType.Object;
+            const canDrag = !isObjectTool || this.mouseButton === 2;
+
+            if (canDrag) {
+                this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
+            }
         }
     }
 
