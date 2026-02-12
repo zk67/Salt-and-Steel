@@ -22,8 +22,8 @@ describe('GameCreationPageComponent', () => {
     let socketServiceSpy: jasmine.SpyObj<SocketClientService>;
 
     const mockGames: Game[] = [
-        { _id: '1', name: 'Visible Game', visible: true } as Game,
-        { _id: '2', name: 'Hidden Game', visible: false } as Game,
+        { _id: '1', name: 'Visible Game', description: 'A visible game', visible: true } as Game,
+        { _id: '2', name: 'Hidden Game', description: 'A hidden game', visible: false } as Game,
     ];
 
     beforeEach(async () => {

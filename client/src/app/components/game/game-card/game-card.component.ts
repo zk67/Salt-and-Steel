@@ -25,6 +25,6 @@ export class GameCardComponent {
   }
     
   get hasDescription(): boolean{
-    return  !!this.game.description.trim();
+    return  !!this.game.description?.trim();
   }
 }
