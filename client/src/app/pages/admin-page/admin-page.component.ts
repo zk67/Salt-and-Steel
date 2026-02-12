@@ -36,10 +36,6 @@ export class AdminPageComponent implements OnInit {
     toggleVisibility(game: Game): void {
         if (game._id)
             this.saveService.updateGameVisibility(game._id, !game.visible).subscribe({
-                next: () => {
-                    this.refresh();
-                    this.socketService.send('refresh');
-                },
                 error: () => {
                     this.errorMsg = 'Impossible de changer la visibilité.';
                 },
@@ -53,10 +49,6 @@ export class AdminPageComponent implements OnInit {
         }
 
         this.saveService.deleteGame(gameId).subscribe({
-            next: () => {
-                this.refresh();
-                this.socketService.send('refresh');
-            },
             error: () => (this.errorMsg = 'Impossible de supprimer le jeu.'),
         });
     }

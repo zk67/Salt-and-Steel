@@ -1,6 +1,6 @@
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: true })
@@ -10,9 +10,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(private readonly logger: Logger) {}
 
-    @SubscribeMessage(GatewayEvents.Refresh)
-    refresh(socket: Socket): void {
-        socket.broadcast.emit(GatewayEvents.Update);
+    broadcastUpdate(): void {
+        this.server.emit(GatewayEvents.Update);
     }
 
     handleConnection(socket: Socket): void {

@@ -110,21 +110,15 @@ describe('Page admin (AdminPageComponent)', () => {
         expect(saveServiceSpy.deleteGame).not.toHaveBeenCalled();
     });
 
-    it('deleteGame() (succès) devrait rafraîchir et envoyer l événement refresh', () => {
-        spyOn(component, 'refresh');
+    it('deleteGame() (succès) devrait appeler deleteGame du service', () => {
         component.deleteGame('abc');
         expect(saveServiceSpy.deleteGame).toHaveBeenCalledWith('abc');
-        expect(component.refresh).toHaveBeenCalled();
-        expect(socketSpy.send).toHaveBeenCalledWith('refresh');
     });
 
-    it('toggleVisibility() (succès) devrait rafraîchir et envoyer l événement refresh', () => {
-        spyOn(component, 'refresh');
+    it('toggleVisibility() (succès) devrait appeler updateGameVisibility du service', () => {
         const game = { _id: '1', visible: true } as unknown as Game;
         component.toggleVisibility(game);
         expect(saveServiceSpy.updateGameVisibility).toHaveBeenCalledWith('1', false);
-        expect(component.refresh).toHaveBeenCalled();
-        expect(socketSpy.send).toHaveBeenCalledWith('refresh');
     });
 
     it('toggleVisibility() (erreur) devrait définir errorMsg', () => {
