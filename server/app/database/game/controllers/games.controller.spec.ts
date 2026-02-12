@@ -1,5 +1,5 @@
 import { GamesService } from '@app/database/game/services/game.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';

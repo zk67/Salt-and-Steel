@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 
 import { AdminPageComponent } from './admin-page.component';
 

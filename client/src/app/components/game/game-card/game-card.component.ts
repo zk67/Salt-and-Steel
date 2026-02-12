@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Router } from '@angular/router';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 
 @Component({
   selector: 'app-game-card',
@@ -25,6 +25,6 @@ export class GameCardComponent {
   }
     
   get hasDescription(): boolean{
-    return  !!this.game.description.trim();
+    return  !!this.game.description?.trim();
   }
 }

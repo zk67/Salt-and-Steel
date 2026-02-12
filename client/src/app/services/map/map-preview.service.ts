@@ -1,13 +1,14 @@
-import { MapObjectType, TileType} from '@common/types/map.interface';
 import { Injectable } from '@angular/core';
-import { Game } from '@common/classes/game';
+import { MapObjectType, TileType } from '@common/types/map.interface';
+import { Game } from '@common/types/game.interface';
+
+const DEFAULT_PREVIEW_SIZE = 256;
+const OBJECT_PADDING_RATIO = 0.15;
 
 @Injectable({
     providedIn: 'root',
 })
 export class MapPreviewService {
-    readonly previewSize = 256;
-    readonly nombreMajore = 0.15;
 
     private readonly tilePaths = new Map<TileType, string>([
         [TileType.Basic, 'assets/tiles/basic.png'],
@@ -45,7 +46,7 @@ export class MapPreviewService {
         return p;
     }
 
-    async generatePreview(map:Game ,pixelSize: number = this.previewSize): Promise<string> {
+    async generatePreview(map: Game, pixelSize: number = DEFAULT_PREVIEW_SIZE): Promise<string> {
 
         const size = map.size;
 
@@ -104,7 +105,7 @@ export class MapPreviewService {
                     const objImg = await getObjImg(obj);
                     if (objImg) {
                         //marge pour que l'objet soit un peu plus petit a changer si juge necessaire.
-                        const pad = Math.floor(cell * this.nombreMajore);
+                        const pad = Math.floor(cell * OBJECT_PADDING_RATIO);
                         ctx.drawImage( objImg,x * cell + pad,y * cell + pad,cell - 2 * pad, cell - 2 * pad);
                     }
                 }

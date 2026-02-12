@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { GameCardComponent } from '@app/components/game/game-card/game-card.component';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 
 
 @Component({

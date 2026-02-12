@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { of } from 'rxjs';
 import { GameCreationPageComponent } from './game-creation-page.component';
 
@@ -22,8 +22,8 @@ describe('GameCreationPageComponent', () => {
     let socketServiceSpy: jasmine.SpyObj<SocketClientService>;
 
     const mockGames: Game[] = [
-        { _id: '1', name: 'Visible Game', visible: true } as Game,
-        { _id: '2', name: 'Hidden Game', visible: false } as Game,
+        { _id: '1', name: 'Visible Game', description: 'A visible game', visible: true } as Game,
+        { _id: '2', name: 'Hidden Game', description: 'A hidden game', visible: false } as Game,
     ];
 
     beforeEach(async () => {

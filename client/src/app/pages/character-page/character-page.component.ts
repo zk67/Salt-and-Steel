@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { isStringValid } from '@app/utils/validation';
 
-const BASELIFE = 6;
-const BASESPEED = 6;
-const BASEATTACK = 4;
-const BASEDEFENSE = 4;
-const NBAVATAR = 12;
-const MAXNAME_LENGTH = 32;
-const HALFRANDOM = 0.5;
+const BASE_LIFE = 6;
+const BASE_SPEED = 6;
+const BASE_ATTACK = 4;
+const BASE_DEFENSE = 4;
+const NUMBER_OF_AVATARS = 12;
+const HALF_RANDOM = 0.5;
 
 type StatKey = 'life' | 'speed' | 'attack' | 'defense';
 type BonusTarget = 'life' | 'speed';
@@ -29,10 +29,10 @@ export class CharacterPageComponent {
   bonusTarget = new FormControl<BonusTarget | null>(null);
   d6Target = new FormControl<DiceTarget | null>(null);
 
-  life = new FormControl<number>(BASELIFE);
-  speed = new FormControl<number>(BASESPEED);
-  attack = new FormControl<number>(BASEATTACK);
-  defense = new FormControl<number>(BASEDEFENSE);
+  life = new FormControl<number>(BASE_LIFE);
+  speed = new FormControl<number>(BASE_SPEED);
+  attack = new FormControl<number>(BASE_ATTACK);
+  defense = new FormControl<number>(BASE_DEFENSE);
 
   statDescriptions: Record<StatKey, string> = {
     life: 'Points de vie. À 0, ton personnage est vaincu.',
@@ -48,13 +48,13 @@ export class CharacterPageComponent {
     'Anne la Rouge',
     'Jack le Borgne',
     'Capitaine Flint',
-    "Mary l'Écarlate",
-    "Le Crochet d'Argent",
+    'Mary l\'Écarlate',
+    'Le Crochet d\'Argent',
     'Barbe-de-Fer',
     'Samuel Tempête',
     'Ragnar le Cruel',
     'Isabella la Furie',
-    "Morgan l'Ombre",
+    'Morgan l\'Ombre',
     'Le Loup des Mers',
     'Edward le Sanguinaire',
     'Nina Vents-Noirs',
@@ -69,11 +69,11 @@ export class CharacterPageComponent {
     'Lucia Cœur-Sombre',
     'Le Requin Rouge',
     'Thomas Coupe-Gorge',
-    "Elena l'Ouragan",
+    'Elena l\'Ouragan',
     'Capitaine Mistral',
     'Le Fantôme des Flots',
     'Ivan le Marteau',
-    "Sofia Dents-d'Or",
+    'Sofia Dents-d\'Or',
     'Le Serpent de Mer',
     'William Long-Sabre',
     'Carmen Feu-Vert',
@@ -89,13 +89,13 @@ export class CharacterPageComponent {
     'Boris Coupe-Ancre',
     'Luna Vague-Sombre',
     'Le Vautour des Mers',
-    "Gabriel Croc-d'Acier",
+    'Gabriel Croc-d\'Acier',
     'Mila Brise-Os',
     'Le Baron des Flots',
     'Élias Vent-du-Nord',
   ];
 
-  avatars: string[] = Array.from({ length: NBAVATAR }, (_, i) => `assets/avatars/avatar-${i + 1}.png`);
+  avatars: string[] = Array.from({ length: NUMBER_OF_AVATARS }, (_, i) => `assets/avatars/avatar-${i + 1}.png`);
 
   getDieFor(target: DiceTarget): DieKind {
     const d6 = this.d6Target.value;
@@ -153,8 +153,8 @@ export class CharacterPageComponent {
 
   private updateStatsLifeSpeed(): void {
     const target = this.bonusTarget.value;
-    const nextLife = BASELIFE + (target === 'life' ? 2 : 0);
-    const nextSpeed = BASESPEED + (target === 'speed' ? 2 : 0);
+    const nextLife = BASE_LIFE + (target === 'life' ? 2 : 0);
+    const nextSpeed = BASE_SPEED + (target === 'speed' ? 2 : 0);
 
     this.life.setValue(nextLife);
     this.speed.setValue(nextSpeed);
@@ -164,25 +164,25 @@ export class CharacterPageComponent {
     this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
     this.avatar.setValue(this.avatars[Math.floor(Math.random() * this.avatars.length)]);
 
-    const bonus: BonusTarget = Math.random() < HALFRANDOM ? 'life' : 'speed';
-    const d6: DiceTarget = Math.random() < HALFRANDOM ? 'attack' : 'defense';
+    const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'life' : 'speed';
+    const d6: DiceTarget = Math.random() < HALF_RANDOM ? 'attack' : 'defense';
 
     this.bonusTarget.setValue(bonus);
     this.d6Target.setValue(d6);
     this.updateStatsLifeSpeed();
   }
 
-  submitCharacter() {
-        if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
-            alert('Veuillez remplir le formulaire au complet!');
-            return;
-        }
-
-        if (this.characterName.value.length > MAXNAME_LENGTH) {
-            alert('Le nom du personnage ne doit pas dépasser 32 caractères!');
-            return;
-        }
-
-        this.router.navigate(['/waiting']);
+  submitCharacter(): void {
+    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
+      alert('Veuillez remplir le formulaire au complet!');
+      return;
     }
+
+    if (!isStringValid(this.characterName.value)) {
+      alert(`Le nom du personnage est invalide!`);
+      return;
+    }
+
+    this.router.navigate(['/waiting']);
+  }
 }

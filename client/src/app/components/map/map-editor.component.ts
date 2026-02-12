@@ -20,12 +20,15 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     private globalMouseUpListener = () => {
         this.isMouseDown = false;
     };
+
     private globalMouseDownListener = () => {
         this.isMouseDown = true;
     };
+
     private globalDragStartListener = (event: Event) => {
         event.preventDefault();
     };
+
     private globalContextMenuListener = (event: Event) => {
         event.preventDefault();
     };

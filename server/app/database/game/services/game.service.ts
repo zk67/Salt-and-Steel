@@ -5,11 +5,7 @@ import { Model } from 'mongoose';
 
 @Injectable()
 export class GamesService {
-  private gameModel: Model<GameDocument>;
-
-  constructor(@InjectModel(Game.name) gameModel: Model<GameDocument>) {
-    this.gameModel = gameModel;
-  }
+  constructor(@InjectModel(Game.name) private readonly gameModel: Model<GameDocument>) {}
 
   async addGame(game: Game): Promise<boolean> {
     const added = await this.gameModel.create(game);

@@ -1,39 +1,34 @@
-import { Game } from '@common/classes/game';
-import { Output ,Input , Component, EventEmitter} from '@angular/core';
-import { MapSize } from '@common/types/map.interface';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Game } from '@common/types/game.interface';
+import { MapSize } from '@common/types/map.interface';
 
 @Component({
     selector: 'app-game-created',
-    standalone: true,
     templateUrl: './game-created.component.html',
     styleUrls: ['./game-created.component.scss'],
     imports: [CommonModule],
 })
-
-export class GameCreatedComponent{
+export class GameCreatedComponent {
     @Input() game: Game;
 
     @Output() toggle = new EventEmitter<Game>();
     @Output() editGame = new EventEmitter<string>();
     @Output() deleteGame = new EventEmitter<string>();
 
-    get previewSrc() {
-        if (this.game.imageUrl){
-            return this.game.imageUrl;
-        }
-        return '';
+    get previewSrc(): string {
+        return this.game.imageUrl || '';
     }
 
-    get hasDescription(): boolean{
-        return  !!this.game.description.trim();
+    get hasDescription(): boolean {
+        return !!this.game.description.trim();
     }
 
-    get size(){
+    get size(): string {
         return MapSize[this.game.size];
     }
 
-    get mode(){
+    get mode(): string {
         return this.game.gameMode;
     }
 

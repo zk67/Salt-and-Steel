@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { Game } from '@common/classes/game';
+import { Game } from '@common/types/game.interface';
 import { GameCardComponent } from './game-card.component';
 
 /*
@@ -72,9 +72,7 @@ describe('GameCardComponent', () => {
         component.game = mockGameWithoutImage;
         fixture.detectChanges();
 
-        const placeholder = fixture.debugElement.query(By.css('p'));
-        expect(placeholder).toBeTruthy();
-        expect(placeholder.nativeElement.textContent).toContain('image');
+        expect(component.previewSrc).toBe('');
     });
 
     it('devrait appeler handleClick lorsque la carte est cliquée', () => {
@@ -82,7 +80,7 @@ describe('GameCardComponent', () => {
         spyOn(component, 'handleClick');
 
         fixture.detectChanges();
-        fixture.debugElement.query(By.css('.game-card')).triggerEventHandler('click');
+        fixture.debugElement.query(By.css('.game-row')).triggerEventHandler('click');
         expect(component.handleClick).toHaveBeenCalled();
     });
 });
