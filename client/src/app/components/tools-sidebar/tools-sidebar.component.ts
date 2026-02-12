@@ -67,8 +67,8 @@ export class ToolsSidebarComponent {
                 await firstValueFrom(this.saveService.replaceGame(game._id, game));
                 alert(`Jeu "${game.name}" modifié avec succès !`);
             } else {
-                const savedGame = await firstValueFrom(this.saveService.addGame(game));
-                alert(`Jeu "${savedGame.name}" créé avec succès !`);
+                await firstValueFrom(this.saveService.addGame(game));
+                alert(`Jeu "${game.name}" créé avec succès !`);
             }
             this.router.navigate(['/admin']);
         } catch (err) {

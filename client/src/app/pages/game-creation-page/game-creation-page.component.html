@@ -14,9 +14,7 @@
       } @else {
           <div class="games-list">
           @for (game of games; track game._id) {
-            @if (game.visible){
             <app-game-card [game]="game"></app-game-card>
-            }
           }
         </div>
       }
