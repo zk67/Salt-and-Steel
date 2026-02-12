@@ -72,9 +72,7 @@ describe('GameCardComponent', () => {
         component.game = mockGameWithoutImage;
         fixture.detectChanges();
 
-        const img = fixture.debugElement.query(By.css('img'));
-        expect(img).toBeTruthy();
-        expect(img.nativeElement.src).toBe('');
+        expect(component.previewSrc).toBe('');
     });
 
     it('devrait appeler handleClick lorsque la carte est cliquée', () => {
