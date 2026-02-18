@@ -52,6 +52,10 @@ export class ToolsSidebarComponent {
 
     async saveMap(): Promise<void> {
         const game = this.mapService.getGameData();
+        if (!game) {
+            alert('Aucune carte à sauvegarder.');
+            return;
+        }
 
         const errors = await this.saveService.validateBeforeSave(game);
         if (errors.length > 0) {
