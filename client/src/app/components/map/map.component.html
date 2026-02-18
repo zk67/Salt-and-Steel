@@ -1,6 +1,6 @@
 <div class="map-grid" [style.--grid-size]="gridSize">
     @if (readyToLoad) {
-        @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
+        @for (row of mapService.tiles(); track $index; let rowIndex = $index) {
             @for (tile of row; track $index; let colIndex = $index) {
                 <div class="tile"
                     [attr.data-tile-type]="tileType[tile.tileType]"
