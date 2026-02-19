@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SaveService } from '@app/services/save.service';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
+import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { MapObjectType, TileType } from '@common/types/map.interface';
 import { firstValueFrom } from 'rxjs';
@@ -66,13 +66,15 @@ export class ToolsSidebarComponent {
         game.imageUrl = await this.mapPreviewService.generatePreview(game);
         game.date = new Date();
         try {
-
             if (game._id) {
-                await firstValueFrom(this.saveService.replaceGame(game._id, game));
-                alert(`Jeu "${game.name}" modifié avec succès !`);
-            } else {
-                await firstValueFrom(this.saveService.addGame(game));
-                alert(`Jeu "${game.name}" créé avec succès !`);
+                const updatedGame = await firstValueFrom(this.saveService.getGame(game._id));
+                if (updatedGame === undefined || updatedGame === null) {
+                    await firstValueFrom(this.saveService.addGame(game));
+                    alert(`Jeu "${game.name}" créé avec succès !`);
+                } else {
+                    await firstValueFrom(this.saveService.replaceGame(game._id, game));
+                    alert(`Jeu "${game.name}" modifié avec succès !`);
+                }
             }
             this.router.navigate(['/admin']);
         } catch (err) {
