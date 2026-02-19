@@ -13,3 +13,8 @@ export interface Game {
     gameMode: GameMode;
     tiles: TileData[][];
 }
+
+export interface MovePlayerPayload {
+    playerId: string;
+    direction: string;
+}

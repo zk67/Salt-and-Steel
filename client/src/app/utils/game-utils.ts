@@ -1,6 +1,6 @@
 import { MapObjectType, MapSize, TileData, TileType } from '@common/types/map.interface';
 import { MIN_PLAYERS, MAX_PLAYERS_SMALL, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_LARGE } from '@app/const/gameConst';
-import { Player } from '@app/interfaces/player.interface';
+import { Player } from '@common/types/player.interface';
 
 // Coût en énergie pour se déplacer sur chaque type de tuile
 export const TILE_ENERGY_COST: Record<TileType, number> = {

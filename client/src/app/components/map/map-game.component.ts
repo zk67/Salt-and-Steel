@@ -1,17 +1,19 @@
-import { Component, computed, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Player } from '@app/interfaces/player.interface';
+import { Player } from '@common/types/player.interface';
 import { MapService } from '@app/services/map/map.service';
-import { SaveService } from '@app/services/save.service';
+import { SocketClientService } from '@app/services/socket-client.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
+import { MovePlayerPayload } from '@common/types/game.interface';
+import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
-import { firstValueFrom } from 'rxjs';
+import { GameService } from '@app/services/game.service';
 
-const DIRECTION: Record<string, [number, number]> = {
-    w: [0, -1],
-    a: [-1, 0],
-    s: [0, 1],
-    d: [1, 0],
+const PLAYER_DIRECTION: Record<string, string> = {
+    w: 'up',
+    a: 'left',
+    s: 'down',
+    d: 'right',
 };
 
 @Component({
@@ -26,61 +28,65 @@ export class MapGameComponent implements OnInit, OnDestroy {
     tileType = TileType;
     mapObjectType = MapObjectType;
 
-    players = signal<Player[]>([]); // TODO: mettre la liste des joueurs dans un service pour la partager entre les composants
     movableTilesMap = signal<boolean[][]>([]);
-
-    clientPlayer = computed(() =>
-        this.players().find(p => p.id === '1') || null,
-    );
+    isClientPlayerTurn = signal<boolean>(true);
 
     constructor(
         public mapService: MapService,
-        private saveService: SaveService,
+        public gameService: GameService,
         private router: Router,
+        private readonly socketService: SocketClientService,
     ) {}
 
     private globalKeyUpListener = (event: KeyboardEvent) => {
-        const direction = DIRECTION[event.key.toLowerCase()];
+        const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
-            const player = this.clientPlayer();
+            const player = this.gameService.clientPlayer();
             if (!player) return;
-            this.handleMovePlayer(player, player.x + direction[0], player.y + direction[1]);
+            this.handleMovePlayer(player, direction);
         }
     };
 
     async ngOnInit(): Promise<void> {
-        const id = '698e0c946cc0b3dcc5fe996a';
+        const game = this.gameService.game();
 
-        if (id) {
-            const game = await firstValueFrom(this.saveService.getGame(id));
-            if (!game) {
-                alert('Map introuvable, retour a la page principal.');
-                this.router.navigate(['/home']);
-                return;
-            }
-
-            this.gridSize = game.size;
+        if (game) {
             this.mapService.loadFromDB(game);
+            this.gridSize = game.size as MapSize;
         } else {
-            alert('Aucun ID de map fourni, retour a la page principal.');
             this.router.navigate(['/home']);
             return;
         }
 
-        this.readyToLoad = true;
-
         // Temporary: create fake players until server integration
-        this.players.set([
-            { id: '1', name: 'Player 1', x: 5, y: 5, energy: 5, speed: 6, imageUrl: 'assets/avatars/avatar-1.png' },
-            { id: '2', name: 'Player 2', x: 10, y: 10, energy: 5, speed: 6, imageUrl: 'assets/avatars/avatar-2.png' },
-        ]);
+        this.gameService.addPlayer({
+            id: '1',
+            name: 'Player 1',
+            x: 5,
+            y: 5,
+            energy: 5,
+            speed: 6,
+            imageUrl: 'assets/avatars/avatar-1.png',
+        });
+        this.gameService.addPlayer({
+            id: '2',
+            name: 'Player 2',
+            x: 10,
+            y: 10,
+            energy: 5,
+            speed: 6,
+            imageUrl: 'assets/avatars/avatar-2.png',
+        });
 
-        const player = this.clientPlayer();
+        const player = this.gameService.clientPlayer();
         if (player) {
             this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), player));
         }
 
+        this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
         window.addEventListener('keyup', this.globalKeyUpListener);
+
+        this.readyToLoad = true;
     }
 
     ngOnDestroy(): void {
@@ -88,7 +94,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     getPlayerAt(x: number, y: number): Player | null {
-        return this.players().find(p => p.x === x && p.y === y) || null;
+        return this.gameService.players().find(p => p.x === x && p.y === y) || null;
     }
 
     getMovableTilesAt(x: number, y: number): boolean {
@@ -100,18 +106,38 @@ export class MapGameComponent implements OnInit, OnDestroy {
         return getObjectDescription(objectType);
     }
 
-    private handleMovePlayer(player: Player, newX: number, newY: number): void {
+    private handleMovePlayer(player: Player, direction: string): void {
+        const [dx, dy] = DIRECTION[direction];
+        const newX = player.x + dx;
+        const newY = player.y + dy;
+
         if (this.getMovableTilesAt(newX, newY)) {
-            const tile = this.mapService.getTile(newX, newY);
-            if (!tile) return;
+            const payload: MovePlayerPayload = {
+                playerId: player.id,
+                direction,
+            };
 
-            const updatedPlayer = { ...player, x: newX, y: newY,
-                energy: player.energy - TILE_ENERGY_COST[tile.tileType] };
+            this.socketService.send('movePlayer', payload);
+        }
+    }
 
-            this.players.update(players => {
-                return players.map(p => p.id === updatedPlayer.id ? updatedPlayer : p);
-            });
+    private handlePlayerMovePayload(payload: MovePlayerPayload) {
+        const player = this.gameService.players().find(p => p.id === payload.playerId);
+        if (!player) return;
 
+        const [dx, dy] = DIRECTION[payload.direction];
+        const newX = player.x + dx;
+        const newY = player.y + dy;
+
+        const tile = this.mapService.getTile(newX, newY);
+        if (!tile) return;
+
+        const updatedPlayer = { ...player, x: newX, y: newY,
+            energy: player.energy - TILE_ENERGY_COST[tile.tileType] };
+
+        this.gameService.updatePlayer(player.id, updatedPlayer);
+
+        if(this.isClientPlayerTurn()) {
             this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), updatedPlayer));
         }
     }
