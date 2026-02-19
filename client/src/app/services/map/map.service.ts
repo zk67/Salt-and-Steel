@@ -12,12 +12,12 @@ export class MapService {
     private originalGame: Game | null = null;
 
     // Signals pour les propriétés du jeu
-    tiles = computed(() => this.gameSignal()?.tiles ?? []);
-    name = computed(() => this.gameSignal()?.name ?? '');
-    description = computed(() => this.gameSignal()?.description ?? '');
-    size = computed(() => this.gameSignal()?.size ?? 0);
-    visible = computed(() => this.gameSignal()?.visible ?? false);
-    gameMode = computed(() => this.gameSignal()?.gameMode ?? GameMode.Classic);
+    private tiles = computed(() => this.gameSignal()?.tiles ?? []);
+    private name = computed(() => this.gameSignal()?.name ?? '');
+    private description = computed(() => this.gameSignal()?.description ?? '');
+    private size = computed(() => this.gameSignal()?.size ?? 0);
+    private visible = computed(() => this.gameSignal()?.visible ?? false);
+    private gameMode = computed(() => this.gameSignal()?.gameMode ?? GameMode.Classic);
 
     initializeMap(size: number, gameMode: GameMode = GameMode.Classic): void {
         this.gameSignal.set({
@@ -54,6 +54,10 @@ export class MapService {
 
     getDescription(): string {
         return this.description();
+    }
+
+    getGameMode(): GameMode {
+        return this.gameMode();
     }
 
     setDescription(description: string): void {
