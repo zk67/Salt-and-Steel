@@ -5,7 +5,7 @@
                 <div class="tile"
                     [attr.data-tile-type]="tileType[tile.tileType]"
                     [attr.data-object]="mapObjectType[tile.mapObject]"
-                    [attr.data-movable]="getMovableTilesAt(colIndex, rowIndex) ? 'true' : null"
+                    [attr.data-movable]="getMovableTilesAt(colIndex, rowIndex) && isClientPlayerTurn() ? 'true' : null"
                     [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                     [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'">
                     @if (getPlayerAt(colIndex, rowIndex); as player) {

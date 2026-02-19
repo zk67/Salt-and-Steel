@@ -5,6 +5,7 @@ import { Gateway } from '@app/gateways/gateway';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CurrentGamesService } from '@app/current-games.service';
 
 
 @Module({
@@ -20,6 +21,6 @@ import { MongooseModule } from '@nestjs/mongoose';
         MongooseModule.forFeature([{ name: Game.name, schema: gameSchema }]),
     ],
     controllers: [GamesController],
-    providers: [Gateway, Logger, GamesService],
+    providers: [Gateway, Logger, GamesService, CurrentGamesService],
 })
 export class GamesModule {}
