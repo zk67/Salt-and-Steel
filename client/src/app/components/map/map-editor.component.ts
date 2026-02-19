@@ -4,18 +4,22 @@ import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { GameMode, MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { getObjectDescription } from '@app/utils/game-utils';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-map-editor',
-    templateUrl: './map.component.html',
+    templateUrl: './map-editor.component.html',
     styleUrls: ['./map.component.scss'],
 })
 export class MapEditorComponent implements OnInit, OnDestroy {
     gridSize: MapSize = MapSize.Small;
-    readyToLoad: boolean = false;
+    readyToLoad = false;
 
-    private isMouseDown: boolean = false; // Pour gerer le mouse drag
+    tileType = TileType;
+    mapObjectType = MapObjectType;
+
+    private isMouseDown = false;
 
     private globalMouseUpListener = () => {
         this.isMouseDown = false;
@@ -33,11 +37,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         event.preventDefault();
     };
 
-    private mouseButton: number = 0;
-
-    // Utile pour la composante HTML pour lier le enum et string
-    tileType = TileType;
-    mapObjectType = MapObjectType;
+    private mouseButton = 0;
 
     constructor(
         private route: ActivatedRoute,
@@ -53,7 +53,6 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
     }
 
-    // Permet de gerer le mouse drag
     onMouseEnter(event: MouseEvent, x: number, y: number): void {
         if (this.isMouseDown) {
             const isObjectTool = this.toolService.getToolType() === ToolType.Object;
@@ -65,10 +64,13 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         }
     }
 
+    getObjectDescription(objectType: number): string {
+        return getObjectDescription(objectType);
+    }
+
     async ngOnInit(): Promise<void> {
         const id = this.route.snapshot.queryParams.id;
 
-        // permet de gerer le mouse drag + fix quelque bugs
         window.addEventListener('mouseup', this.globalMouseUpListener);
         window.addEventListener('mousedown', this.globalMouseDownListener);
         window.addEventListener('dragstart', this.globalDragStartListener);
@@ -112,16 +114,5 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         window.removeEventListener('mousedown', this.globalMouseDownListener);
         window.removeEventListener('dragstart', this.globalDragStartListener);
         window.removeEventListener('contextmenu', this.globalContextMenuListener);
-    }
-
-    getObjectDescription(objectType: number): string {
-        switch (objectType) {
-            case this.mapObjectType.SpawnPoint:
-                return 'Point de départ des joueurs';
-            case this.mapObjectType.Flag:
-                return 'Drapeau - Objectif à capturer';
-            default:
-                return '';
-        }
     }
 }
