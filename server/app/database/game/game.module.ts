@@ -1,3 +1,4 @@
+import { CurrentGamesService } from '@app/current-games.service';
 import { GamesController } from '@app/database/game/controllers/games.controller';
 import { Game, gameSchema } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
@@ -5,7 +6,6 @@ import { Gateway } from '@app/gateways/gateway';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CurrentGamesService } from '@app/current-games.service';
 
 
 @Module({

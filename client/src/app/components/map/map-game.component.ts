@@ -1,13 +1,13 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Player } from '@common/types/player.interface';
+import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
 import { MovePlayerPayload } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
-import { GameService } from '@app/services/game.service';
+import { Player } from '@common/types/player.interface';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -67,6 +67,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
             energy: 5,
             speed: 6,
             imageUrl: 'assets/avatars/avatar-1.png',
+            attack: 4,
+            defense: 4,
+            life: 6,
+            d6target: 'attack',
         });
         this.gameService.addPlayer({
             id: '2',
@@ -76,6 +80,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
             energy: 5,
             speed: 6,
             imageUrl: 'assets/avatars/avatar-2.png',
+            attack: 4,
+            defense: 4,
+            life: 6,
+            d6target: 'attack',
         });
 
         const player = this.gameService.clientPlayer();
@@ -132,12 +140,14 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const tile = this.mapService.getTile(newX, newY);
         if (!tile) return;
 
-        const updatedPlayer = { ...player, x: newX, y: newY,
-            energy: player.energy - TILE_ENERGY_COST[tile.tileType] };
+        const updatedPlayer = {
+            ...player, x: newX, y: newY,
+            energy: player.energy - TILE_ENERGY_COST[tile.tileType],
+        };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        if(this.isClientPlayerTurn()) {
+        if (this.isClientPlayerTurn()) {
             this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), updatedPlayer));
         }
     }
