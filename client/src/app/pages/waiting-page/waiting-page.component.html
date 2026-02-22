@@ -1,4 +1,17 @@
 <div class="container justified">
     <h1 class="header-item">Salle d'attente</h1>
+    <div>
+        @for (player of players; track player.id) {
+            <div class="player-row">
+                <img
+                  [src]="player.imageUrl"
+                  alt="Aperçu du personnage"
+                  width="50"
+                  height="50"
+                />
+                <p class="player-name">{{ player.name }}</p>
+            </div>
+        }
+    </div>
     <button class="button" routerLink="/home">Retour</button>
 </div>

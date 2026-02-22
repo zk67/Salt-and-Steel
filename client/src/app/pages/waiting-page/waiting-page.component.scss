@@ -19,3 +19,10 @@
     justify-content: center;
     text-align: center;
 }
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
