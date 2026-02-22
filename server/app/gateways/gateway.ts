@@ -1,9 +1,10 @@
-import { GatewayEvents } from '@common/types/gateway.events';
+import { CurrentGamesService } from '@app/current-games.service';
 import { MovePlayerPayload } from '@common/types/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CurrentGamesService } from '@app/current-games.service';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -36,7 +37,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
             return;
         }
 
-        if(this.currentGamesService.movePlayer(client.rooms[0], payload.playerId, payload.direction)) {
+        if (this.currentGamesService.movePlayer(client.rooms[0], payload.playerId, payload.direction)) {
             this.server.emit('playerMoved', payload);
         } else {
             this.logger.warn(`Failed to move player ${payload.playerId} in direction ${payload.direction}`);
@@ -44,7 +45,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     private validatePlayer(socket: Socket, playerId: string): boolean {
-        if(playerId !== socket.id) {
+        if (playerId !== socket.id) {
             this.logger.warn(`Player ID ${playerId} does not match socket ID ${socket.id}`);
             return false;
         }
@@ -62,5 +63,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         return true;
+    }
+
+    @SubscribeMessage('getPlayerId')
+    getPlayerId(client: Socket, player: Player): void {
+        player.id = client.id;
+        client.emit('playerId', player);
     }
 }

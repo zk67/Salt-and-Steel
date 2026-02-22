@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { GameService } from '@app/services/game.service';
+import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
+import { Player } from '@common/types/player.interface';
 
 const BASE_LIFE = 6;
 const BASE_SPEED = 6;
@@ -22,7 +25,12 @@ type DieKind = 'd4' | 'd6' | 'none';
   imports: [ReactiveFormsModule],
 })
 export class CharacterPageComponent {
-  constructor(private router: Router){}
+  constructor(
+    private router: Router,
+    private socketService: SocketClientService,
+    private gameService: GameService,
+  ) {}
+
   characterName = new FormControl('');
   avatar = new FormControl<string | null>(null);
 
@@ -120,7 +128,7 @@ export class CharacterPageComponent {
   }
 
   get pirateTitle(): string {
-    return 'Le Roc des Sept Mers'; 
+    return 'Le Roc des Sept Mers';
   }
 
   get pirateDescription(): string {
@@ -181,6 +189,32 @@ export class CharacterPageComponent {
       return;
     }
 
-    this.router.navigate(['/waiting']);
+    const player: Player = {
+      id: '',
+      name: this.characterName.value,
+      imageUrl: this.avatar.value,
+      x: 0,
+      y: 0,
+      energy: 0,
+      speed: this.speed.value,
+      life: this.life.value,
+      attack: this.attack.value,
+      defense: this.defense.value,
+      d6target: this.d6Target.value,
+    };
+
+    if (!this.socketService.isSocketAlive()) {
+      this.socketService.connect();
+    }
+
+    const onPlayerId = (p: Player) => {
+      player.id = p.id;
+      this.socketService.off('playerId', onPlayerId);
+      this.gameService.addPlayer(player);
+      this.router.navigate(['/waiting']);
+    };
+
+    this.socketService.on('playerId', onPlayerId);
+    this.socketService.send('getPlayerId', player);
   }
 }

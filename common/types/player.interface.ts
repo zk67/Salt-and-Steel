@@ -5,5 +5,9 @@ export interface Player {
     x: number;
     y: number;
     energy: number;
-    speed: number;
+    speed: number | null;
+    life: number | null;
+    attack: number | null;
+    defense: number | null;
+    d6target: 'attack' | 'defense' | null;
 }
