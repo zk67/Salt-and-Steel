@@ -65,6 +65,16 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         return true;
     }
 
+    @SubscribeMessage('joinRoom')
+    handleJoinRoom(client: Socket, room: string): void {
+        client.join(room);
+    }
+
+    @SubscribeMessage('leaveRoom')
+    handleLeaveRoom(client: Socket, room: string): void {
+        client.leave(room);
+    }
+
     @SubscribeMessage('getPlayerId')
     getPlayerId(client: Socket, player: Player): void {
         player.id = client.id;
