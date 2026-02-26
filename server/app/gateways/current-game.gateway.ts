@@ -86,6 +86,12 @@ export class CurrentGameGateway implements OnGatewayInit {
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
     }
 
+    @SubscribeMessage('endTurnEarly')
+    endTurnEarly(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        this.currentGamesService.nextPlayerTurn(room);
+    }
+
 
     @SubscribeMessage('debugMove')
     handleDebugMove(client: Socket, payload: DebugMovePayload): void {
