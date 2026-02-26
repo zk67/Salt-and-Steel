@@ -112,6 +112,19 @@ export class CurrentGamesService {
 
         this.emitCallback?.(game.roomId, turnPayload);
     }
+
+    debugMove(roomId: string, playerId: string, x: number, y: number): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const player = game.players.find(p => p.id === playerId);
+        if (!player) return false;
+
+        player.x = x;
+        player.y = y;
+
+        return true;
+    }
 }
 
 export interface PlayableGame {
