@@ -83,14 +83,7 @@ export class CurrentGamesService {
         if (!game || !game.turnOrder) return;
 
         if (game.currentPhase === TurnPhase.Turn) {
-            game.currentPhase = TurnPhase.WaitTurn;
-            const lastPlayerId = game.turnOrder[game.currentTurnIndex];
-            const lastPlayer = game.players.find(p => p.id === lastPlayerId);
-            if (!lastPlayer) return;
-            lastPlayer.energy = 0;
-            game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
-            this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
-            this.sendTurnUpdate(game);
+            this.nextPlayerTurn(roomId);
         } else {
             game.currentPhase = TurnPhase.Turn;
             const currentPlayerId = game.turnOrder[game.currentTurnIndex];
@@ -102,6 +95,23 @@ export class CurrentGamesService {
             this.sendTurnUpdate(game);
             this.timer.startTurnTimer(game.roomId, TIMER_TURN);
         }
+    }
+
+    nextPlayerTurn(roomId: string): void {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return;
+
+        this.timer.stopTimer(game.roomId); // Quand on fini en avance
+        game.currentPhase = TurnPhase.WaitTurn;
+
+        const lastPlayerId = game.turnOrder[game.currentTurnIndex];
+        const lastPlayer = game.players.find(p => p.id === lastPlayerId);
+        if (!lastPlayer) return;
+
+        lastPlayer.energy = 0;
+        game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
+        this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
+        this.sendTurnUpdate(game);
     }
 
     private sendTurnUpdate(game: PlayableGame): void {
