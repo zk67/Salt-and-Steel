@@ -21,6 +21,10 @@ export class GameService {
         this.players.update(players => [...players, player]);
     }
 
+    getPlayers(): Player[] {
+        return this.players();
+    }
+
     setClientPlayer(player: Player): void {
         this.addPlayer(player);
         this.clientPlayerId = player.id;

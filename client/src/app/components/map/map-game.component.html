@@ -3,6 +3,7 @@
         @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
             @for (tile of row; track $index; let colIndex = $index) {
                 <div class="tile"
+                    (click)="onTileClick(colIndex, rowIndex)"
                     [attr.data-tile-type]="tileType[tile.tileType]"
                     [attr.data-object]="mapObjectType[tile.mapObject]"
                     [attr.data-movable]="getMovableTilesAt(colIndex, rowIndex) && isClientPlayerTurn() ? 'true' : null"

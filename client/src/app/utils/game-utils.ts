@@ -1,5 +1,5 @@
+import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/gameConst';
 import { MapObjectType, MapSize, TileData, TileType } from '@common/types/map.interface';
-import { MIN_PLAYERS, MAX_PLAYERS_SMALL, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_LARGE } from '@app/const/gameConst';
 import { Player } from '@common/types/player.interface';
 
 // Coût en énergie pour se déplacer sur chaque type de tuile
@@ -10,6 +10,11 @@ export const TILE_ENERGY_COST: Record<TileType, number> = {
     [TileType.Wall]: Infinity, // Impassable
     [TileType.Door]: 1,
 };
+
+export function getPlayerAt(players: Player[] | undefined, x: number, y: number): Player | null {
+    if (!players) return null;
+    return players.find(p => p.x === x && p.y === y) || null;
+}
 
 export function getMinMaxPlayers(size: number): { minPlayers: number; maxPlayers: number } {
     let minPlayers: number;
@@ -36,7 +41,8 @@ export function getMinMaxPlayers(size: number): { minPlayers: number; maxPlayers
     return { minPlayers, maxPlayers };
 }
 
-export function movableTiles(tiles: TileData[][], player: Player): boolean[][] {
+
+export function movableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
     const result: boolean[][] = [];
 
     for (let y = 0; y < tiles.length; y++) {
@@ -71,6 +77,10 @@ export function movableTiles(tiles: TileData[][], player: Player): boolean[][] {
             const newY = current.y + dy;
 
             if (newX < 0 || newY < 0 || newY >= tiles.length || newX >= tiles[newY].length) {
+                continue;
+            }
+
+            if (getPlayerAt(players, newX, newY)) {
                 continue;
             }
 

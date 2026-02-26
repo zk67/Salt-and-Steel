@@ -1,4 +1,4 @@
-import { Game, MovePlayerPayload, GameInfoPayload } from '@common/types/game.interface';
+import { Game, MovePlayerPayload, GameInfoPayload, DebugMovePayload } from '@common/types/game.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -84,5 +84,23 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.createGame(game, room);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+    }
+
+
+    @SubscribeMessage('debugMove')
+    handleDebugMove(client: Socket, payload: DebugMovePayload): void {
+        this.logger.log(`Player ${payload.playerId} attempting to move to (${payload.x}, ${payload.y})`);
+        const isPlayerValid = this.validatePlayer(client, payload.playerId);
+
+        if (!isPlayerValid) {
+            this.logger.warn(`Player ID is not valid for socket ID: ${client.id}`);
+            return;
+        }
+
+        if (this.currentGamesService.debugMove(client.rooms[0], payload.playerId, payload.x, payload.y)) {
+            this.server.emit('handleClickDebug', payload);
+        } else {
+            this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.x}, ${payload.y})`);
+        }
     }
 }

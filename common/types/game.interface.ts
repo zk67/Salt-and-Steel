@@ -34,3 +34,9 @@ export enum TurnPhase {
     WaitTurn,
     Turn,
 }
+
+export interface DebugMovePayload {
+    playerId: string;
+    x: number;
+    y: number;
+}
