@@ -41,7 +41,7 @@ export class Timer {
             this.intervals.delete(gameId);
         }
 
-        this.currentGamesService.changeTurn(gameId);
         this.timers.delete(gameId);
+        this.currentGamesService.changeTurn(gameId);
     }
 }

@@ -3,7 +3,6 @@ import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server, Socket } from 'socket.io';
 import { Gateway } from './gateway';
-import { CurrentGamesService } from '@app/current-games.service';
 
 /**
  * Description:
@@ -37,11 +36,6 @@ describe('ChatGateway', () => {
         warn: jest.fn(),
     };
 
-    const mockCurrentGamesService = {
-        movePlayer: jest.fn(),
-        getGameByRoomId: jest.fn(),
-    };
-
     const mockSocket = { id: 'socket-id', broadcast: { emit: jest.fn() } } as unknown as Socket;
     const mockServer = { emit: jest.fn() } as unknown as Server;
 
@@ -50,7 +44,6 @@ describe('ChatGateway', () => {
             providers: [
                 Gateway,
                 { provide: Logger, useValue: mockLogger },
-                { provide: CurrentGamesService, useValue: mockCurrentGamesService },
             ],
         }).compile();
 
