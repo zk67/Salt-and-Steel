@@ -1,13 +1,14 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { Player } from '@common/types/player.interface';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
-import { MovePlayerPayload } from '@common/types/game.interface';
+import { GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { Player } from '@common/types/player.interface';
 import { GameService } from '@app/services/game.service';
+import { TimeService } from '@app/services/time.service';
+import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -29,13 +30,13 @@ export class MapGameComponent implements OnInit, OnDestroy {
     mapObjectType = MapObjectType;
 
     movableTilesMap = signal<boolean[][]>([]);
-    isClientPlayerTurn = signal<boolean>(true);
+    isClientPlayerTurn = signal<boolean>(false);
 
     constructor(
         public mapService: MapService,
         public gameService: GameService,
-        private router: Router,
         private readonly socketService: SocketClientService,
+        private readonly timeService: TimeService,
     ) {}
 
     private globalKeyUpListener = (event: KeyboardEvent) => {
@@ -48,42 +49,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     };
 
     async ngOnInit(): Promise<void> {
-        const game = this.gameService.game();
-
-        if (game) {
-            this.mapService.loadFromDB(game);
-            this.gridSize = game.size as MapSize;
-        } else {
-            this.router.navigate(['/home']);
-            return;
-        }
-
-        // Temporary: create fake players until server integration
-        this.gameService.addPlayer({
-            id: '1',
-            name: 'Player 1',
-            x: 5,
-            y: 5,
-            energy: 5,
-            speed: 6,
-            imageUrl: 'assets/avatars/avatar-1.png',
-        });
-        this.gameService.addPlayer({
-            id: '2',
-            name: 'Player 2',
-            x: 10,
-            y: 10,
-            energy: 5,
-            speed: 6,
-            imageUrl: 'assets/avatars/avatar-2.png',
-        });
-
-        const player = this.gameService.clientPlayer();
-        if (player) {
-            this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), player));
-        }
-
+        this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
         this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
+        this.socketService.on<GameInfoPayload>('gameStartInfo', this.handleStartGame.bind(this));
+
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -132,13 +101,54 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const tile = this.mapService.getTile(newX, newY);
         if (!tile) return;
 
-        const updatedPlayer = { ...player, x: newX, y: newY,
-            energy: player.energy - TILE_ENERGY_COST[tile.tileType] };
+        const updatedPlayer = {
+            ...player, x: newX, y: newY,
+            energy: player.energy - TILE_ENERGY_COST[tile.tileType],
+        };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        if(this.isClientPlayerTurn()) {
+        if (this.isClientPlayerTurn()) {
             this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), updatedPlayer));
         }
+    }
+
+    private handleNewTurn(newTurn: NewTurnPayload) {
+        const player = this.gameService.clientPlayer();
+        if(!player) return;
+
+        if(newTurn.phase === TurnPhase.WaitTurn) {
+            this.timeService.stopTimer();
+            this.timeService.startTimer(TIMER_WAIT_TURN);
+
+            if (newTurn.playerId === player.id) {
+                this.isClientPlayerTurn.set(true);
+                player.energy = player.speed ?? 0;
+            } else {
+                this.isClientPlayerTurn.set(false);
+                player.energy = 0;
+            }
+
+            this.gameService.updatePlayer(player.id, player);
+        }else{
+            this.timeService.stopTimer();
+            this.timeService.startTimer(TIMER_TURN);
+
+            if(player.id === newTurn.playerId) {
+                this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), player));
+            }
+        }
+    }
+
+    // Probablement mettre cette fonction dans la waiting room pour initialiser en avance
+    private handleStartGame(payload: GameInfoPayload): void {
+        payload.players.forEach(p => {
+            if (p.id !== this.gameService.clientPlayer()?.id) {
+                this.gameService.addPlayer(p);
+                alert(`Player ${p.name} has joined the game!`);
+            }
+        });
+
+        this.mapService.loadFromDB(payload.game);
     }
 }

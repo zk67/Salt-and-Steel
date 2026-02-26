@@ -1,20 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { Game } from '@common/types/game.interface';
+import { Game, TurnPhase, NewTurnPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { Timer } from '@app/game-timer';
+import { TIMER_WAIT_TURN, TIMER_TURN } from '@common/types/game.constant';
 
 const RANDOM_RANGE = 0.5;
-const TIMER_WAIT_TURN = 3;
-const TIMER_TURN = 30;
 
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
+    private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
 
+    setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
+        this.emitCallback = callback;
+    }
+
+    // Create et add son similaire a decider lequel on garde, va dependre de comment on creer les games a partir de la waiting room
     addGame(game: Game, roomId: string, players: Player[]): void {
         this.games.push({ _game: game, roomId, players });
+    }
+
+    createGame(game: Game, roomId: string): void {
+        this.games.push({ _game: game, roomId, players: [] });
+    }
+
+    addPlayerToGame(roomId: string, player: Player): void {
+        const game = this.getGameByRoomId(roomId);
+        if (game) {
+            game.players.push(player);
+            Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
+        }
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
@@ -43,44 +60,57 @@ export class CurrentGamesService {
         return true;
     }
 
-    startGame(roomId: string): void {
+    startGame(roomId: string): PlayableGame {
         const game = this.getGameByRoomId(roomId);
-        if (!game) return;
+        if (!game){
+            Logger.warn(`Game not found for room ID: ${roomId}`);
+            return;
+        }
         const shuffled = [...game.players].sort(() => Math.random() - RANDOM_RANGE);
         game.turnOrder = shuffled.sort((a, b) => b.speed - a.speed).map(p => p.id);
-        game.players.forEach(player => {
-            player.energy = player.speed;
-        });
-
-        this.timer.startTurnTimer(roomId, TIMER_WAIT_TURN);
+        this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
 
         game.currentPhase = TurnPhase.WaitTurn;
         game.currentTurnIndex = 0;
+
+        this.sendTurnUpdate(game);
+
+        return game;
     }
 
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game || !game.turnOrder) return;
 
-        if (game.currentPhase === TurnPhase.WaitTurn) {
-            game.currentPhase = TurnPhase.Turn;
-            this.timer.startTurnTimer(roomId, TIMER_TURN);
-        } else {
+        if (game.currentPhase === TurnPhase.Turn) {
+            game.currentPhase = TurnPhase.WaitTurn;
             const lastPlayerId = game.turnOrder[game.currentTurnIndex];
             const lastPlayer = game.players.find(p => p.id === lastPlayerId);
             if (!lastPlayer) return;
-
             lastPlayer.energy = 0;
-
             game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
+            this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
+            this.sendTurnUpdate(game);
+        } else {
+            game.currentPhase = TurnPhase.Turn;
             const currentPlayerId = game.turnOrder[game.currentTurnIndex];
             const currentPlayer = game.players.find(p => p.id === currentPlayerId);
             if (!currentPlayer) return;
 
             currentPlayer.energy = currentPlayer.speed;
 
-            this.timer.startTurnTimer(roomId, TIMER_TURN);
+            this.sendTurnUpdate(game);
+            this.timer.startTurnTimer(game.roomId, TIMER_TURN);
         }
+    }
+
+    private sendTurnUpdate(game: PlayableGame): void {
+        const turnPayload: NewTurnPayload = {
+            phase: game.currentPhase,
+            playerId: game.turnOrder[game.currentTurnIndex],
+        };
+
+        this.emitCallback?.(game.roomId, turnPayload);
     }
 }
 
@@ -91,9 +121,4 @@ export interface PlayableGame {
     turnOrder?: string[];
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
-}
-
-enum TurnPhase {
-    WaitTurn,
-    Turn,
 }
