@@ -8,10 +8,10 @@ import { Player } from '@common/types/player.interface';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly clientPlayer = computed(() =>
-        this.players().find(p => p.id === this.clientPlauerId) || null,
+        this.players().find(p => p.id === this.clientPlayerId) || null,
     );
     readonly game = signal<Game | null>(null);
-    private clientPlauerId = '1';
+    private clientPlayerId = '1';
 
     setGame(game: Game): void {
         this.game.set(game);
@@ -21,9 +21,13 @@ export class GameService {
         this.players.update(players => [...players, player]);
     }
 
+    getPlayers(): Player[] {
+        return this.players();
+    }
+
     setClientPlayer(player: Player): void {
         this.addPlayer(player);
-        this.clientPlauerId = player.id;
+        this.clientPlayerId = player.id;
     }
 
     updatePlayer(playerId: string, updates: Partial<Player>): void {

@@ -1,0 +1,17 @@
+<div class="container">
+    <div class="game-info">
+        <div class="game-info" id="map-size">
+            <p>Taille de la map: {{ mapSize() }} x {{ mapSize() }}</p>
+        </div>
+        <div class="game-info" id="player-count">
+            <p>Nombre de joueurs actuels: {{ playerCount() }}</p> <!-- todo: vérifier le fonctionnement --> 
+        </div>
+        <div class="game-info" id="active-player">
+            <p>Joueur actif: </p> <!-- todo: ajouter un signal pour le joueur actif --> 
+        </div>
+    </div>
+    <div class="player-list">
+        <app-player-list></app-player-list>
+    </div>
+    <div class="chatbox"></div>
+</div>
