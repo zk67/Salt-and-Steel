@@ -39,7 +39,7 @@
         background-size: cover;
         background-position: center;
     }
-    
+
     &[data-object="SpawnPoint"] {
         background-image: url("/assets/objects/spawn.png"), var(--tile-image);
         background-size: 80%, cover;
@@ -65,13 +65,42 @@
         background-position: center, center;
     }
 
-    transition: border 0.1s ease;
+    transition: border 0.1s ease, box-shadow 0.1s ease;
     border: 2px solid transparent;
 
     &:hover {
         border: 2px solid #fff;
         cursor: pointer;
     }
+
+    &[data-movable="true"] {
+        box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.6);
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(34, 197, 94, 0.2);
+            pointer-events: none;
+            z-index: 1;
+        }
+    }
+}
+
+.player-avatar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    z-index: 10;
+    pointer-events: none;
+    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 .tile::after {

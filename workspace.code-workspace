@@ -12,5 +12,8 @@
         {
             "path": "./common"
         }
-    ]
+    ],
+    "settings": {
+        "powershell.cwd": "LOG2995-208"
+    }
 }

@@ -29,4 +29,12 @@ export class SocketClientService {
     send<T>(event: string, data?: T, callback?: () => void): void {
         this.socket.emit(event, ...([data, callback].filter((x) => x)));
     }
+
+    joinRoom(room: string): void {
+        this.socket.emit('joinRoom', room);
+    }
+
+    leaveRoom(room: string): void {
+        this.socket.emit('leaveRoom', room);
+    }
 }

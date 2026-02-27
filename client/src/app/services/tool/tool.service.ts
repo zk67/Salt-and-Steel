@@ -54,6 +54,7 @@ export class ToolService {
     place(x: number, y: number): void {
         if (this.toolType === ToolType.None) return;
         const tile = this.mapService.getTile(x, y);
+        if (!tile) return;
 
         if (this.toolType === ToolType.Tile) {
             if (this.tileType === TileType.Wall) {
