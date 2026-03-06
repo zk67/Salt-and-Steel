@@ -1,17 +1,26 @@
-<div class="container justified">
-    <h1 class="header-item">Salle d'attente</h1>
-    <div>
-        @for (player of players; track player.id) {
-            <div class="player-row">
-                <img
-                  [src]="player.imageUrl"
-                  alt="Aperçu du personnage"
-                  width="50"
-                  height="50"
-                />
-                <p class="player-name">{{ player.name }}</p>
-            </div>
-        }
+<div class="container">
+    <div class="left">Clavardage</div>
+    <div class="right">
+        <h1 class="header-item">Salle d'attente</h1>
+        <div class="slots">
+            @for (player of players; track player.id; let i = $index) {
+                <div class="player-slot">
+                    <img
+                        [src]="player.imageUrl"
+                        alt="Aperçu du personnage"
+                        width="50"
+                        height="50"
+                    />
+                    <p>{{ player.name }}</p>
+                </div>
+            }
+
+            @for (i of [].constructor(6 - players.length); track $index) {
+                <div class="player-slot empty">
+                    <p>Emplacement vide</p>
+                </div>
+            }
+        </div>
+        <button class="button" routerLink="/home">Retour</button>
     </div>
-    <button class="button" routerLink="/home">Retour</button>
 </div>

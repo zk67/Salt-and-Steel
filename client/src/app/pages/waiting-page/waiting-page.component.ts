@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SocketClientService } from '@app/services/socket-client.service';
 import { Player } from '@common/types/player.interface';
 
 @Component({
@@ -9,66 +10,22 @@ import { Player } from '@common/types/player.interface';
     imports: [RouterLink],
 })
 export class WaitingPageComponent {
-    // player temporaire (va bugger quand il y aura une merge de l'interface de Player)
-    player1: Player = {
-        id: '1',
-        name: 'Player 1',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-1.png',
+    players: Player[] = [];
+
+    private onPlayersToGame = (p: Player[]) => {
+        this.players = p;
     };
 
-    player2: Player = {
-        id: '2',
-        name: 'Player 2',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-2.png',
-    };
+    constructor(
+        private socketService: SocketClientService,
+    ) {}
 
-    player3: Player = {
-        id: '3',
-        name: 'Player 3',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-3.png',
-    };
+    ngOnInit(): void {
+        this.socketService.on('playersToGame', this.onPlayersToGame);
+        this.socketService.send('getPlayersToGame'); // TODO: envoyer un payload si besoin (genre le roomId ou un truc) pour que le serveur puisse retourner les joueurs de la bonne partie
+    }
 
-    player4: Player = {
-        id: '4',
-        name: 'Player 4',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-4.png',
-    };
-
-    player5: Player = {
-        id: '5',
-        name: 'Player 5',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-5.png',
-    };
-
-    player6: Player = {
-        id: '6',
-        name: 'Player 6',
-        x: 5,
-        y: 5,
-        energy: 5,
-        speed: 6,
-        imageUrl: 'assets/avatars/avatar-6.png',
-    };
-
-    players = [this.player1, this.player2, this.player3, this.player4, this.player5, this.player6];
+    ngOnDestroy(): void {
+        this.socketService.off('playersToGame', this.onPlayersToGame);
+    }
 }

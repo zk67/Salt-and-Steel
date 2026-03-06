@@ -1,9 +1,10 @@
-import { Game, MovePlayerPayload, GameInfoPayload } from '@common/types/game.interface';
+import { CurrentGamesService } from '@app/current-games.service';
+import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { Game, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
+import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CurrentGamesService } from '@app/current-games.service';
-import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -84,5 +85,19 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.createGame(game, room);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+    }
+
+    @SubscribeMessage('addPlayerToGame')
+    addPlayerToGame(client: Socket, player: Player): void {
+        const room = getRoomIdFromSocket(client);
+        this.currentGamesService.addPlayerToGame(room, player);
+        this.logger.log(`Added player ${player.name} to game in room: ${room}`);
+    }
+
+    @SubscribeMessage('getPlayersToGame')
+    getPlayersToGame(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        const players = this.currentGamesService.getPlayersToGame(room);
+        this.server.to(room).emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
     }
 }

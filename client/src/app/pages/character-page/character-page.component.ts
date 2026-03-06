@@ -25,11 +25,29 @@ type DieKind = 'd4' | 'd6' | 'none';
   imports: [ReactiveFormsModule],
 })
 export class CharacterPageComponent {
+  clientPlayer?: Player;
+
+  private onPlayerId = (p: Player) => {
+    if (this.clientPlayer) {
+      this.clientPlayer.id = p.id;
+      this.gameService.setClientPlayer(this.clientPlayer); // Ajout du joueur côté client
+      this.socketService.send('addPlayerToGame', this.clientPlayer); // Envoi du joueur au serveur
+    }
+  };
+
   constructor(
     private router: Router,
     private socketService: SocketClientService,
     private gameService: GameService,
   ) {}
+
+  ngOnInit(): void {
+    this.socketService.on('playerId', this.onPlayerId);
+  }
+
+  ngOnDestroy(): void {
+    this.socketService.off('playerId', this.onPlayerId);
+  }
 
   characterName = new FormControl('');
   avatar = new FormControl<string | null>(null);
@@ -189,7 +207,7 @@ export class CharacterPageComponent {
       return;
     }
 
-    const player: Player = {
+    this.clientPlayer = {
       id: '',
       name: this.characterName.value,
       imageUrl: this.avatar.value,
@@ -207,14 +225,13 @@ export class CharacterPageComponent {
       this.socketService.connect();
     }
 
-    const onPlayerId = (p: Player) => {
-      player.id = p.id;
-      this.socketService.off('playerId', onPlayerId);
-      this.gameService.addPlayer(player);
-      this.router.navigate(['/waiting']);
-    };
+    this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par une room dynamique si besoin (a faire avant le merge)
 
-    this.socketService.on('playerId', onPlayerId);
-    this.socketService.send('getPlayerId', player);
+    if (history.state.from === 'create') {
+      this.socketService.send('createGame', null /* TODO envoyer un objet Game (selon ce que Alexandre dit) */);
+    }
+
+    this.socketService.send('getPlayerId', this.clientPlayer);
+    this.router.navigate(['/waiting']);
   }
 }

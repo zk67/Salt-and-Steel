@@ -13,18 +13,20 @@ export class GameCardComponent {
 
   constructor(private router: Router) {}
   handleClick() {
-    this.router.navigate(['/character-form']);
+    this.router.navigate(['/character-form'], {
+      state: { from: 'create' }
+    });
     this.click.emit();
   }
 
   get previewSrc() {
-    if (this.game.imageUrl){
-        return this.game.imageUrl;
+    if (this.game.imageUrl) {
+      return this.game.imageUrl;
     }
     return '';
   }
-    
-  get hasDescription(): boolean{
-    return  !!this.game.description?.trim();
+
+  get hasDescription(): boolean {
+    return !!this.game.description?.trim();
   }
 }

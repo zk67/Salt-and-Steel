@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { Game, TurnPhase, NewTurnPayload } from '@common/types/game.interface';
-import { Player } from '@common/types/player.interface';
 import { Timer } from '@app/game-timer';
-import { TIMER_WAIT_TURN, TIMER_TURN } from '@common/types/game.constant';
+import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { Game, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
+import { Player } from '@common/types/player.interface';
+import { Injectable, Logger } from '@nestjs/common';
 
 const RANDOM_RANGE = 0.5;
 
@@ -17,11 +17,6 @@ export class CurrentGamesService {
         this.emitCallback = callback;
     }
 
-    // Create et add son similaire a decider lequel on garde, va dependre de comment on creer les games a partir de la waiting room
-    addGame(game: Game, roomId: string, players: Player[]): void {
-        this.games.push({ _game: game, roomId, players });
-    }
-
     createGame(game: Game, roomId: string): void {
         this.games.push({ _game: game, roomId, players: [] });
     }
@@ -32,6 +27,11 @@ export class CurrentGamesService {
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         }
+    }
+
+    getPlayersToGame(roomId: string): Player[] {
+        const game = this.getGameByRoomId(roomId);
+        return game ? game.players : [];
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
@@ -49,7 +49,7 @@ export class CurrentGamesService {
 
         const energycost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
 
-        if(player.energy < energycost) {
+        if (player.energy < energycost) {
             return false;
         }
 
@@ -62,7 +62,7 @@ export class CurrentGamesService {
 
     startGame(roomId: string): PlayableGame {
         const game = this.getGameByRoomId(roomId);
-        if (!game){
+        if (!game) {
             Logger.warn(`Game not found for room ID: ${roomId}`);
             return;
         }
