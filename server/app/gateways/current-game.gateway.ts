@@ -1,6 +1,7 @@
 import { CurrentGamesService } from '@app/current-games.service';
+import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { Game, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
+import { GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
@@ -14,6 +15,7 @@ export class CurrentGameGateway implements OnGatewayInit {
     constructor(
         private readonly logger: Logger,
         private readonly currentGamesService: CurrentGamesService,
+        private readonly gamesService: GamesService,
     ) {}
 
     afterInit(): void {
@@ -81,10 +83,17 @@ export class CurrentGameGateway implements OnGatewayInit {
     }
 
     @SubscribeMessage('createGame')
-    createGame(client: Socket, game: Game): void {
+    async createGame(client: Socket, data: { id: string }): Promise<boolean> {
         const room = getRoomIdFromSocket(client);
+        const gameId = data.id;
+        const game = await this.gamesService.getOneGame(gameId);
+        if (!game) {
+            this.logger.warn(`Game not found in DB for id: ${gameId}`);
+            return false;
+        }
         this.currentGamesService.createGame(game, room);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+        return true;
     }
 
     @SubscribeMessage('addPlayerToGame')

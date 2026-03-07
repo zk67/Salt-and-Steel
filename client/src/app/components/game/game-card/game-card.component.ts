@@ -13,8 +13,12 @@ export class GameCardComponent {
 
   constructor(private router: Router) {}
   handleClick() {
+    const queryParams = {
+      gameId: this.game._id,
+    };
     this.router.navigate(['/character-form'], {
-      state: { from: 'create' }
+      queryParams,
+      state: { from: 'create' }  // si ce fichier est aussi utiliser dans la page joindre un partie, alors il faut changer cette ligne
     });
     this.click.emit();
   }

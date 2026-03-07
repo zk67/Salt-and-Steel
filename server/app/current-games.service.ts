@@ -27,6 +27,9 @@ export class CurrentGamesService {
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         }
+        else {
+            Logger.log(`Game not found for room ${roomId}. Cannot add player ${player.name}.`);
+        }
     }
 
     getPlayersToGame(roomId: string): Player[] {

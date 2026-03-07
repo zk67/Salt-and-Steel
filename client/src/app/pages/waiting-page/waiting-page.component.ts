@@ -22,7 +22,7 @@ export class WaitingPageComponent {
 
     ngOnInit(): void {
         this.socketService.on('playersToGame', this.onPlayersToGame);
-        this.socketService.send('getPlayersToGame'); // TODO: envoyer un payload si besoin (genre le roomId ou un truc) pour que le serveur puisse retourner les joueurs de la bonne partie
+        this.socketService.send('getPlayersToGame');
     }
 
     ngOnDestroy(): void {

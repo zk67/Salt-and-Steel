@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
@@ -32,11 +32,13 @@ export class CharacterPageComponent {
       this.clientPlayer.id = p.id;
       this.gameService.setClientPlayer(this.clientPlayer); // Ajout du joueur côté client
       this.socketService.send('addPlayerToGame', this.clientPlayer); // Envoi du joueur au serveur
+      this.router.navigate(['/waiting']);
     }
   };
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private socketService: SocketClientService,
     private gameService: GameService,
   ) {}
@@ -228,10 +230,12 @@ export class CharacterPageComponent {
     this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par une room dynamique si besoin (a faire avant le merge)
 
     if (history.state.from === 'create') {
-      this.socketService.send('createGame', null /* TODO envoyer un objet Game (selon ce que Alexandre dit) */);
+      const id = this.route.snapshot.queryParams.gameId;
+      this.socketService.send('createGame', { id }, () => {
+        this.socketService.send('getPlayerId', this.clientPlayer);
+      });
+    } else {
+      this.socketService.send('getPlayerId', this.clientPlayer);
     }
-
-    this.socketService.send('getPlayerId', this.clientPlayer);
-    this.router.navigate(['/waiting']);
   }
 }
