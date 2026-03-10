@@ -2,6 +2,13 @@ import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS }
 import { MapObjectType, MapSize, TileData, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
 
+const directions = [
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+];
+
 // Coût en énergie pour se déplacer sur chaque type de tuile
 export const TILE_ENERGY_COST: Record<TileType, number> = {
     [TileType.Basic]: 1,
@@ -60,13 +67,6 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
     visited.set(`${player.x},${player.y}`, player.energy);
     result[player.y][player.x] = true;
 
-    const directions = [
-        [0, -1],
-        [0, 1],
-        [-1, 0],
-        [1, 0],
-    ];
-
     // BFS
     while (queue.length > 0) {
         const current = queue.shift();
@@ -102,6 +102,32 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
             }
         }
     }
+
+    return result;
+}
+
+export function getActionableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
+    const result: boolean[][] = [];
+
+    for (let y = 0; y < tiles.length; y++) {
+        result[y] = [];
+        for (let x = 0; x < tiles[y].length; x++) {
+            result[y][x] = false;
+        }
+    }
+
+    directions.forEach(([dx, dy]) => {
+        const newX = player.x + dx;
+        const newY = player.y + dy;
+
+        if (newX < 0 || newY < 0 || newY >= tiles.length || newX >= tiles[newY].length) {
+            return;
+        }
+
+        if (getPlayerAt(players, newX, newY) || tiles[newY][newX].mapObject !== MapObjectType.None) {
+            result[newY][newX] = true;
+        }
+    });
 
     return result;
 }

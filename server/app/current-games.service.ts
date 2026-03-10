@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { Game, TurnPhase, NewTurnPayload } from '@common/types/game.interface';
+import { Game, TurnPhase, NewTurnPayload, BattleWonPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { Timer } from '@app/game-timer';
-import { TIMER_WAIT_TURN, TIMER_TURN } from '@common/types/game.constant';
+import { TIMER_WAIT_TURN, TIMER_TURN, MAX_VICTORIES } from '@common/types/game.constant';
 
 const RANDOM_RANGE = 0.5;
 
@@ -134,6 +134,37 @@ export class CurrentGamesService {
         player.y = y;
 
         return true;
+    }
+
+    battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return [battlePayload, false, false];
+
+        const winner = game.players.find(p => p.id === battlePayload.winnerId);
+        const loser = game.players.find(p => p.id === battlePayload.loserId);
+        if (!winner || !loser) return [battlePayload, false, false];
+
+        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
+            // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
+            //  donc on check que c'est bien son tour
+            Logger.warn(`Ce n'est pas le tour du gagnant (${winner.name}) dans la room ${roomId}.`);
+            return [battlePayload, false, false];
+        }
+
+        const dx = Math.abs(winner.x - loser.x);
+        const dy = Math.abs(winner.y - loser.y);
+        const areAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+        if (!areAdjacent) {
+            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.x},${winner.y}), loser (${loser.x},${loser.y})`);
+            return [battlePayload,false, false];
+        }
+
+        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
+        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
+
+        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
+
+        return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
     }
 }
 
