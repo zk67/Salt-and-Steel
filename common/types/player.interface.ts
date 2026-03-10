@@ -10,4 +10,5 @@ export interface Player {
     attack: number | null;
     defense: number | null;
     d6target: 'attack' | 'defense' | null;
+    victoryPoints: number;
 }

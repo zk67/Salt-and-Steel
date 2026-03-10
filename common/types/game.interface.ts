@@ -30,6 +30,12 @@ export interface NewTurnPayload {
     phase: TurnPhase;
 }
 
+export interface BattleWonPayload {
+    loserId: string;
+    winnerId: string;
+    // TODO: Ajouter la position de respawn dans le payload
+}
+
 export enum TurnPhase {
     WaitTurn,
     Turn,

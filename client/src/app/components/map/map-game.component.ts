@@ -5,10 +5,11 @@ import { SocketClientService } from '@app/services/socket-client.service';
 import { TimeService } from '@app/services/time.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { DebugMovePayload, GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { DebugMovePayload, GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase, BattleWonPayload } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
+import { Router } from '@angular/router';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -16,6 +17,8 @@ const PLAYER_DIRECTION: Record<string, string> = {
     s: 'down',
     d: 'right',
 };
+
+const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
 @Component({
     selector: 'app-map-game',
@@ -28,8 +31,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     tileType = TileType;
     mapObjectType = MapObjectType;
-
-    movableTilesMap = signal<boolean[][]>([]);
     isClientPlayerTurn = signal<boolean>(false);
 
     debugMode = false;
@@ -39,6 +40,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         public gameService: GameService,
         private readonly socketService: SocketClientService,
         private readonly timeService: TimeService,
+        private router: Router,
     ) {}
 
     // TODO: check si M vient de clavardage et seulement prendre de host, const M a bouger lorsque permanent
@@ -64,6 +66,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
         this.socketService.on<GameInfoPayload>('gameStartInfo', this.handleStartGame.bind(this));
         this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayload.bind(this));
+        this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
+        this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOver.bind(this));
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -78,7 +82,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     getMovableTilesAt(x: number, y: number): boolean {
-        const movable = this.movableTilesMap();
+        const movable = this.gameService.actionTile();
         return movable[y] && movable[y][x] ? true : false;
     }
 
@@ -120,11 +124,41 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
         if (this.isClientPlayerTurn()) {
-            this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
         }
     }
 
     onTileClick(x: number, y: number): void {
+        if (this.debugMode){
+            this.debugClick(x, y);
+        } else if (this.gameService.getActionMode() && this.getMovableTilesAt(x, y)){
+            this.doActionAt(x, y);
+        }
+    }
+
+    doActionAt(x: number, y: number): void {
+        const player = this.getPlayerAt(x, y);
+        if(player){
+            this.killPlayer(player.id);
+        }else{
+            const mapObject = this.mapService.getMapObject(x, y);
+            if(mapObject !== MapObjectType.None){
+                alert(`Action on object ${getObjectDescription(mapObject)} at (${x}, ${y})`);
+            }
+        }
+    }
+
+    killPlayer(playerId: string): void {
+        const player = this.gameService.players().find(p => p.id === playerId);
+        const clientPlayer = this.gameService.clientPlayer();
+        if (!player || !clientPlayer) return;
+
+        alert(`Player ${player.name} has been killed!`);
+        this.socketService.send('battleWon', { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
+        // Update player position + add victory send those info to server
+    }
+
+    debugClick(x: number, y: number): void {
         if (!this.debugMode) return;
 
         const player = this.gameService.clientPlayer();
@@ -153,7 +187,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const updatedPlayer: Player = { ...player, x: payload.x, y: payload.y };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        this.movableTilesMap.set(
+        this.gameService.actionTile.set(
             movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()),
         );
     }
@@ -180,9 +214,19 @@ export class MapGameComponent implements OnInit, OnDestroy {
             this.timeService.startTimer(TIMER_TURN);
 
             if (player.id === newTurn.playerId) {
-                this.movableTilesMap.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
+                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
             }
         }
+    }
+
+    private handleBattleWon(payload: BattleWonPayload): void {
+        const loser = this.gameService.players().find(p => p.id === payload.loserId);
+        const winner = this.gameService.players().find(p => p.id === payload.winnerId);
+        if (!loser || !winner) return;
+
+        alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
+        this.gameService.addVictoryPoint(winner.id);
+        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
     }
 
     // Probablement mettre cette fonction dans la waiting room pour initialiser en avance
@@ -195,5 +239,15 @@ export class MapGameComponent implements OnInit, OnDestroy {
         });
 
         this.mapService.loadFromDB(payload.game);
+    }
+
+    private handleGameOver(payload: { winnerId: string }): void {
+        const winner = this.gameService.players().find(p => p.id === payload.winnerId);
+        if (!winner) return;
+
+        alert(`Game Over! The winner is ${winner.name}!`);
+        setTimeout(() => {
+            this.router.navigate(['/home']);
+        }, DELAY_BEFORE_NAVIGATE_HOME);
     }
 }

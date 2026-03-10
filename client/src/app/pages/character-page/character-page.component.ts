@@ -201,6 +201,7 @@ export class CharacterPageComponent {
       attack: this.attack.value,
       defense: this.defense.value,
       d6target: this.d6Target.value,
+      victoryPoints: 0,
     };
 
     if (!this.socketService.isSocketAlive()) {
