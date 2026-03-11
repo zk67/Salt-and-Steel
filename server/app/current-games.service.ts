@@ -29,6 +29,13 @@ export class CurrentGamesService {
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
         if (game) {
+            let newName = player.name;
+            let counter = 2;
+            while (game.players.some((p) => p.name === newName)) {
+                newName = `${player.name}-${counter}`;
+                counter++;
+            }
+            player.name = newName;
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         }
