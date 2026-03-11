@@ -9,7 +9,7 @@ interface JoinableGame {
     playerCount: number;
 }
 @Component({
-    selector: 'join-game-page',
+    selector: 'app-join-game-page',
     templateUrl: './join-game-page.component.html',
     styleUrls: ['./join-game-page.component.scss'],
     imports: [RouterLink],

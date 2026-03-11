@@ -4,6 +4,7 @@ import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } fr
 import { Server, Socket } from 'socket.io';
 import { CurrentGamesService ,JoinableGameSummary } from '@app/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { Player } from '@common/types/player.interface';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -134,6 +135,20 @@ export class CurrentGameGateway implements OnGatewayInit {
     private emitJoinableGames(): void {
         const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
         this.server.emit('joinableGames', joinableGames);
+    }
+
+    @SubscribeMessage('addPlayerToCurrentGame')
+    handleAddPlayerToCurrentGame(client: Socket, player: Player): void {
+        const room = getRoomIdFromSocket(client);
+
+        if (!room) {
+            this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);
+            return;
+        }
+
+        this.currentGamesService.addPlayerToGame(room, player);
+        this.logger.log(`Player ${player.name} added to current game in room ${room}`);
+        this.emitJoinableGames();
     }
 
 }
