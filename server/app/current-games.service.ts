@@ -178,6 +178,14 @@ export class CurrentGamesService {
             });
     }
 
+    canJoinGame(roomId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+    if (!game) {
+        return false;
+    }
+        return game.players.length < game._game.maxPlayers;
+    }
+
 }
 
 export interface PlayableGame {

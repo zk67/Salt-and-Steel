@@ -143,11 +143,19 @@ export class CurrentGameGateway implements OnGatewayInit {
 
         if (!room) {
             this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);
+            client.emit('joinCurrentGameResult', { success: false });
+            return;
+        }
+
+        if (!this.currentGamesService.canJoinGame(room)) {
+            this.logger.warn(`Impossible d'ajouter le joueur ${player.name}: salle verrouillee ou pleine (${room})`);
+            client.emit('joinCurrentGameResult', { success: false });
             return;
         }
 
         this.currentGamesService.addPlayerToGame(room, player);
         this.logger.log(`Player ${player.name} added to current game in room ${room}`);
+        client.emit('joinCurrentGameResult', { success: true });
         this.emitJoinableGames();
     }
 

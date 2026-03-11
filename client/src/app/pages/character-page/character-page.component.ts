@@ -180,15 +180,14 @@ export class CharacterPageComponent {
 
   submitCharacter(): void {
     if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
-      alert('Veuillez remplir le formulaire au complet!');
-      return;
-    }
+        alert('Veuillez remplir le formulaire au complet!');
+        return;
+      }
 
     if (!isStringValid(this.characterName.value)) {
-      alert(`Le nom du personnage est invalide!`);
+      alert('Le nom du personnage est invalide!');
       return;
     }
-
     const player: Player = {
       id: '',
       name: this.characterName.value,
@@ -196,10 +195,10 @@ export class CharacterPageComponent {
       x: 0,
       y: 0,
       energy: 0,
-      speed: this.speed.value,
-      life: this.life.value,
-      attack: this.attack.value,
-      defense: this.defense.value,
+      speed: this.speed.value ?? BASE_SPEED,
+      life: this.life.value ?? BASE_LIFE,
+      attack: this.attack.value ?? BASE_ATTACK,
+      defense: this.defense.value ?? BASE_DEFENSE,
       d6target: this.d6Target.value,
       victoryPoints: 0,
     };
@@ -208,21 +207,40 @@ export class CharacterPageComponent {
       this.socketService.connect();
     }
 
-    const onPlayerId = (p: Player) => {
-      player.id = p.id;
-      this.socketService.off('playerId', onPlayerId);
-      this.gameService.addPlayer(player);
-      if (selectedRoomId) {
-        this.socketService.send('addPlayerToCurrentGame', player);
-        this.gameService.clearSelectedJoinRoomId();
-      }
-      this.router.navigate(['/waiting']);
-    };
     const selectedRoomId = this.gameService.getSelectedJoinRoomId();
 
     if (selectedRoomId) {
-        this.socketService.joinRoom(selectedRoomId);
+      this.socketService.joinRoom(selectedRoomId);
     }
+    
+    const onJoinCurrentGameResult = (result: { success: boolean }) =>{
+      this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
+      if (result.success) {
+        this.gameService.clearSelectedJoinRoomId();
+        this.router.navigate(['/waiting']);
+        return;
+      }
+      const retry = window.confirm("La partie n'est plus disponible. Appuyez sur OK pour réessayer ou Annuler pour retourner à l'accueil.");
+      if (!retry) {
+        this.gameService.clearSelectedJoinRoomId();
+        this.router.navigate(['/home']);
+      }
+      
+    };
+
+    const onPlayerId = (p: Player) => {
+      this.socketService.off('playerId', onPlayerId);
+      player.id = p.id;
+      this.gameService.addPlayer(player);
+
+      if (!selectedRoomId) {
+        this.router.navigate(['/waiting']);
+      }else{
+        this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
+        this.socketService.send('addPlayerToCurrentGame', player);
+      }
+    };
+
     this.socketService.on('playerId', onPlayerId);
     this.socketService.send('getPlayerId', player);
   }
