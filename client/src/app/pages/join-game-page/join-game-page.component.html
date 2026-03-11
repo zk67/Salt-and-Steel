@@ -1,4 +1,17 @@
 <div class="container">
-  <h1>Joindre une partie</h1>
-  <button routerLink="/home">Retour</button>
+    <h1>Joindre une partie</h1>
+    <button routerLink="/home">Retour</button>
+
+    @if (joinableGames.length === 0) {
+        <p>Aucune partie disponible pour le moment.</p>
+    } @else {
+        <section class="games-list">
+            @for (entry of joinableGames; track entry.roomId) {
+                <article class="game-row">
+                    <h2>{{ entry.game.name }}</h2>
+                    <p>Joueurs en attente : {{ entry.playerCount }} / {{ entry.game.maxPlayers }}</p>
+                </article>
+            }
+        </section>
+    }
 </div>
