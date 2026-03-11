@@ -212,9 +212,17 @@ export class CharacterPageComponent {
       player.id = p.id;
       this.socketService.off('playerId', onPlayerId);
       this.gameService.addPlayer(player);
+      if (selectedRoomId) {
+        this.socketService.send('addPlayerToCurrentGame', player);
+        this.gameService.clearSelectedJoinRoomId();
+      }
       this.router.navigate(['/waiting']);
     };
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
 
+    if (selectedRoomId) {
+        this.socketService.joinRoom(selectedRoomId);
+    }
     this.socketService.on('playerId', onPlayerId);
     this.socketService.send('getPlayerId', player);
   }

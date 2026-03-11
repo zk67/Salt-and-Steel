@@ -73,4 +73,8 @@ export class GameService {
     getSelectedJoinRoomId(): string | null {
         return this.selectedJoinRoomId();
     }
+
+    clearSelectedJoinRoomId(): void {
+        this.selectedJoinRoomId.set(null);
+    }
 }
