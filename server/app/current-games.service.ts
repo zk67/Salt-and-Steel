@@ -166,6 +166,18 @@ export class CurrentGamesService {
 
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
     }
+
+    getJoinableGames(): JoinableGameSummary[] {
+        return this.games
+            .filter(game => game.players.length < game._game.maxPlayers)
+            .map(game => {
+                return {
+                    roomId: game.roomId,
+                    game: game._game,
+                    playerCount: game.players.length};
+            });
+    }
+
 }
 
 export interface PlayableGame {
@@ -175,4 +187,10 @@ export interface PlayableGame {
     turnOrder?: string[];
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
+}
+
+export interface JoinableGameSummary {
+    roomId: string;
+    game: Game;
+    playerCount: number;
 }

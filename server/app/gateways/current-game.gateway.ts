@@ -2,7 +2,7 @@ import { Game, MovePlayerPayload, GameInfoPayload, DebugMovePayload, BattleWonPa
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService ,JoinableGameSummary } from '@app/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 
 @WebSocketGateway({ cors: true })
@@ -82,8 +82,15 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.createGame(game, room);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+        this.emitJoinableGames();
     }
 
+    @SubscribeMessage('getJoinableGames')
+    handleGetJoinableGames(client: Socket): void {
+        const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
+        client.emit('joinableGames', joinableGames);
+    }
+    
     @SubscribeMessage('endTurnEarly')
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
@@ -123,4 +130,10 @@ export class CurrentGameGateway implements OnGatewayInit {
             }
         }
     }
+
+    private emitJoinableGames(): void {
+        const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
+        this.server.emit('joinableGames', joinableGames);
+    }
+
 }
