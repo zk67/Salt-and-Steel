@@ -10,6 +10,9 @@
                 <article class="game-row">
                     <h2>{{ entry.game.name }}</h2>
                     <p>Joueurs en attente : {{ entry.playerCount }} / {{ entry.game.maxPlayers }}</p>
+                    <button type="button" (click)="selectGame(entry.roomId)">
+                        Joindre cette partie
+                    </button>
                 </article>
             }
         </section>

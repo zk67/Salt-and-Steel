@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink , Router } from '@angular/router';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/types/game.interface';
+import { GameService } from '@app/services/game.service';
 
 interface JoinableGame {
     roomId: string;
@@ -22,7 +23,12 @@ export class JoinGameComponent implements OnInit, OnDestroy {
         this.joinableGames = games;
     };
 
-    constructor(private socketService: SocketClientService) {}
+    constructor(private socketService: SocketClientService,private gameService: GameService,private router: Router) {}
+
+    selectGame(roomId: string): void {
+        this.gameService.setSelectedJoinRoomId(roomId);
+        this.router.navigate(['/character-form']);
+    }
 
     ngOnInit(): void {
         if (!this.socketService.isSocketAlive()) {
