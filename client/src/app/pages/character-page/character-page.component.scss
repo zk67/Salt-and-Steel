@@ -436,3 +436,8 @@
     transform: translateX(-50%) translateY(0);
   }
 }
+
+.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

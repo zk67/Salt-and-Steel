@@ -5,6 +5,7 @@ import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
 import { Player } from '@common/types/player.interface';
+import { OnInit } from '@angular/core';
 
 const BASE_LIFE = 6;
 const BASE_SPEED = 6;
@@ -24,7 +25,8 @@ type DieKind = 'd4' | 'd6' | 'none';
   styleUrls: ['./character-page.component.scss'],
   imports: [ReactiveFormsModule],
 })
-export class CharacterPageComponent {
+export class CharacterPageComponent implements OnInit {
+
   constructor(
     private router: Router,
     private socketService: SocketClientService,
@@ -41,6 +43,8 @@ export class CharacterPageComponent {
   speed = new FormControl<number>(BASE_SPEED);
   attack = new FormControl<number>(BASE_ATTACK);
   defense = new FormControl<number>(BASE_DEFENSE);
+
+  unavailableAvatars: string[] = [];
 
   statDescriptions: Record<StatKey, string> = {
     life: 'Points de vie. À 0, ton personnage est vaincu.',
@@ -145,7 +149,9 @@ export class CharacterPageComponent {
   }
 
   selectAvatar(a: string): void {
-    this.avatar.setValue(a);
+    if (!this.isAvatarUnavailable(a)){
+      this.avatar.setValue(a);
+    }
   }
 
   toggleBonus(target: BonusTarget): void {
@@ -244,4 +250,23 @@ export class CharacterPageComponent {
     this.socketService.on('playerId', onPlayerId);
     this.socketService.send('getPlayerId', player);
   }
+
+  isAvatarUnavailable(avatar: string): boolean {
+    return this.unavailableAvatars.includes(avatar);
+  }
+
+  ngOnInit(): void {
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
+    if (selectedRoomId){
+      if (!this.socketService.isSocketAlive()) {
+        this.socketService.connect();
+      }
+      this.socketService.joinRoom(selectedRoomId);
+      this.socketService.on<string[]>('unavailableAvatars', (avatars) => {
+        this.unavailableAvatars = avatars;
+      });
+      this.socketService.send('getUnavailableAvatars');
+    }
+    }
+
 }

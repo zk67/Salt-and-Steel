@@ -193,6 +193,15 @@ export class CurrentGamesService {
         return game.players.length < game._game.maxPlayers;
     }
 
+    getUnavailableAvatars(roomId: string): string[] {
+        const game = this.getGameByRoomId(roomId);
+
+        if (game) {
+            return game.players.map((player) => player.imageUrl).filter((imageUrl): imageUrl is string => !!imageUrl);
+        }else{
+            return [];
+        }
+    }
 }
 
 export interface PlayableGame {

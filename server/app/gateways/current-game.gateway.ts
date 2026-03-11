@@ -159,4 +159,16 @@ export class CurrentGameGateway implements OnGatewayInit {
         this.emitJoinableGames();
     }
 
+    @SubscribeMessage('getUnavailableAvatars')
+    handleGetUnavailableAvatars(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            const avatars = this.currentGamesService.getUnavailableAvatars(room);
+            client.emit('unavailableAvatars', avatars);
+        }else{
+            client.emit('unavailableAvatars', []);
+            return;
+        }
+
+}
 }
