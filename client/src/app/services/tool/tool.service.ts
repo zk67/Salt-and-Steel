@@ -104,7 +104,7 @@ export class ToolService {
 
         const gameData = this.mapService.getGameData();
 
-        if(gameData) {
+        if (gameData) {
             gameData.tiles.flat().filter(t => t.mapObject !== MapObjectType.None).forEach((tile) => {
                 this.setNumberObject(tile.mapObject);
             });
