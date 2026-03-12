@@ -223,6 +223,21 @@ export class CurrentGamesService {
             }
         }
     }
+
+    clearSelectedAvatarByClientId(clientId: string): string[] {
+        const updatedRooms: string[] = [];
+        for (const [roomId, selections] of this.selectedAvatarsByRoom.entries()) {
+            if (!selections.has(clientId)) {
+                continue;
+            }
+            selections.delete(clientId);
+            updatedRooms.push(roomId);
+            if (selections.size === 0) {
+                this.selectedAvatarsByRoom.delete(roomId);
+            }
+        }
+        return updatedRooms;
+    }
 }
 export interface PlayableGame {
     _game: Game;

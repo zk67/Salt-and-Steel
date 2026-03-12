@@ -8,7 +8,7 @@ import { Player } from '@common/types/player.interface';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
-export class CurrentGameGateway implements OnGatewayInit {
+export class CurrentGameGateway implements OnGatewayInit  {
     @WebSocketServer() private server: Server;
 
     constructor(
@@ -194,5 +194,4 @@ export class CurrentGameGateway implements OnGatewayInit {
             this.emitUnavailableAvatars(room);
         }
     }
-
 }
