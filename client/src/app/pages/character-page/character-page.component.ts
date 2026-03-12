@@ -246,7 +246,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
     if (history.state.from === 'create') {
       this.clientPlayer.isOrganizer = true;
-      const GAMEID = crypto.randomUUID();
+      const GAMEID = this.generateUUID();
       this.gameIdSave = GAMEID;
       this.socketService.joinRoom(GAMEID);
       const DBID = this.route.snapshot.queryParams.gameId;
@@ -259,5 +259,13 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par le gameId de la game que le joueur a rejoint
     }
     this.socketService.send('getPlayerId', this.clientPlayer);
+  }
+
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   }
 }
