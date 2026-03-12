@@ -14,7 +14,7 @@
       } @else {
           <div class="games-list">
           @for (game of games; track game._id) {
-            <app-game-card [game]="game"></app-game-card>
+            <app-game-card [game]="game" (click)="selectGame(game)"></app-game-card>
           }
         </div>
       }
