@@ -47,13 +47,13 @@ export class CurrentGamesService {
 
         const [dx, dy] = DIRECTION[direction];
 
-        const energycost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
+        const movementCost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
 
-        if(player.energy < energycost) {
+        if(player.movementPoints < movementCost) {
             return false;
         }
 
-        player.energy -= energycost;
+        player.movementPoints -= movementCost;
         player.x += dx;
         player.y += dy;
 
@@ -66,8 +66,15 @@ export class CurrentGamesService {
             Logger.warn(`Game not found for room ID: ${roomId}`);
             return;
         }
+
         const shuffled = [...game.players].sort(() => Math.random() - RANDOM_RANGE);
-        game.turnOrder = shuffled.sort((a, b) => b.speed - a.speed).map(p => p.id);
+        const sorted = shuffled.sort((a, b) => b.speed - a.speed);
+        
+        game.turnOrder = sorted.map(p => p.id);
+        sorted.forEach((player, idx) => {
+            player.turnOrder = idx;
+        });
+
         this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
 
         game.currentPhase = TurnPhase.WaitTurn;
@@ -90,7 +97,7 @@ export class CurrentGamesService {
             const currentPlayer = game.players.find(p => p.id === currentPlayerId);
             if (!currentPlayer) return;
 
-            currentPlayer.energy = currentPlayer.speed;
+            currentPlayer.movementPoints = currentPlayer.speed;
 
             this.sendTurnUpdate(game);
             this.timer.startTurnTimer(game.roomId, TIMER_TURN);
@@ -108,7 +115,7 @@ export class CurrentGamesService {
         const lastPlayer = game.players.find(p => p.id === lastPlayerId);
         if (!lastPlayer) return;
 
-        lastPlayer.energy = 0;
+        lastPlayer.movementPoints = 0;
         game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
         this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
         this.sendTurnUpdate(game);
@@ -165,6 +172,38 @@ export class CurrentGamesService {
         // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
 
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
+    }
+
+    validateEndTurnEarly(roomId: string, playerId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const player = game.players.find(p => p.id === playerId);
+        if (!player) return false;
+
+        if (game.turnOrder[game.currentTurnIndex] !== player.id) {
+            Logger.warn(`Ce n'est pas le tour du joueur (${player.name}) dans la room ${roomId}.`);
+            return false;
+        }
+
+        return true;
+    }
+
+    removePlayerFromGame(roomId: string, playerId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) return false;
+
+        if(game.turnOrder[game.currentTurnIndex] === playerId){
+            this.nextPlayerTurn(roomId);
+        }
+
+        game.players.splice(playerIndex, 1);
+        game.turnOrder = game.turnOrder.filter(id => id !== playerId);
+
+        return true;
     }
 }
 

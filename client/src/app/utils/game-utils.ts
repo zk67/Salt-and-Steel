@@ -60,11 +60,11 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
     }
 
     const visited = new Map<string, number>();
-    const queue: { x: number, y: number, energy: number }[] = [];
+    const queue: { x: number, y: number, movementPoints: number }[] = [];
 
     // Position initiale du joueur
-    queue.push({ x: player.x, y: player.y, energy: player.energy });
-    visited.set(`${player.x},${player.y}`, player.energy);
+    queue.push({ x: player.x, y: player.y, movementPoints: player.movementPoints });
+    visited.set(`${player.x},${player.y}`, player.movementPoints);
     result[player.y][player.x] = true;
 
     // BFS
@@ -86,7 +86,7 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
 
             const tile = tiles[newY][newX];
             const energyCost = TILE_ENERGY_COST[tile.tileType];
-            const remainingEnergy = current.energy - energyCost;
+            const remainingEnergy = current.movementPoints - energyCost;
 
             if (remainingEnergy < 0) {
                 continue;
@@ -98,7 +98,7 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
             if (previousEnergy === undefined || remainingEnergy > previousEnergy) {
                 visited.set(key, remainingEnergy);
                 result[newY][newX] = true;
-                queue.push({ x: newX, y: newY, energy: remainingEnergy });
+                queue.push({ x: newX, y: newY, movementPoints: remainingEnergy });
             }
         }
     }

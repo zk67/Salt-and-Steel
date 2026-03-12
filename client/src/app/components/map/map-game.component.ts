@@ -6,9 +6,9 @@ import { SocketClientService } from '@app/services/socket-client.service';
 import { TimeService } from '@app/services/time.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
-import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { MapObjectType, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
 
 const PLAYER_DIRECTION: Record<string, string> = {
@@ -26,7 +26,6 @@ const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
     styleUrls: ['./map.component.scss'],
 })
 export class MapGameComponent implements OnInit, OnDestroy {
-    gridSize: MapSize = MapSize.Small;
     readyToLoad = false;
 
     tileType = TileType;
@@ -62,9 +61,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     async ngOnInit(): Promise<void> {
         this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
         this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
-        this.socketService.on<GameInfoPayload>('gameStartInfo', this.handleStartGame.bind(this));
         this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayload.bind(this));
-        this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
         this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOver.bind(this));
         window.addEventListener('keyup', this.globalKeyUpListener);
 
@@ -116,7 +113,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
         const updatedPlayer = {
             ...player, x: newX, y: newY,
-            energy: player.energy - TILE_ENERGY_COST[tile.tileType],
+            movementPoints: player.movementPoints - TILE_ENERGY_COST[tile.tileType],
         };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
@@ -136,6 +133,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     doActionAt(x: number, y: number): void {
         const player = this.getPlayerAt(x, y);
+        const clientPlayer = this.gameService.clientPlayer();
+
+        if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
+
         if (player) {
             this.killPlayer(player.id);
         } else {
@@ -144,6 +145,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 alert(`Action on object ${getObjectDescription(mapObject)} at (${x}, ${y})`);
             }
         }
+
+        this.gameService.changeActionMode();
     }
 
     killPlayer(playerId: string): void {
@@ -197,13 +200,16 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (newTurn.phase === TurnPhase.WaitTurn) {
             this.timeService.stopTimer();
             this.timeService.startTimer(TIMER_WAIT_TURN);
+            this.gameService.setActivePlayer(newTurn.playerId);
 
             if (newTurn.playerId === player.id) {
                 this.isClientPlayerTurn.set(true);
-                player.energy = player.speed ?? 0;
+                player.movementPoints = player.speed ?? 0;
+                player.actionsLeft = 1;
             } else {
                 this.isClientPlayerTurn.set(false);
-                player.energy = 0;
+                player.movementPoints = 0;
+                player.actionsLeft = 0;
             }
 
             this.gameService.updatePlayer(player.id, player);
@@ -215,28 +221,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
             }
         }
-    }
-
-    private handleBattleWon(payload: BattleWonPayload): void {
-        const loser = this.gameService.players().find(p => p.id === payload.loserId);
-        const winner = this.gameService.players().find(p => p.id === payload.winnerId);
-        if (!loser || !winner) return;
-
-        alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
-        this.gameService.addVictoryPoint(winner.id);
-        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
-    }
-
-    // Probablement mettre cette fonction dans la waiting room pour initialiser en avance
-    private handleStartGame(payload: GameInfoPayload): void {
-        payload.players.forEach(p => {
-            if (p.id !== this.gameService.clientPlayer()?.id) {
-                this.gameService.addPlayer(p);
-                alert(`Player ${p.name} has joined the game!`);
-            }
-        });
-
-        this.mapService.loadFromDB(payload.game);
     }
 
     private handleGameOver(payload: { winnerId: string }): void {

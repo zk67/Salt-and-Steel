@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
     selector: 'app-game-button',
@@ -12,4 +12,5 @@ export class Button {
     @Input() onClick: (() => void) | undefined;
     @Input() disabled: boolean = false;
     @Input() variant: 'action' | 'end-turn' | 'surrender' = 'action';
+    @Output() clicked = new EventEmitter<void>();
 }

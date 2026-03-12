@@ -87,6 +87,7 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage('endTurnEarly')
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
+        this.currentGamesService.validateEndTurnEarly(room, client.id);
         this.currentGamesService.nextPlayerTurn(room);
     }
 
@@ -99,7 +100,9 @@ export class CurrentGameGateway implements OnGatewayInit {
             return;
         }
 
-        if (this.currentGamesService.debugMove(client.rooms[0], payload.playerId, payload.x, payload.y)) {
+        const room = getRoomIdFromSocket(client);
+
+        if (this.currentGamesService.debugMove(room, payload.playerId, payload.x, payload.y)) {
             this.server.emit('handleClickDebug', payload);
         } else {
             this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.x}, ${payload.y})`);
@@ -112,15 +115,26 @@ export class CurrentGameGateway implements OnGatewayInit {
             return;
         }
 
-        const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(client.rooms[0], payload);
+        const room = getRoomIdFromSocket(client);
+        const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload);
 
         if(battleValid) {
             this.server.emit('handleBattleWon', updatedPayload);
             this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
             
             if (isGameOver) {
-                this.server.to(client.rooms[0]).emit('gameOver', { winnerId: payload.winnerId });
+                this.server.to(room).emit('gameOver', { winnerId: payload.winnerId });
             }
+        }
+    }
+
+    @SubscribeMessage('surrender')
+    handleSurrender(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+
+        if(this.currentGamesService.removePlayerFromGame(room, client.id)){
+            this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
+            this.server.to(room).emit('removePlayer', { playerId: client.id });
         }
     }
 }
