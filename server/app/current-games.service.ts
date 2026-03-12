@@ -12,6 +12,7 @@ export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
+    private selectedAvatarsByRoom = new Map<string, Map<string, string>>();//cle1:roomId ,(2:clientId ,3:avatar)
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
@@ -195,15 +196,34 @@ export class CurrentGamesService {
 
     getUnavailableAvatars(roomId: string): string[] {
         const game = this.getGameByRoomId(roomId);
-
         if (game) {
-            return game.players.map((player) => player.imageUrl).filter((imageUrl): imageUrl is string => !!imageUrl);
+            const waitingRoomAvatars = game.players.map(p => p.imageUrl).filter(Boolean);
+            const roomMap = this.selectedAvatarsByRoom.get(roomId);
+            const selectedAvatars = roomMap ? Array.from(roomMap.values()) : [];
+            const allAvatars = waitingRoomAvatars.concat(selectedAvatars);
+            return [...new Set(allAvatars)];
         }else{
             return [];
         }
     }
-}
 
+    setSelectedAvatar(roomId: string, clientId: string, avatar: string): void {
+    if (!this.selectedAvatarsByRoom.has(roomId)) {
+        this.selectedAvatarsByRoom.set(roomId, new Map<string, string>());
+    }
+    this.selectedAvatarsByRoom.get(roomId)?.set(clientId, avatar);
+    }
+
+    clearSelectedAvatar(roomId: string, clientId: string): void {
+        const roomSelections = this.selectedAvatarsByRoom.get(roomId);
+        if (roomSelections) {
+            roomSelections.delete(clientId);
+            if (roomSelections.size === 0) {
+                this.selectedAvatarsByRoom.delete(roomId);
+            }
+        }
+    }
+}
 export interface PlayableGame {
     _game: Game;
     roomId: string;

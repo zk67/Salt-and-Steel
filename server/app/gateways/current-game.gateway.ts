@@ -170,5 +170,29 @@ export class CurrentGameGateway implements OnGatewayInit {
             return;
         }
 
-}
+    }
+
+    private emitUnavailableAvatars(roomId: string): void {
+    const avatars = this.currentGamesService.getUnavailableAvatars(roomId);
+    this.server.to(roomId).emit('unavailableAvatars', avatars);
+    }
+
+    @SubscribeMessage('selectAvatarInJoinForm')
+    handleSelectAvatarInJoinForm(client: Socket, avatar: string): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            this.currentGamesService.setSelectedAvatar(room, client.id, avatar);
+            this.emitUnavailableAvatars(room);
+        }
+    }
+
+    @SubscribeMessage('clearSelectedAvatarInJoinForm')
+    handleClearSelectedAvatarInJoinForm(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            this.currentGamesService.clearSelectedAvatar(room, client.id);
+            this.emitUnavailableAvatars(room);
+        }
+    }
+
 }

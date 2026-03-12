@@ -1,11 +1,10 @@
-import { Component } from '@angular/core';
+import { Component ,OnInit ,OnDestroy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
 import { Player } from '@common/types/player.interface';
-import { OnInit } from '@angular/core';
 
 const BASE_LIFE = 6;
 const BASE_SPEED = 6;
@@ -25,7 +24,7 @@ type DieKind = 'd4' | 'd6' | 'none';
   styleUrls: ['./character-page.component.scss'],
   imports: [ReactiveFormsModule],
 })
-export class CharacterPageComponent implements OnInit {
+export class CharacterPageComponent implements OnInit ,OnDestroy{
 
   constructor(
     private router: Router,
@@ -149,8 +148,11 @@ export class CharacterPageComponent implements OnInit {
   }
 
   selectAvatar(a: string): void {
-    if (!this.isAvatarUnavailable(a)){
+    if (!this.isAvatarUnavailable(a) || this.avatar.value === a){
       this.avatar.setValue(a);
+      if (this.gameService.getSelectedJoinRoomId()) {
+        this.socketService.send('selectAvatarInJoinForm', a);
+      }
     }
   }
 
@@ -171,6 +173,10 @@ export class CharacterPageComponent implements OnInit {
     this.life.setValue(nextLife);
     this.speed.setValue(nextSpeed);
   }
+
+  private readonly onUnavailableAvatars = (avatars: string[]) => {
+    this.unavailableAvatars = avatars;
+  };
 
   randomizeStats(): void {
     this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
@@ -252,6 +258,9 @@ export class CharacterPageComponent implements OnInit {
   }
 
   isAvatarUnavailable(avatar: string): boolean {
+    if (this.avatar.value === avatar) {
+      return false;
+    }
     return this.unavailableAvatars.includes(avatar);
   }
 
@@ -262,11 +271,16 @@ export class CharacterPageComponent implements OnInit {
         this.socketService.connect();
       }
       this.socketService.joinRoom(selectedRoomId);
-      this.socketService.on<string[]>('unavailableAvatars', (avatars) => {
-        this.unavailableAvatars = avatars;
-      });
+      this.socketService.on<string[]>('unavailableAvatars', this.onUnavailableAvatars);
       this.socketService.send('getUnavailableAvatars');
     }
     }
 
+  ngOnDestroy(): void {
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
+    if (selectedRoomId) {
+      this.socketService.send('clearSelectedAvatarInJoinForm');
+    }
+    this.socketService.off('unavailableAvatars', this.onUnavailableAvatars);
+  }
 }
