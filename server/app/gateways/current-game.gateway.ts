@@ -80,7 +80,10 @@ export class CurrentGameGateway implements OnGatewayInit  {
 
     @SubscribeMessage('createGame')
     createGame(client: Socket, game: Game): void {
-        const room = getRoomIdFromSocket(client) ?? client.id;
+        const room = getRoomIdFromSocket(client);
+        if (!room){
+            return;
+        }
         this.currentGamesService.createGame(game, room);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
         this.emitJoinableGames();
@@ -139,7 +142,7 @@ export class CurrentGameGateway implements OnGatewayInit  {
 
     @SubscribeMessage('addPlayerToCurrentGame')
     handleAddPlayerToCurrentGame(client: Socket, player: Player): void {
-        const room = getRoomIdFromSocket(client) ?? client.id;
+        const room = getRoomIdFromSocket(client);
 
         if (!room) {
             this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);

@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink ,Router } from '@angular/router';
 import { GameCardComponent } from '@app/components/game/game-card/game-card.component';
+import { GameService } from '@app/services/game.service';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/types/game.interface';
@@ -20,6 +21,7 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
     private saveService: SaveService,
     private socketService: SocketClientService,
     private router: Router,
+    private gameService : GameService,
   ) {}
 
   games: Game[] = [];
@@ -45,11 +47,7 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
   }
 
   selectGame(game: Game): void {
-    if (!this.socketService.isSocketAlive()) {
-      this.socketService.connect();
-    }
-
-    this.socketService.send('createGame', game);
+    this.gameService.setSelectedHostGame(game);
     this.router.navigate(['/character-form']);
   }
 }

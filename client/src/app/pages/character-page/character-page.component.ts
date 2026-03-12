@@ -269,17 +269,16 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.connect();
     }
 
-    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
+    const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
+    const selectedHostGame = this.gameService.getSelectedHostGame();
 
-    if (selectedRoomId) {
-      this.socketService.joinRoom(selectedRoomId);
-    }
 
     const onJoinCurrentGameResult = (result: { success: boolean }) => {
       this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
 
       if (result.success) {
         this.gameService.clearSelectedJoinRoomId();
+        this.gameService.clearSelectedHostGame();
         this.router.navigate(['/waiting']);
         return;
       }
@@ -300,7 +299,19 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.gameService.addPlayer(player);
 
       this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
-      this.socketService.send('addPlayerToCurrentGame', player);
+      if(selectedJoinRoomId){
+        this.socketService.joinRoom(selectedJoinRoomId);
+        this.socketService.send('addPlayerToCurrentGame',player);
+        return;
+      }
+      if (selectedHostGame) {
+        const roomId = crypto.randomUUID();
+        this.socketService.joinRoom(roomId);
+        this.socketService.send('createGame', selectedHostGame);
+        this.socketService.send('addPlayerToCurrentGame', player);
+        return;
+      }
+      this.router.navigate(['/waiting']);
     };
 
     this.socketService.on('playerId', onPlayerId);

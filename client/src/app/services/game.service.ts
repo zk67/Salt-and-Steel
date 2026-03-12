@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
 import { Player } from '@common/types/player.interface';
 import { MapService } from './map/map.service';
+import { Game } from '@common/types/game.interface';
 
 @Injectable({
     providedIn: 'root',
@@ -10,6 +11,7 @@ export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
     private selectedJoinRoomId : string | null =null;
+    private selectedHostGame :Game | null =null; 
 
     readonly activePlayer = computed(() => this.players().find((p) => p.id === this.activePlayerId()) ?? null);
     private activePlayerId = signal<string | null>(null);
@@ -93,5 +95,16 @@ export class GameService {
 
     toggleDebugMode(): void {
         this.isDebugMode.update((v) => !v);
+    }
+    setSelectedHostGame(game: Game): void {
+        this.selectedHostGame = game;
+    }
+
+    getSelectedHostGame(): Game | null {
+        return this.selectedHostGame;
+    }
+
+    clearSelectedHostGame(): void {
+        this.selectedHostGame = null;
     }
 }
