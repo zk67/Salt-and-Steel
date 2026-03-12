@@ -17,7 +17,8 @@ export class CurrentGamesService {
         this.emitCallback = callback;
     }
 
-    createGame(game: Game, roomId: string): void {
+    createGame(game: Game, roomId: string, gameId: string): void {
+        game._id = gameId;
         this.games.push({ _game: game, roomId, players: [] });
     }
 

@@ -4,14 +4,19 @@
         <h1 class="header-item">Salle d'attente</h1>
         <div class="slots">
             @for (player of players; track player.id; let i = $index) {
-                <div class="player-slot">
+                <div class="player-slot" [class.organizer]="player.isOrganizer">
                     <img
                         [src]="player.imageUrl"
                         alt="Aperçu du personnage"
                         width="50"
                         height="50"
                     />
-                    <p>{{ player.name }}</p>
+                    <p>
+                        {{ player.name }}
+                        @if (player.isOrganizer) {
+                            <span class="organizer-badge">(Organisateur)</span>
+                        }
+                    </p>
                 </div>
             }
 
@@ -21,6 +26,7 @@
                 </div>
             }
         </div>
-        <button class="button" routerLink="/home">Retour</button>
+        <button class="button" (click)="startGame()">Commencer</button>
+        <button class="button" (click)="goHome()">Retour</button>
     </div>
 </div>

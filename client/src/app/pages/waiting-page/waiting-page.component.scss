@@ -32,6 +32,17 @@
     border-radius: 8px;
 }
 
+.player-slot.organizer {
+    border: 2px solid gold;
+    background: rgba(255,255,255,0.4);
+}
+
+.organizer-badge {
+    font-size: 0.8rem;
+    color: gold;
+    margin-left: 8px;
+}
+
 .player-slot.empty {
     justify-content: center;
     opacity: 0.6;

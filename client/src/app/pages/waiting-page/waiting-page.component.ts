@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Player } from '@common/types/player.interface';
 
@@ -18,7 +18,20 @@ export class WaitingPageComponent {
 
     constructor(
         private socketService: SocketClientService,
+        private router: Router,
+        private route: ActivatedRoute,
     ) {}
+
+    startGame(): void {
+        this.router.navigate(['/game']);
+        this.socketService.send('startGame');
+    }
+
+    goHome(): void {
+        const gameId = this.route.snapshot.queryParams.gameId;
+        this.socketService.leaveRoom(gameId);
+        this.router.navigate(['/home']);
+    }
 
     ngOnInit(): void {
         this.socketService.on('playersToGame', this.onPlayersToGame);

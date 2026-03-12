@@ -83,15 +83,14 @@ export class CurrentGameGateway implements OnGatewayInit {
     }
 
     @SubscribeMessage('createGame')
-    async createGame(client: Socket, data: { id: string }): Promise<boolean> {
+    async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
         const room = getRoomIdFromSocket(client);
-        const gameId = data.id;
-        const game = await this.gamesService.getOneGame(gameId);
+        const game = await this.gamesService.getOneGame(data.gameDbId);
         if (!game) {
-            this.logger.warn(`Game not found in DB for id: ${gameId}`);
+            this.logger.warn(`Game not found in DB for id: ${data.gameDbId}`);
             return false;
         }
-        this.currentGamesService.createGame(game, room);
+        this.currentGamesService.createGame(game, room, data.gameId);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
         return true;
     }
@@ -100,7 +99,6 @@ export class CurrentGameGateway implements OnGatewayInit {
     addPlayerToGame(client: Socket, player: Player): void {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.addPlayerToGame(room, player);
-        this.logger.log(`Added player ${player.name} to game in room: ${room}`);
     }
 
     @SubscribeMessage('getPlayersToGame')

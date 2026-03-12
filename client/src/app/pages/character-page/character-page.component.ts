@@ -26,13 +26,20 @@ type DieKind = 'd4' | 'd6' | 'none';
 })
 export class CharacterPageComponent {
   clientPlayer?: Player;
+  gameIdSave?: string;
 
   private onPlayerId = (p: Player) => {
     if (this.clientPlayer) {
       this.clientPlayer.id = p.id;
       this.gameService.setClientPlayer(this.clientPlayer); // Ajout du joueur côté client
       this.socketService.send('addPlayerToGame', this.clientPlayer); // Envoi du joueur au serveur
-      this.router.navigate(['/waiting']);
+
+      const queryParams = {
+        gameId: this.gameIdSave,
+      };
+      this.router.navigate(['/waiting'], {
+        queryParams
+      });
     }
   };
 
@@ -198,7 +205,7 @@ export class CharacterPageComponent {
     this.updateStatsLifeSpeed();
   }
 
-  submitCharacter(): void {
+  async submitCharacter(): Promise<void> {
     if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
       alert('Veuillez remplir le formulaire au complet!');
       return;
@@ -221,21 +228,27 @@ export class CharacterPageComponent {
       attack: this.attack.value,
       defense: this.defense.value,
       d6target: this.d6Target.value,
+      isOrganizer: false,
     };
 
     if (!this.socketService.isSocketAlive()) {
       this.socketService.connect();
     }
 
-    this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par une room dynamique si besoin (a faire avant le merge)
-
     if (history.state.from === 'create') {
-      const id = this.route.snapshot.queryParams.gameId;
-      this.socketService.send('createGame', { id }, () => {
-        this.socketService.send('getPlayerId', this.clientPlayer);
+      this.clientPlayer.isOrganizer = true;
+      const gameId = crypto.randomUUID();
+      this.gameIdSave = gameId;
+      this.socketService.joinRoom(gameId);
+      const DbId = this.route.snapshot.queryParams.gameId;
+      await new Promise<void>((resolve) => {
+        this.socketService.send('createGame', { gameDbId: DbId, gameId: gameId }, () => {
+          resolve();
+        });
       });
     } else {
-      this.socketService.send('getPlayerId', this.clientPlayer);
+      this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par le gameId de la game que le joueur a rejoint
     }
+    this.socketService.send('getPlayerId', this.clientPlayer);
   }
 }
