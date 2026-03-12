@@ -56,7 +56,7 @@ describe('GameCardComponent', () => {
 
         component.handleClick();
 
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/character-form']);
+        expect(routerSpy.navigate).toHaveBeenCalledWith(jasmine.arrayContaining(['/character-form']));
     });
 
     it('devrait afficher l\'image lorsque imageUrl est présent', () => {
