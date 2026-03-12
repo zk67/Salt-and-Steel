@@ -2,6 +2,7 @@ import { Timer } from '@app/game-timer';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { BattleWonPayload, Game, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
+import { MapObjectType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -89,6 +90,35 @@ export class CurrentGamesService {
         return game;
     }
 
+    allocateSpawnPoints(roomId: string): void {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return;
+
+        const nbPlayers = game.players.length;
+
+        const spawnPoints: { x: number; y: number }[] = [];
+        for (let y = 0; y < game._game.tiles.length; y++) {
+            for (let x = 0; x < game._game.tiles[y].length; x++) {
+                if (game._game.tiles[y][x].mapObject === MapObjectType.SpawnPoint) {
+                    spawnPoints.push({ x, y });
+                }
+            }
+        }
+
+        const shuffled = spawnPoints.sort(() => Math.random() - RANDOM_RANGE);
+
+        game.spawnPoints = new Map();
+        game.players.forEach((player, index) => {
+            player.x = shuffled[index].x;
+            player.y = shuffled[index].y;
+            game.spawnPoints.set(player.id, { x: shuffled[index].x, y: shuffled[index].y });
+        });
+
+        shuffled.slice(nbPlayers).forEach(({ x, y }) => {
+            game._game.tiles[y][x].mapObject = MapObjectType.None;
+        });
+    }
+
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game || !game.turnOrder) return;
@@ -173,7 +203,21 @@ export class CurrentGamesService {
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
         const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
 
-        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
+        const loserSpawn = game.spawnPoints?.get(loser.id);
+        if (!loserSpawn) {
+            Logger.warn(`Le point de départ du joueur perdant est introuvable`);
+            return [battlePayload, false, false];
+        }
+
+        //TODO: Vérifier que le point de départ n'est pas occupé. Sinon, trouver la case libre la plus proche.
+
+        loser.x = loserSpawn.x;
+        loser.y = loserSpawn.y;
+
+        battlePayload.loserPos = {
+            x: loserSpawn.x,
+            y: loserSpawn.y,
+        };
 
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
     }
@@ -218,4 +262,5 @@ export interface PlayableGame {
     turnOrder?: string[];
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
+    spawnPoints?: Map<string, { x: number; y: number }>;
 }

@@ -1,9 +1,9 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { SocketClientService } from '@app/services/socket-client.service';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
+import { BattleWonPayload, GameInfoPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { MapService } from './map/map.service';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { GameInfoPayload, BattleWonPayload } from '@common/types/game.interface';
 
 @Injectable({
     providedIn: 'root',
@@ -29,7 +29,7 @@ export class GameService {
         this.socketService.on('removePlayer', ({ playerId }: { playerId: string }) => {
             if (!this.isGameStarted) {
                 this.removePlayer(playerId);
-            }else{
+            } else {
                 this.players.update(players => players.map(p => p.id === playerId ? { ...p, isSurrendered: true } : p));
             }
         });
@@ -114,6 +114,6 @@ export class GameService {
 
         alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
         this.addVictoryPoint(winner.id);
-        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
+        this.updatePlayer(loser.id, { x: payload.loserPos.x, y: payload.loserPos.y });
     }
 }
