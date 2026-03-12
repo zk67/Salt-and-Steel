@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit ,signal} from '@angular/core';
 import { RouterLink , Router } from '@angular/router';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Game } from '@common/types/game.interface';
@@ -17,10 +17,10 @@ interface JoinableGame {
 })
 
 export class JoinGameComponent implements OnInit, OnDestroy {
-    joinableGames: JoinableGame[] = [];
+    joinableGames = signal<JoinableGame[]>([]);
 
     private readonly onJoinableGames = (games: JoinableGame[]) => {
-        this.joinableGames = games;
+        this.joinableGames.set(games);
     };
 
     constructor(private socketService: SocketClientService,private gameService: GameService,private router: Router) {}
