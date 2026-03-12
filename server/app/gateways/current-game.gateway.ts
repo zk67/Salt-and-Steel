@@ -103,7 +103,7 @@ export class CurrentGameGateway implements OnGatewayInit {
     getPlayersToGame(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         const players = this.currentGamesService.getPlayersToGame(room);
-        this.server.to(room).emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
+        client.emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
     }
 
     @SubscribeMessage('endTurnEarly')

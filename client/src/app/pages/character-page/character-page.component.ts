@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
@@ -24,7 +24,7 @@ type DieKind = 'd4' | 'd6' | 'none';
   styleUrls: ['./character-page.component.scss'],
   imports: [ReactiveFormsModule],
 })
-export class CharacterPageComponent {
+export class CharacterPageComponent implements OnInit, OnDestroy {
   clientPlayer?: Player;
   gameIdSave?: string;
 
@@ -38,7 +38,7 @@ export class CharacterPageComponent {
         gameId: this.gameIdSave,
       };
       this.router.navigate(['/waiting'], {
-        queryParams
+        queryParams,
       });
     }
   };
@@ -246,12 +246,12 @@ export class CharacterPageComponent {
 
     if (history.state.from === 'create') {
       this.clientPlayer.isOrganizer = true;
-      const gameId = crypto.randomUUID();
-      this.gameIdSave = gameId;
-      this.socketService.joinRoom(gameId);
-      const DbId = this.route.snapshot.queryParams.gameId;
+      const GAMEID = crypto.randomUUID();
+      this.gameIdSave = GAMEID;
+      this.socketService.joinRoom(GAMEID);
+      const DBID = this.route.snapshot.queryParams.gameId;
       await new Promise<void>((resolve) => {
-        this.socketService.send('createGame', { gameDbId: DbId, gameId: gameId }, () => {
+        this.socketService.send('createGame', { gameDbId: DBID, gameId: GAMEID }, () => {
           resolve();
         });
       });

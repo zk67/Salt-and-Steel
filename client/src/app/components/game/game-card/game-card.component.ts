@@ -18,7 +18,7 @@ export class GameCardComponent {
     };
     this.router.navigate(['/character-form'], {
       queryParams,
-      state: { from: 'create' }  // si ce fichier est aussi utiliser dans la page joindre un partie, alors il faut changer cette ligne
+      state: { from: 'create' },  // si ce fichier est aussi utiliser dans la page joindre un partie, alors il faut changer cette ligne
     });
     this.click.emit();
   }

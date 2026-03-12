@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Player } from '@common/types/player.interface';
 
@@ -7,9 +7,9 @@ import { Player } from '@common/types/player.interface';
     selector: 'app-waiting-page',
     templateUrl: './waiting-page.component.html',
     styleUrls: ['./waiting-page.component.scss'],
-    imports: [RouterLink],
+    imports: [],
 })
-export class WaitingPageComponent {
+export class WaitingPageComponent implements OnInit, OnDestroy {
     players: Player[] = [];
 
     private onPlayersToGame = (p: Player[]) => {
