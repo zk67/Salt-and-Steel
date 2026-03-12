@@ -9,7 +9,7 @@ import { MapService } from './map/map.service';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
-    readonly selectedJoinRoomId = signal<string | null>(null);
+    private selectedJoinRoomId : string | null =null;
 
     readonly activePlayer = computed(() => this.players().find((p) => p.id === this.activePlayerId()) ?? null);
     private activePlayerId = signal<string | null>(null);
@@ -76,15 +76,15 @@ export class GameService {
     }
 
     setSelectedJoinRoomId(roomId: string): void {
-        this.selectedJoinRoomId.set(roomId);
+        this.selectedJoinRoomId = roomId;
     }
 
     getSelectedJoinRoomId(): string | null {
-        return this.selectedJoinRoomId();
+        return this.selectedJoinRoomId;
     }
 
     clearSelectedJoinRoomId(): void {
-        this.selectedJoinRoomId.set(null);
+        this.selectedJoinRoomId =null;
     }
 
     setActivePlayer(id: string): void {
