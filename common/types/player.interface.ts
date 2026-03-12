@@ -4,7 +4,6 @@ export interface Player {
     imageUrl?: string;
     x: number;
     y: number;
-    energy: number;
     speed: number | null;
     hp: number | null;
     maxHp: number | null;

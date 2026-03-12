@@ -198,7 +198,6 @@ export class CharacterPageComponent {
       imageUrl: this.avatar.value,
       x: 0,
       y: 0,
-      energy: 0,
       speed: this.speed.value,
       hp: this.hp.value,
       maxHp: this.hp.value,

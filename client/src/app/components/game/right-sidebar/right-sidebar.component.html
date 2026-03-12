@@ -5,10 +5,10 @@
     <div class="buttons-grid">
         <div class="time-display"> {{ currentTime() }}s</div>
         <div class="action-button">
-            <app-game-button label="Action" variant="action" (clicked)="onAction()"></app-game-button>
+            <app-game-button label="Action" variant="action" [disabled]="!isYourTurn() || !actionPointsLeft()" (clicked)="onAction()"></app-game-button>
         </div>
         <div class="end-turn-button">
-            <app-game-button label="Terminer le tour" variant="end-turn" (clicked)="onEndTurn()"></app-game-button>
+            <app-game-button label="Terminer le tour" variant="end-turn" [disabled]="!isYourTurn()" (clicked)="onEndTurn()"></app-game-button>
         </div>
         <div class="surrender-button">
             <app-game-button label="Abandonner" variant="surrender" (clicked)="onSurrender()"></app-game-button>
