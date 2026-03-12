@@ -2,6 +2,13 @@ import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS }
 import { MapObjectType, MapSize, TileData, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
 
+const directions = [
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+];
+
 // Coût en énergie pour se déplacer sur chaque type de tuile
 export const TILE_ENERGY_COST: Record<TileType, number> = {
     [TileType.Basic]: 1,
@@ -53,19 +60,12 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
     }
 
     const visited = new Map<string, number>();
-    const queue: { x: number, y: number, energy: number }[] = [];
+    const queue: { x: number, y: number, movementPoints: number }[] = [];
 
     // Position initiale du joueur
-    queue.push({ x: player.x, y: player.y, energy: player.energy });
-    visited.set(`${player.x},${player.y}`, player.energy);
+    queue.push({ x: player.x, y: player.y, movementPoints: player.movementPoints });
+    visited.set(`${player.x},${player.y}`, player.movementPoints);
     result[player.y][player.x] = true;
-
-    const directions = [
-        [0, -1],
-        [0, 1],
-        [-1, 0],
-        [1, 0],
-    ];
 
     // BFS
     while (queue.length > 0) {
@@ -86,7 +86,7 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
 
             const tile = tiles[newY][newX];
             const energyCost = TILE_ENERGY_COST[tile.tileType];
-            const remainingEnergy = current.energy - energyCost;
+            const remainingEnergy = current.movementPoints - energyCost;
 
             if (remainingEnergy < 0) {
                 continue;
@@ -98,10 +98,36 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
             if (previousEnergy === undefined || remainingEnergy > previousEnergy) {
                 visited.set(key, remainingEnergy);
                 result[newY][newX] = true;
-                queue.push({ x: newX, y: newY, energy: remainingEnergy });
+                queue.push({ x: newX, y: newY, movementPoints: remainingEnergy });
             }
         }
     }
+
+    return result;
+}
+
+export function getActionableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
+    const result: boolean[][] = [];
+
+    for (let y = 0; y < tiles.length; y++) {
+        result[y] = [];
+        for (let x = 0; x < tiles[y].length; x++) {
+            result[y][x] = false;
+        }
+    }
+
+    directions.forEach(([dx, dy]) => {
+        const newX = player.x + dx;
+        const newY = player.y + dy;
+
+        if (newX < 0 || newY < 0 || newY >= tiles.length || newX >= tiles[newY].length) {
+            return;
+        }
+
+        if (getPlayerAt(players, newX, newY) || tiles[newY][newX].mapObject !== MapObjectType.None) {
+            result[newY][newX] = true;
+        }
+    });
 
     return result;
 }

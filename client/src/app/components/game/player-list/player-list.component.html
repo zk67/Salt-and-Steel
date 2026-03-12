@@ -1,0 +1,20 @@
+<div class="container">
+    <h3 class="title">Joueurs</h3>
+    <ul>
+        @for (player of sortedPlayers(); track player.id) {
+            <li class="player-item" [class.active]="isActive(player)" [class.abandoned]="player.hasAbandoned">
+                @if (player.imageUrl) {
+                    <img [src]="player.imageUrl" class="player-avatar" alt="avatar" />
+                }
+                <div class="player-info">
+                    <span class="player-name">
+                        @if (isActive(player)) { <span class="active-indicator">▶</span> }
+                        {{ player.name }}
+                        @if (player.isOrganizer) { <span class="organizer-badge">★</span> }
+                    </span>
+                    <span class="player-stat">Combats gagnés: {{ player.victoryPoints }}</span>
+                </div>
+            </li>
+        }
+    </ul>
+</div>

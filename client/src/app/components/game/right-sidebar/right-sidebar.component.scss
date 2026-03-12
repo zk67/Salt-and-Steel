@@ -1,0 +1,42 @@
+:host {
+  display: block;
+  height: 100vh;
+  width: 20vw;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.player-info {
+  flex: 1;
+  background-color: #8d8d8d;
+  overflow-y: auto;
+}
+
+.buttons-grid {
+  display: grid;
+  grid-template-areas:
+    "timer action"
+    "surrender end-turn";
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(2, 1fr);
+  height: 20vh;
+}
+
+.time-display { 
+  grid-area: timer; 
+  background-color: #9b9be0; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: bold; 
+  font-size: 16px; 
+}
+
+.action-button { grid-area: action; }
+.surrender-button { grid-area: surrender; }
+.end-turn-button { grid-area: end-turn; }

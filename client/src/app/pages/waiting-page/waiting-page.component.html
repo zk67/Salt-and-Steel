@@ -1,4 +1,32 @@
-<div class="container justified">
-    <h1 class="header-item">Salle d'attente</h1>
-    <button class="button" routerLink="/home">Retour</button>
+<div class="container">
+    <div class="left">Clavardage</div>
+    <div class="right">
+        <h1 class="header-item">Salle d'attente</h1>
+        <div class="slots">
+            @for (player of players; track player.id; let i = $index) {
+                <div class="player-slot" [class.organizer]="player.isOrganizer">
+                    <img
+                        [src]="player.imageUrl"
+                        alt="Aperçu du personnage"
+                        width="50"
+                        height="50"
+                    />
+                    <p>
+                        {{ player.name }}
+                        @if (player.isOrganizer) {
+                            <span class="organizer-badge">(Organisateur)</span>
+                        }
+                    </p>
+                </div>
+            }
+
+            @for (i of [].constructor(6 - players.length); track $index) {
+                <div class="player-slot empty">
+                    <p>Emplacement vide</p>
+                </div>
+            }
+        </div>
+        <button class="button" (click)="startGame()">Commencer</button>
+        <button class="button" (click)="goHome()">Retour</button>
+    </div>
 </div>

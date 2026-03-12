@@ -11,7 +11,9 @@ import { MapService } from '@app/services/map/map.service';
 })
 export class LeftSidebarComponent {
     mapSize = computed(() => this.mapService.getSize());
-    playerCount = computed(() => this.gameService.players());
+    playerCount = computed(() => this.gameService.players().length);
+    activePlayer = computed(() => this.gameService.activePlayer());
+    isDebugMode = computed(() => this.gameService.isDebugMode());
 
     constructor(
         public mapService: MapService,

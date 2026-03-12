@@ -1,0 +1,41 @@
+<div class="container">
+    @if (player()) {
+        <div class="player-header">
+            @if (player()!.imageUrl) {
+                <img [src]="player()!.imageUrl" class="player-avatar" alt="avatar" />
+            }
+            <span class="player-name">{{ player()!.name }}</span>
+        </div>
+
+        <div class="player-health">
+            <span class="label">PV</span>
+            <span class="value">{{ player()!.hp }} / {{ player()!.maxHp }}</span>
+            <div class="health-bar">
+                <div class="health-fill" [style.width.%]="(player()!.hp! / player()!.maxHp!) * 100"></div>
+            </div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat">
+                <span class="label">Rapidité</span>
+                <span class="value">{{ player()!.speed }}</span>
+            </div>
+            <div class="stat">
+                <span class="label">Attaque</span>
+                <span class="value">{{ player()!.attack }} <em class="dice">({{ player()!.d6target === 'attack' ? 'D6' : 'D4' }})</em></span>
+            </div>
+            <div class="stat">
+                <span class="label">Défense</span>
+                <span class="value">{{ player()!.defense }} <em class="dice">({{ player()!.d6target === 'defense' ? 'D6' : 'D4' }})</em></span>
+            </div>
+            <div class="stat">
+                <span class="label">Mouvement</span>
+                <span class="value">{{ player()!.movementPoints }}</span>
+            </div>
+            <div class="stat">
+                <span class="label">Actions</span>
+                <span class="value">{{ player()!.actionsLeft }}</span>
+            </div>
+        </div>
+    }
+</div>

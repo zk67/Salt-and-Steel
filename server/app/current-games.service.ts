@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { Game, TurnPhase, NewTurnPayload } from '@common/types/game.interface';
-import { Player } from '@common/types/player.interface';
 import { Timer } from '@app/game-timer';
-import { TIMER_WAIT_TURN, TIMER_TURN } from '@common/types/game.constant';
+import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { BattleWonPayload, Game, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
+import { Player } from '@common/types/player.interface';
+import { Injectable, Logger } from '@nestjs/common';
 
 const RANDOM_RANGE = 0.5;
 
@@ -17,12 +17,8 @@ export class CurrentGamesService {
         this.emitCallback = callback;
     }
 
-    // Create et add son similaire a decider lequel on garde, va dependre de comment on creer les games a partir de la waiting room
-    addGame(game: Game, roomId: string, players: Player[]): void {
-        this.games.push({ _game: game, roomId, players });
-    }
-
-    createGame(game: Game, roomId: string): void {
+    createGame(game: Game, roomId: string, gameId: string): void {
+        game._id = gameId;
         this.games.push({ _game: game, roomId, players: [] });
     }
 
@@ -32,6 +28,14 @@ export class CurrentGamesService {
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         }
+        else {
+            Logger.log(`Game not found for room ${roomId}. Cannot add player ${player.name}.`);
+        }
+    }
+
+    getPlayersToGame(roomId: string): Player[] {
+        const game = this.getGameByRoomId(roomId);
+        return game ? game.players : [];
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
@@ -47,13 +51,13 @@ export class CurrentGamesService {
 
         const [dx, dy] = DIRECTION[direction];
 
-        const energycost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
+        const movementCost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
 
-        if(player.energy < energycost) {
+        if (player.movementPoints < movementCost) {
             return false;
         }
 
-        player.energy -= energycost;
+        player.movementPoints -= movementCost;
         player.x += dx;
         player.y += dy;
 
@@ -62,12 +66,19 @@ export class CurrentGamesService {
 
     startGame(roomId: string): PlayableGame {
         const game = this.getGameByRoomId(roomId);
-        if (!game){
+        if (!game) {
             Logger.warn(`Game not found for room ID: ${roomId}`);
             return;
         }
+
         const shuffled = [...game.players].sort(() => Math.random() - RANDOM_RANGE);
-        game.turnOrder = shuffled.sort((a, b) => b.speed - a.speed).map(p => p.id);
+        const sorted = shuffled.sort((a, b) => b.speed - a.speed);
+
+        game.turnOrder = sorted.map(p => p.id);
+        sorted.forEach((player, idx) => {
+            player.turnOrder = idx;
+        });
+
         this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
 
         game.currentPhase = TurnPhase.WaitTurn;
@@ -90,7 +101,7 @@ export class CurrentGamesService {
             const currentPlayer = game.players.find(p => p.id === currentPlayerId);
             if (!currentPlayer) return;
 
-            currentPlayer.energy = currentPlayer.speed;
+            currentPlayer.movementPoints = currentPlayer.speed;
 
             this.sendTurnUpdate(game);
             this.timer.startTurnTimer(game.roomId, TIMER_TURN);
@@ -108,7 +119,7 @@ export class CurrentGamesService {
         const lastPlayer = game.players.find(p => p.id === lastPlayerId);
         if (!lastPlayer) return;
 
-        lastPlayer.energy = 0;
+        lastPlayer.movementPoints = 0;
         game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
         this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
         this.sendTurnUpdate(game);
@@ -132,6 +143,69 @@ export class CurrentGamesService {
 
         player.x = x;
         player.y = y;
+
+        return true;
+    }
+
+    battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return [battlePayload, false, false];
+
+        const winner = game.players.find(p => p.id === battlePayload.winnerId);
+        const loser = game.players.find(p => p.id === battlePayload.loserId);
+        if (!winner || !loser) return [battlePayload, false, false];
+
+        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
+            // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
+            //  donc on check que c'est bien son tour
+            Logger.warn(`Ce n'est pas le tour du gagnant (${winner.name}) dans la room ${roomId}.`);
+            return [battlePayload, false, false];
+        }
+
+        const dx = Math.abs(winner.x - loser.x);
+        const dy = Math.abs(winner.y - loser.y);
+        const areAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+        if (!areAdjacent) {
+            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.x},${winner.y}), loser (${loser.x},${loser.y})`);
+            return [battlePayload, false, false];
+        }
+
+        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
+        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
+
+        // TODO: Ajouter le respawn point / position voulu dans le payload et update la position du loser
+
+        return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
+    }
+
+    validateEndTurnEarly(roomId: string, playerId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const player = game.players.find(p => p.id === playerId);
+        if (!player) return false;
+
+        if (game.turnOrder[game.currentTurnIndex] !== player.id) {
+            Logger.warn(`Ce n'est pas le tour du joueur (${player.name}) dans la room ${roomId}.`);
+            return false;
+        }
+
+        return true;
+    }
+
+    removePlayerFromGame(roomId: string, playerId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) return false;
+
+        if (game.turnOrder[game.currentTurnIndex] === playerId) {
+            this.nextPlayerTurn(roomId);
+        }
+
+        game.players.splice(playerIndex, 1);
+        game.turnOrder = game.turnOrder.filter(id => id !== playerId);
 
         return true;
     }
