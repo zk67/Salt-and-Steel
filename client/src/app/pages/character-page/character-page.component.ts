@@ -245,12 +245,8 @@ export class CharacterPageComponent implements OnInit ,OnDestroy{
       player.id = p.id;
       this.gameService.addPlayer(player);
 
-      if (!selectedRoomId) {
-        this.router.navigate(['/waiting']);
-      }else{
-        this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
-        this.socketService.send('addPlayerToCurrentGame', player);
-      }
+      this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
+      this.socketService.send('addPlayerToCurrentGame', player);
     };
 
     this.socketService.on('playerId', onPlayerId);
