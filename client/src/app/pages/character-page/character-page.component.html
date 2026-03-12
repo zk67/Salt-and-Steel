@@ -46,15 +46,15 @@
         <div class="stat" >
           <div class="stat-meta">
             <div class="stat-label">
-              <span class="stat-icon stat-icon--life" aria-hidden="true"></span>
+              <span class="stat-icon stat-icon--hp" aria-hidden="true"></span>
               Vie
             </div>
-            <div class="stat-desc">{{ statDescriptions.life }}</div>
+            <div class="stat-desc">{{ statDescriptions.hp }}</div>
           </div>
 
           <div class="stat-value">
-            {{ life.value }}
-            @if (bonusTarget.value === 'life') {
+            {{ hp.value }}
+            @if (bonusTarget.value === 'hp') {
               <span class="badge badge--bonus">+2</span>
             }
           </div>
@@ -62,8 +62,8 @@
           <button
             type="button"
             class="btn btn--brass btn--toggle"
-            [class.selected]="bonusTarget.value === 'life'"
-            (click)="toggleBonus('life')"
+            [class.selected]="bonusTarget.value === 'hp'"
+            (click)="toggleBonus('hp')"
           >
             Bonus +2
           </button>

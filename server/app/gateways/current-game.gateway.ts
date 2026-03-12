@@ -1,7 +1,7 @@
 import { CurrentGamesService } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
@@ -28,10 +28,8 @@ export class CurrentGameGateway implements OnGatewayInit {
     handleMovePlayer(client: Socket, payload: MovePlayerPayload): void {
         const room = getRoomIdFromSocket(client);
         this.logger.log(`Player ${payload.playerId} attempting to move ${payload.direction}`);
-        const isPlayerValid = this.validatePlayer(client, payload.playerId);
 
-        if (!isPlayerValid) {
-            this.logger.warn(`Player ID is not valid for socket ID: ${client.id}`);
+        if (!this.validatePlayer(client, payload.playerId)) {
             return;
         }
 
@@ -106,5 +104,59 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         const players = this.currentGamesService.getPlayersToGame(room);
         this.server.to(room).emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
+    }
+
+    @SubscribeMessage('endTurnEarly')
+    endTurnEarly(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        this.currentGamesService.validateEndTurnEarly(room, client.id);
+        this.currentGamesService.nextPlayerTurn(room);
+    }
+
+
+    @SubscribeMessage('debugMove')
+    handleDebugMove(client: Socket, payload: DebugMovePayload): void {
+        this.logger.log(`Player ${payload.playerId} attempting to move to (${payload.x}, ${payload.y})`);
+
+        if (!this.validatePlayer(client, payload.playerId)) {
+            return;
+        }
+
+        const room = getRoomIdFromSocket(client);
+
+        if (this.currentGamesService.debugMove(room, payload.playerId, payload.x, payload.y)) {
+            this.server.emit('handleClickDebug', payload);
+        } else {
+            this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.x}, ${payload.y})`);
+        }
+    }
+
+    @SubscribeMessage('battleWon')
+    handleBattleWon(client: Socket, payload: BattleWonPayload): void {
+        if (!this.validatePlayer(client, payload.winnerId) || !this.validatePlayer(client, payload.loserId)) {
+            return;
+        }
+
+        const room = getRoomIdFromSocket(client);
+        const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload);
+
+        if (battleValid) {
+            this.server.emit('handleBattleWon', updatedPayload);
+            this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
+
+            if (isGameOver) {
+                this.server.to(room).emit('gameOver', { winnerId: payload.winnerId });
+            }
+        }
+    }
+
+    @SubscribeMessage('surrender')
+    handleSurrender(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+
+        if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
+            this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
+            this.server.to(room).emit('removePlayer', { playerId: client.id });
+        }
     }
 }

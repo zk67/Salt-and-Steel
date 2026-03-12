@@ -1,0 +1,11 @@
+<div class="container">
+    <div class="game-info">
+        <p>Taille de la map: {{ mapSize() }} x {{ mapSize() }}</p>
+        <p>Joueurs: {{ playerCount() }}</p>
+        <p>Joueur actif: <strong>{{ activePlayer()?.name ?? '—' }}</strong></p>
+    </div>
+    <div class="player-list">
+        <app-player-list></app-player-list>
+    </div>
+    <div class="chatbox"></div>
+</div>

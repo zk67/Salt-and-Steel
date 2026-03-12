@@ -6,15 +6,15 @@ import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
 import { Player } from '@common/types/player.interface';
 
-const BASE_LIFE = 6;
+const BASE_HP = 6;
 const BASE_SPEED = 6;
 const BASE_ATTACK = 4;
 const BASE_DEFENSE = 4;
 const NUMBER_OF_AVATARS = 12;
 const HALF_RANDOM = 0.5;
 
-type StatKey = 'life' | 'speed' | 'attack' | 'defense';
-type BonusTarget = 'life' | 'speed';
+type StatKey = 'hp' | 'speed' | 'attack' | 'defense';
+type BonusTarget = 'hp' | 'speed';
 type DiceTarget = 'attack' | 'defense';
 type DieKind = 'd4' | 'd6' | 'none';
 
@@ -64,13 +64,13 @@ export class CharacterPageComponent {
   bonusTarget = new FormControl<BonusTarget | null>(null);
   d6Target = new FormControl<DiceTarget | null>(null);
 
-  life = new FormControl<number>(BASE_LIFE);
+  hp = new FormControl<number>(BASE_HP);
   speed = new FormControl<number>(BASE_SPEED);
   attack = new FormControl<number>(BASE_ATTACK);
   defense = new FormControl<number>(BASE_DEFENSE);
 
   statDescriptions: Record<StatKey, string> = {
-    life: 'Points de vie. À 0, ton personnage est vaincu.',
+    hp: 'Points de vie. À 0, ton personnage est vaincu.',
     speed: 'Détermine qui agit en premier et aide à esquiver les coups.',
     attack: 'Ta force offensive. En combat, tu lances le dé assigné à Attaque.',
     defense: 'Ta résistance. En combat, tu lances le dé assigné à Défense.',
@@ -151,7 +151,7 @@ export class CharacterPageComponent {
 
   get bonusSummary(): string {
     if (!this.bonusTarget.value) return 'Non choisi';
-    return this.bonusTarget.value === 'life' ? '+2 Vie' : '+2 Rapidité';
+    return this.bonusTarget.value === 'hp' ? '+2 Vie' : '+2 Rapidité';
   }
 
   get pirateTitle(): string {
@@ -177,19 +177,19 @@ export class CharacterPageComponent {
 
   toggleBonus(target: BonusTarget): void {
     this.bonusTarget.setValue(target);
-    this.updateStatsLifeSpeed();
+    this.updateStatsHpSpeed();
   }
 
   toggleDiceBonus(target: DiceTarget): void {
     this.d6Target.setValue(target);
   }
 
-  private updateStatsLifeSpeed(): void {
+  private updateStatsHpSpeed(): void {
     const target = this.bonusTarget.value;
-    const nextLife = BASE_LIFE + (target === 'life' ? 2 : 0);
+    const nextHp = BASE_HP + (target === 'hp' ? 2 : 0);
     const nextSpeed = BASE_SPEED + (target === 'speed' ? 2 : 0);
 
-    this.life.setValue(nextLife);
+    this.hp.setValue(nextHp);
     this.speed.setValue(nextSpeed);
   }
 
@@ -197,12 +197,12 @@ export class CharacterPageComponent {
     this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
     this.avatar.setValue(this.avatars[Math.floor(Math.random() * this.avatars.length)]);
 
-    const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'life' : 'speed';
+    const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'hp' : 'speed';
     const d6: DiceTarget = Math.random() < HALF_RANDOM ? 'attack' : 'defense';
 
     this.bonusTarget.setValue(bonus);
     this.d6Target.setValue(d6);
-    this.updateStatsLifeSpeed();
+    this.updateStatsHpSpeed();
   }
 
   async submitCharacter(): Promise<void> {
@@ -216,19 +216,28 @@ export class CharacterPageComponent {
       return;
     }
 
+    const d6 = this.d6Target.value;
+    const d4target: 'attack' | 'defense' | null = d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
+
     this.clientPlayer = {
       id: '',
       name: this.characterName.value,
       imageUrl: this.avatar.value,
       x: 0,
       y: 0,
-      energy: 0,
       speed: this.speed.value,
-      life: this.life.value,
+      hp: this.hp.value,
+      maxHp: this.hp.value,
       attack: this.attack.value,
       defense: this.defense.value,
       d6target: this.d6Target.value,
+      d4target,
+      movementPoints: this.speed.value ?? 0,
+      actionsLeft: 1,
+      victoryPoints: 0,
+      hasAbandoned: false,
       isOrganizer: false,
+      turnOrder: 0,
     };
 
     if (!this.socketService.isSocketAlive()) {
