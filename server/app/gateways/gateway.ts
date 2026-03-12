@@ -4,7 +4,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { CurrentGamesService } from '@app/current-games.service';
-import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 
 @WebSocketGateway({ cors: true })
 @Injectable()

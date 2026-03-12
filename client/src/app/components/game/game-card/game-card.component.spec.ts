@@ -50,13 +50,10 @@ describe('GameCardComponent', () => {
         component = fixture.componentInstance;
     });
 
-    it('devrait naviguer vers le formulaire de personnage et émettre un événement de clic', () => {
+    it('devrait émettre un événement de clic', () => {
         spyOn(component.click, 'emit');
-        component.game = mockGameWithImage;
-
         component.handleClick();
-
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/character-form']);
+        expect(component.click.emit).toHaveBeenCalled();
     });
 
     it('devrait afficher l\'image lorsque imageUrl est présent', () => {
