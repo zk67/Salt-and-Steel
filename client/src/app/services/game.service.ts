@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { movableTiles, getActionableTiles } from '@app/utils/game-utils';
+import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
 import { Player } from '@common/types/player.interface';
 import { MapService } from './map/map.service';
 
@@ -9,6 +9,8 @@ import { MapService } from './map/map.service';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
+    readonly activePlayer = computed(() => this.players().find(p => p.id === this.activePlayerId()) ?? null);
+    private activePlayerId = signal<string | null>(null);
     readonly clientPlayer = computed(() =>
         this.players().find(p => p.id === this.clientPlayerId) || null,
     );
@@ -20,6 +22,7 @@ export class GameService {
     private clientPlayerId: string = '';
 
     constructor(private mapService: MapService) {}
+    readonly isDebugMode = signal<boolean>(false);
 
     addPlayer(player: Player): void {
         this.players.update(players => [...players, player]);
@@ -54,14 +57,22 @@ export class GameService {
         const player = this.clientPlayer();
         const tiles = this.mapService.getTileMap();
 
-        if(player && tiles.length > 0) {
+        if (player && tiles.length > 0) {
             this.actionMode = this.actionMode ? false : true;
 
             if (this.actionMode) {
                 this.actionTile.set(getActionableTiles(tiles, player, this.getPlayers()));
-            }else{
+            } else {
                 this.actionTile.set(movableTiles(tiles, player, this.getPlayers()));
             }
         }
+    }
+
+    setActivePlayer(id: string): void {
+        this.activePlayerId.set(id);
+    }
+
+    toggleDebugMode(): void {
+        this.isDebugMode.update(v => !v);
     }
 }
