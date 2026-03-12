@@ -180,7 +180,15 @@ export class CharacterPageComponent implements OnInit ,OnDestroy{
 
   randomizeStats(): void {
     this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
-    this.avatar.setValue(this.avatars[Math.floor(Math.random() * this.avatars.length)]);
+    const availableAvatars = this.avatars.filter((avatar) => !this.isAvatarUnavailable(avatar));
+    if (availableAvatars.length > 0) {
+      const randomAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+      this.avatar.setValue(randomAvatar);
+
+      if (this.gameService.getSelectedJoinRoomId()) {
+        this.socketService.send('selectAvatarInJoinForm', randomAvatar);
+      }
+    }
 
     const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'life' : 'speed';
     const d6: DiceTarget = Math.random() < HALF_RANDOM ? 'attack' : 'defense';
