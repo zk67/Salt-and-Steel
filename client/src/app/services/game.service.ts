@@ -28,7 +28,6 @@ export class GameService {
     constructor(private mapService: MapService) {}
     readonly isDebugMode = signal<boolean>(false);
 
-    readonly isDebugMode = signal<boolean>(false);
 
     addPlayer(player: Player): void {
         this.players.update((players) => [...players, player]);
