@@ -28,8 +28,7 @@ export class CurrentGamesService {
         if (game) {
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
-        }
-        else {
+        } else {
             Logger.log(`Game not found for room ${roomId}. Cannot add player ${player.name}.`);
         }
     }
