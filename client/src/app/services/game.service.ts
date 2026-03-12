@@ -26,6 +26,7 @@ export class GameService {
     private clientPlayerId: string = '';
 
     constructor(private mapService: MapService) {}
+    readonly isDebugMode = signal<boolean>(false);
 
     readonly isDebugMode = signal<boolean>(false);
 

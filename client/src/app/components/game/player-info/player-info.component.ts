@@ -1,8 +1,17 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, computed } from '@angular/core';
+import { GameService } from '@app/services/game.service';
+import { Player } from '@common/types/player.interface';
 
 @Component({
-    selector: 'app-player-list',
+    selector: 'app-player-info',
     templateUrl: './player-info.component.html',
     styleUrl: './player-info.component.scss',
+    imports: [CommonModule],
+
 })
-export class PlayerInfoComponent {}
+export class PlayerInfoComponent {
+    player = computed(() => this.gameService.clientPlayer() as Player);
+
+    constructor(private gameService: GameService) {}
+}

@@ -1,15 +1,15 @@
 import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { TimeService } from '@app/services/time.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { DebugMovePayload, GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase, BattleWonPayload } from '@common/types/game.interface';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
-import { Router } from '@angular/router';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -33,8 +33,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
     mapObjectType = MapObjectType;
     isClientPlayerTurn = signal<boolean>(false);
 
-    debugMode = false;
-
     constructor(
         public mapService: MapService,
         public gameService: GameService,
@@ -43,12 +41,12 @@ export class MapGameComponent implements OnInit, OnDestroy {
         private router: Router,
     ) {}
 
-    // TODO: check si M vient de clavardage et seulement prendre de host, const M a bouger lorsque permanent
+    // TODO: check si M vient de clavardage, const M a bouger lorsque permanent
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
-        if (event.key.toLowerCase() === 'm') {
-            this.debugMode = !this.debugMode;
-            alert('Debug mode: ' + (this.debugMode ? 'ON' : 'OFF'));
+        if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
+            this.gameService.toggleDebugMode();
+            alert('Debug mode: ' + (this.gameService.isDebugMode() ? 'ON' : 'OFF'));
         }
     }
 
@@ -129,20 +127,20 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     onTileClick(x: number, y: number): void {
-        if (this.debugMode){
+        if (this.gameService.isDebugMode()) {
             this.debugClick(x, y);
-        } else if (this.gameService.getActionMode() && this.getMovableTilesAt(x, y)){
+        } else if (this.gameService.getActionMode() && this.getMovableTilesAt(x, y)) {
             this.doActionAt(x, y);
         }
     }
 
     doActionAt(x: number, y: number): void {
         const player = this.getPlayerAt(x, y);
-        if(player){
+        if (player) {
             this.killPlayer(player.id);
-        }else{
+        } else {
             const mapObject = this.mapService.getMapObject(x, y);
-            if(mapObject !== MapObjectType.None){
+            if (mapObject !== MapObjectType.None) {
                 alert(`Action on object ${getObjectDescription(mapObject)} at (${x}, ${y})`);
             }
         }
@@ -159,7 +157,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     debugClick(x: number, y: number): void {
-        if (!this.debugMode) return;
+        if (!this.gameService.isDebugMode()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;
