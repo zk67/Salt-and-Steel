@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { Game, TurnPhase, NewTurnPayload, BattleWonPayload } from '@common/types/game.interface';
-import { Player } from '@common/types/player.interface';
 import { Timer } from '@app/game-timer';
-import { TIMER_WAIT_TURN, TIMER_TURN, MAX_VICTORIES } from '@common/types/game.constant';
+import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { BattleWonPayload, Game, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
+import { Player } from '@common/types/player.interface';
+import { Injectable, Logger } from '@nestjs/common';
 
 const RANDOM_RANGE = 0.5;
 
@@ -17,12 +17,8 @@ export class CurrentGamesService {
         this.emitCallback = callback;
     }
 
-    // Create et add son similaire a decider lequel on garde, va dependre de comment on creer les games a partir de la waiting room
-    addGame(game: Game, roomId: string, players: Player[]): void {
-        this.games.push({ _game: game, roomId, players });
-    }
-
-    createGame(game: Game, roomId: string): void {
+    createGame(game: Game, roomId: string, gameId: string): void {
+        game._id = gameId;
         this.games.push({ _game: game, roomId, players: [] });
     }
 
@@ -32,6 +28,14 @@ export class CurrentGamesService {
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         }
+        else {
+            Logger.log(`Game not found for room ${roomId}. Cannot add player ${player.name}.`);
+        }
+    }
+
+    getPlayersToGame(roomId: string): Player[] {
+        const game = this.getGameByRoomId(roomId);
+        return game ? game.players : [];
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
@@ -49,7 +53,7 @@ export class CurrentGamesService {
 
         const movementCost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
 
-        if(player.movementPoints < movementCost) {
+        if (player.movementPoints < movementCost) {
             return false;
         }
 
@@ -62,14 +66,14 @@ export class CurrentGamesService {
 
     startGame(roomId: string): PlayableGame {
         const game = this.getGameByRoomId(roomId);
-        if (!game){
+        if (!game) {
             Logger.warn(`Game not found for room ID: ${roomId}`);
             return;
         }
 
         const shuffled = [...game.players].sort(() => Math.random() - RANDOM_RANGE);
         const sorted = shuffled.sort((a, b) => b.speed - a.speed);
-        
+
         game.turnOrder = sorted.map(p => p.id);
         sorted.forEach((player, idx) => {
             player.turnOrder = idx;
@@ -163,7 +167,7 @@ export class CurrentGamesService {
         const areAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
         if (!areAdjacent) {
             Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.x},${winner.y}), loser (${loser.x},${loser.y})`);
-            return [battlePayload,false, false];
+            return [battlePayload, false, false];
         }
 
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
@@ -196,7 +200,7 @@ export class CurrentGamesService {
         const playerIndex = game.players.findIndex(p => p.id === playerId);
         if (playerIndex === -1) return false;
 
-        if(game.turnOrder[game.currentTurnIndex] === playerId){
+        if (game.turnOrder[game.currentTurnIndex] === playerId) {
             this.nextPlayerTurn(roomId);
         }
 

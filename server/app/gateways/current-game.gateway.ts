@@ -1,9 +1,11 @@
-import { Game, MovePlayerPayload, GameInfoPayload, DebugMovePayload, BattleWonPayload } from '@common/types/game.interface';
+import { CurrentGamesService } from '@app/current-games.service';
+import { GamesService } from '@app/database/game/services/game.service';
+import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
+import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CurrentGamesService } from '@app/current-games.service';
-import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -13,6 +15,7 @@ export class CurrentGameGateway implements OnGatewayInit {
     constructor(
         private readonly logger: Logger,
         private readonly currentGamesService: CurrentGamesService,
+        private readonly gamesService: GamesService,
     ) {}
 
     afterInit(): void {
@@ -78,10 +81,29 @@ export class CurrentGameGateway implements OnGatewayInit {
     }
 
     @SubscribeMessage('createGame')
-    createGame(client: Socket, game: Game): void {
+    async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
         const room = getRoomIdFromSocket(client);
-        this.currentGamesService.createGame(game, room);
+        const game = await this.gamesService.getOneGame(data.gameDbId);
+        if (!game) {
+            this.logger.warn(`Game not found in DB for id: ${data.gameDbId}`);
+            return false;
+        }
+        this.currentGamesService.createGame(game, room, data.gameId);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+        return true;
+    }
+
+    @SubscribeMessage('addPlayerToGame')
+    addPlayerToGame(client: Socket, player: Player): void {
+        const room = getRoomIdFromSocket(client);
+        this.currentGamesService.addPlayerToGame(room, player);
+    }
+
+    @SubscribeMessage('getPlayersToGame')
+    getPlayersToGame(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        const players = this.currentGamesService.getPlayersToGame(room);
+        client.emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
     }
 
     @SubscribeMessage('endTurnEarly')
@@ -118,10 +140,10 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload);
 
-        if(battleValid) {
+        if (battleValid) {
             this.server.emit('handleBattleWon', updatedPayload);
             this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
-            
+
             if (isGameOver) {
                 this.server.to(room).emit('gameOver', { winnerId: payload.winnerId });
             }
@@ -132,7 +154,7 @@ export class CurrentGameGateway implements OnGatewayInit {
     handleSurrender(client: Socket): void {
         const room = getRoomIdFromSocket(client);
 
-        if(this.currentGamesService.removePlayerFromGame(room, client.id)){
+        if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
             this.server.to(room).emit('removePlayer', { playerId: client.id });
         }

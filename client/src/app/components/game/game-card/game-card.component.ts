@@ -13,18 +13,24 @@ export class GameCardComponent {
 
   constructor(private router: Router) {}
   handleClick() {
-    this.router.navigate(['/character-form']);
+    const queryParams = {
+      gameId: this.game._id,
+    };
+    this.router.navigate(['/character-form'], {
+      queryParams,
+      state: { from: 'create' },  // si ce fichier est aussi utiliser dans la page joindre un partie, alors il faut changer cette ligne
+    });
     this.click.emit();
   }
 
   get previewSrc() {
-    if (this.game.imageUrl){
-        return this.game.imageUrl;
+    if (this.game.imageUrl) {
+      return this.game.imageUrl;
     }
     return '';
   }
-    
-  get hasDescription(): boolean{
-    return  !!this.game.description?.trim();
+
+  get hasDescription(): boolean {
+    return !!this.game.description?.trim();
   }
 }
