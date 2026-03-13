@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server, Socket } from 'socket.io';
 import { Gateway } from './gateway';
+import { CurrentGamesService } from '@app/current-games.service';
 
 /**
  * Description:
@@ -35,15 +36,20 @@ describe('ChatGateway', () => {
         log: jest.fn(),
         warn: jest.fn(),
     };
+    const mockCurrentGamesService = {
+        clearSelectedAvatarByClientId: jest.fn().mockReturnValue([]),
+        getUnavailableAvatars: jest.fn().mockReturnValue([]),
+    };
 
     const mockSocket = { id: 'socket-id', broadcast: { emit: jest.fn() } } as unknown as Socket;
-    const mockServer = { emit: jest.fn() } as unknown as Server;
+    const mockServer = { emit: jest.fn(),to:jest.fn().mockReturnValue({emit: jest.fn()})} as unknown as Server;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 Gateway,
                 { provide: Logger, useValue: mockLogger },
+                {provide: CurrentGamesService , useValue :mockCurrentGamesService},
             ],
         }).compile();
 

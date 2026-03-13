@@ -13,6 +13,7 @@ export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
+    private selectedAvatarsByRoom = new Map<string, Map<string, string>>();//cle1:roomId ,(2:clientId ,3:avatar)
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
@@ -26,6 +27,13 @@ export class CurrentGamesService {
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
         if (game) {
+            let newName = player.name;
+            let counter = 2;
+            while (game.players.some((p) => p.name === newName)) {
+                newName = `${player.name}-${counter}`;
+                counter++;
+            }
+            player.name = newName;
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         } else {
@@ -252,8 +260,68 @@ export class CurrentGamesService {
 
         return true;
     }
-}
 
+    getJoinableGames(): JoinableGameSummary[] {
+        return this.games
+            .filter(game => game.players.length < game._game.maxPlayers)
+            .map(game => {
+                return {roomId: game.roomId,game: game._game, playerCount: game.players.length};
+            });
+    }
+
+    canJoinGame(roomId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+    if (!game) {
+        return false;
+    }
+        return game.players.length < game._game.maxPlayers;
+    }
+
+    getUnavailableAvatars(roomId: string): string[] {
+        const game = this.getGameByRoomId(roomId);
+        if (game) {
+            const waitingRoomAvatars = game.players.map(p => p.imageUrl).filter(Boolean);
+            const roomMap = this.selectedAvatarsByRoom.get(roomId);
+            const selectedAvatars = roomMap ? Array.from(roomMap.values()) : [];
+            const allAvatars = waitingRoomAvatars.concat(selectedAvatars);
+            return [...new Set(allAvatars)];
+        }else{
+            return [];
+        }
+    }
+
+    setSelectedAvatar(roomId: string, clientId: string, avatar: string): void {
+        if (!this.selectedAvatarsByRoom.has(roomId)) {
+            this.selectedAvatarsByRoom.set(roomId, new Map<string, string>());
+        }
+        this.selectedAvatarsByRoom.get(roomId)?.set(clientId, avatar);
+    }
+
+    clearSelectedAvatar(roomId: string, clientId: string): void {
+        const roomSelections = this.selectedAvatarsByRoom.get(roomId);
+        if (roomSelections) {
+            roomSelections.delete(clientId);
+            if (roomSelections.size === 0) {
+                this.selectedAvatarsByRoom.delete(roomId);
+            }
+        }
+    }
+
+    clearSelectedAvatarByClientId(clientId: string): string[] {
+        const updatedRooms: string[] = [];
+        for (const [roomId, selections] of this.selectedAvatarsByRoom.entries()) {
+            if (!selections.has(clientId)) {
+                continue;
+            }
+            selections.delete(clientId);
+            updatedRooms.push(roomId);
+            if (selections.size === 0) {
+                this.selectedAvatarsByRoom.delete(roomId);
+            }
+        }
+        return updatedRooms;
+    }
+}
 export interface PlayableGame {
     _game: Game;
     roomId: string;
@@ -262,4 +330,10 @@ export interface PlayableGame {
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
     spawnPoints?: Map<string, { x: number; y: number }>;
+}
+
+export interface JoinableGameSummary {
+    roomId: string;
+    game: Game;
+    playerCount: number;
 }

@@ -1,4 +1,4 @@
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService,JoinableGameSummary } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
-export class CurrentGameGateway implements OnGatewayInit {
+export class CurrentGameGateway implements OnGatewayInit  {
     @WebSocketServer() private server: Server;
 
     constructor(
@@ -83,13 +83,20 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage('createGame')
     async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
         const room = getRoomIdFromSocket(client);
+
+        if (!room) {
+            return false;
+        }
+
         const game = await this.gamesService.getOneGame(data.gameDbId);
         if (!game) {
             this.logger.warn(`Game not found in DB for id: ${data.gameDbId}`);
             return false;
         }
+
         this.currentGamesService.createGame(game, room, data.gameId);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
+        this.emitJoinableGames();
         return true;
     }
 
@@ -104,8 +111,15 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
         const players = this.currentGamesService.getPlayersToGame(room);
         client.emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
+
     }
 
+    @SubscribeMessage('getJoinableGames')
+    handleGetJoinableGames(client: Socket): void {
+        const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
+        client.emit('joinableGames', joinableGames);
+    }
+    
     @SubscribeMessage('endTurnEarly')
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
@@ -159,4 +173,68 @@ export class CurrentGameGateway implements OnGatewayInit {
             this.server.to(room).emit('removePlayer', { playerId: client.id });
         }
     }
+
+    private emitJoinableGames(): void {
+        const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
+        this.server.emit('joinableGames', joinableGames);
+    }
+
+    @SubscribeMessage('addPlayerToCurrentGame')
+    handleAddPlayerToCurrentGame(client: Socket, player: Player): void {
+        const room = getRoomIdFromSocket(client);
+
+        if (!room) {
+            this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);
+            client.emit('joinCurrentGameResult', { success: false });
+            return;
+        }
+
+        if (!this.currentGamesService.canJoinGame(room)) {
+            this.logger.warn(`Impossible d'ajouter le joueur ${player.name}: salle verrouillee ou pleine (${room})`);
+            client.emit('joinCurrentGameResult', { success: false });
+            return;
+        }
+
+        this.currentGamesService.addPlayerToGame(room, player);
+        this.logger.log(`Player ${player.name} added to current game in room ${room}`);
+        client.emit('joinCurrentGameResult', { success: true });
+        this.emitJoinableGames();
+    }
+
+    @SubscribeMessage('getUnavailableAvatars')
+    handleGetUnavailableAvatars(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            const avatars = this.currentGamesService.getUnavailableAvatars(room);
+            client.emit('unavailableAvatars', avatars);
+        }else{
+            client.emit('unavailableAvatars', []);
+            return;
+        }
+
+    }
+
+    private emitUnavailableAvatars(roomId: string): void {
+        const avatars = this.currentGamesService.getUnavailableAvatars(roomId);
+        this.server.to(roomId).emit('unavailableAvatars', avatars);
+    }
+
+    @SubscribeMessage('selectAvatarInJoinForm')
+    handleSelectAvatarInJoinForm(client: Socket, avatar: string): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            this.currentGamesService.setSelectedAvatar(room, client.id, avatar);
+            this.emitUnavailableAvatars(room);
+        }
+    }
+
+    @SubscribeMessage('clearSelectedAvatarInJoinForm')
+    handleClearSelectedAvatarInJoinForm(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        if (room) {
+            this.currentGamesService.clearSelectedAvatar(room, client.id);
+            this.emitUnavailableAvatars(room);
+        }
+    }
 }
+
