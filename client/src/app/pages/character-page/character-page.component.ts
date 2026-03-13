@@ -226,7 +226,12 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   }
 
   submitCharacter(): void {
-    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
+    if (
+      !this.characterName.value ||
+      !this.avatar.value ||
+      !this.bonusTarget.value ||
+      !this.d6Target.value
+    ) {
       alert('Veuillez remplir le formulaire au complet!');
       return;
     }
@@ -237,7 +242,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     const d6 = this.d6Target.value;
-    const d4target: 'attack' | 'defense' | null = d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
+    const d4target: 'attack' | 'defense' | null =
+      d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
 
     const player: Player = {
       id: '',
@@ -260,14 +266,12 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       turnOrder: 0,
     };
 
-
     if (!this.socketService.isSocketAlive()) {
       this.socketService.connect();
     }
 
     const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
     const selectedHostGame = this.gameService.getSelectedHostGame();
-
 
     const onJoinCurrentGameResult = (result: { success: boolean }) => {
       this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
@@ -295,20 +299,34 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.gameService.addPlayer(player);
 
       this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
-      if(selectedJoinRoomId){
+
+      // rejoindre une partie existante
+      if (selectedJoinRoomId) {
         this.socketService.joinRoom(selectedJoinRoomId);
-        this.socketService.send('addPlayerToCurrentGame',player);
-        return;
-      }
-      if (selectedHostGame) {
-        player.isOrganizer = true;
-        const roomId = crypto.randomUUID();
-        this.socketService.joinRoom(roomId);
-        this.socketService.send('createGame', {gameDbId: selectedHostGame, gameId: roomId});
-        //si on appelle addPlayerTocuurentGame avant que create soit fini ca peut cree des probleme ??
         this.socketService.send('addPlayerToCurrentGame', player);
         return;
       }
+
+      // créer une partie
+      if (selectedHostGame) {
+        player.isOrganizer = true;
+        const roomId = crypto.randomUUID();
+
+        this.socketService.joinRoom(roomId);
+
+        this.socketService.send(
+          'createGame',
+          {
+            gameDbId: selectedHostGame._id,
+            gameId: roomId,
+          },
+          () => {
+            this.socketService.send('addPlayerToCurrentGame',player) ;
+          },
+        );
+           return;
+      }
+
       this.router.navigate(['/waiting']);
     };
 
