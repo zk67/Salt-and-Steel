@@ -277,7 +277,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
 
       if (result.success) {
-        this.gameService.clearSelectedJoinRoomId();
         this.gameService.clearSelectedHostGame();
         this.router.navigate(['/waiting']);
         return;
@@ -311,6 +310,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       if (selectedHostGame) {
         player.isOrganizer = true;
         const roomId = crypto.randomUUID();
+        this.gameService.setSelectedJoinRoomId(roomId);
 
         this.socketService.joinRoom(roomId);
 
@@ -321,10 +321,10 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
             gameId: roomId,
           },
           () => {
-            this.socketService.send('addPlayerToCurrentGame',player) ;
+            this.socketService.send('addPlayerToCurrentGame', player);
           },
         );
-           return;
+        return;
       }
 
       this.router.navigate(['/waiting']);

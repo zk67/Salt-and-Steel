@@ -50,6 +50,16 @@ export class CurrentGamesService {
         return this.games.find(g => g.roomId === roomId);
     }
 
+    removeGame(roomId: string): boolean {
+        const index = this.games.findIndex((g) => g.roomId === roomId);
+        if (index === -1) {
+            return false;
+        }
+
+        this.games.splice(index, 1);
+        return true;
+    }
+
     movePlayer(roomId: string, playerId: string, direction: string): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
@@ -254,12 +264,16 @@ export class CurrentGamesService {
         const playerIndex = game.players.findIndex(p => p.id === playerId);
         if (playerIndex === -1) return false;
 
-        if (game.turnOrder[game.currentTurnIndex] === playerId) {
-            this.nextPlayerTurn(roomId);
-        }
+        if (game.turnOrder) {
+            if (game.turnOrder[game.currentTurnIndex] === playerId) {
+                this.nextPlayerTurn(roomId);
+            }
 
-        game.players.splice(playerIndex, 1);
-        game.turnOrder = game.turnOrder.filter(id => id !== playerId);
+            game.players.splice(playerIndex, 1);
+            game.turnOrder = game.turnOrder.filter(id => id !== playerId);
+        } else {
+            game.players.splice(playerIndex, 1);
+        }
 
         return true;
     }
@@ -279,15 +293,15 @@ export class CurrentGamesService {
         return this.games
             .filter(game => game.players.length < game._game.maxPlayers)
             .map(game => {
-                return {roomId: game.roomId,game: game._game, playerCount: game.players.length};
+                return { roomId: game.roomId, game: game._game, playerCount: game.players.length };
             });
     }
 
     canJoinGame(roomId: string): boolean {
         const game = this.getGameByRoomId(roomId);
-    if (!game) {
-        return false;
-    }
+        if (!game) {
+            return false;
+        }
         return game.players.length < game._game.maxPlayers;
     }
 
@@ -299,7 +313,7 @@ export class CurrentGamesService {
             const selectedAvatars = roomMap ? Array.from(roomMap.values()) : [];
             const allAvatars = waitingRoomAvatars.concat(selectedAvatars);
             return [...new Set(allAvatars)];
-        }else{
+        } else {
             return [];
         }
     }
