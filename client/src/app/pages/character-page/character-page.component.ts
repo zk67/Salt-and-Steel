@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
@@ -25,38 +25,12 @@ type DieKind = 'd4' | 'd6' | 'none';
   imports: [ReactiveFormsModule],
 })
 export class CharacterPageComponent implements OnInit, OnDestroy {
-  clientPlayer?: Player;
-  gameIdSave?: string;
-
-  private onPlayerId = (p: Player) => {
-    if (this.clientPlayer) {
-      this.clientPlayer.id = p.id;
-      this.gameService.setClientPlayer(this.clientPlayer); // Ajout du joueur côté client
-      this.socketService.send('addPlayerToGame', this.clientPlayer); // Envoi du joueur au serveur
-
-      const queryParams = {
-        gameId: this.gameIdSave,
-      };
-      this.router.navigate(['/waiting'], {
-        queryParams,
-      });
-    }
-  };
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute,
     private socketService: SocketClientService,
     private gameService: GameService,
   ) {}
-
-  ngOnInit(): void {
-    this.socketService.on('playerId', this.onPlayerId);
-  }
-
-  ngOnDestroy(): void {
-    this.socketService.off('playerId', this.onPlayerId);
-  }
 
   characterName = new FormControl('');
   avatar = new FormControl<string | null>(null);
@@ -68,6 +42,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   speed = new FormControl<number>(BASE_SPEED);
   attack = new FormControl<number>(BASE_ATTACK);
   defense = new FormControl<number>(BASE_DEFENSE);
+
+  unavailableAvatars: string[] = [];
 
   statDescriptions: Record<StatKey, string> = {
     hp: 'Points de vie. À 0, ton personnage est vaincu.',
@@ -83,13 +59,13 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     'Anne la Rouge',
     'Jack le Borgne',
     'Capitaine Flint',
-    'Mary l\'Écarlate',
-    'Le Crochet d\'Argent',
+    "Mary l'Écarlate",
+    "Le Crochet d'Argent",
     'Barbe-de-Fer',
     'Samuel Tempête',
     'Ragnar le Cruel',
     'Isabella la Furie',
-    'Morgan l\'Ombre',
+    "Morgan l'Ombre",
     'Le Loup des Mers',
     'Edward le Sanguinaire',
     'Nina Vents-Noirs',
@@ -103,11 +79,11 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     'Viktor Barbe-Blanche',
     'Le Requin Rouge',
     'Thomas Coupe-Gorge',
-    'Elena l\'Ouragan',
+    "Elena l'Ouragan",
     'Capitaine Mistral',
     'Le Fantôme des Flots',
     'Ivan le Marteau',
-    'Sofia Dents-d\'Or',
+    "Sofia Dents-d'Or",
     'Le Serpent de Mer',
     'William Long-Sabre',
     'Carmen Feu-Vert',
@@ -122,28 +98,42 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     'Boris Coupe-Ancre',
     'Luna Vague-Sombre',
     'Le Vautour des Mers',
-    'Gabriel Croc-d\'Acier',
+    "Gabriel Croc-d'Acier",
     'Mila Brise-Os',
     'Le Baron des Flots',
     'Élias Vent-du-Nord',
   ];
 
-  avatars: string[] = Array.from({ length: NUMBER_OF_AVATARS }, (_, i) => `assets/avatars/avatar-${i + 1}.png`);
+  avatars: string[] = Array.from(
+    { length: NUMBER_OF_AVATARS },
+    (_, i) => `assets/avatars/avatar-${i + 1}.png`,
+  );
+
+  private readonly onUnavailableAvatars = (avatars: string[]) => {
+    this.unavailableAvatars = avatars;
+  };
 
   getDieFor(target: DiceTarget): DieKind {
     const d6 = this.d6Target.value;
-    if (!d6) return 'none';
+    if (!d6) {
+      return 'none';
+    }
     return d6 === target ? 'd6' : 'd4';
   }
 
   getDieLabel(target: DiceTarget): string {
     const kind = this.getDieFor(target);
-    if (kind === 'none') return 'D?';
+    if (kind === 'none') {
+      return 'D?';
+    }
     return kind === 'd6' ? 'D6' : 'D4';
   }
 
   getDieSummary(): string {
-    if (!this.d6Target.value) return 'Non assignés';
+    if (!this.d6Target.value) {
+      return 'Non assignés';
+    }
+
     const atk = this.getDieLabel('attack');
     const def = this.getDieLabel('defense');
     return `Attaque: ${atk} · Défense: ${def}`;
@@ -162,17 +152,32 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     const name = this.characterName.value?.trim();
     const chosen = this.avatar.value != null;
     const lines: string[] = [];
+
     lines.push(
       name
         ? `Ancien mousse devenu capitaine, ${name} jure par l'or et la loyauté.`
         : 'Pirate ...',
     );
-    lines.push(chosen ? 'Son regard vaut une menace, et sa lame parle plus vite que les canons.' : 'Choisis un visage… et la mer te reconnaîtra.');
+
+    lines.push(
+      chosen
+        ? 'Son regard vaut une menace, et sa lame parle plus vite que les canons.'
+        : 'Choisis un visage… et la mer te reconnaîtra.',
+    );
+
     return lines.join('\n');
   }
 
   selectAvatar(a: string): void {
+    if (this.isAvatarUnavailable(a) && this.avatar.value !== a) {
+      return;
+    }
+
     this.avatar.setValue(a);
+
+    if (this.gameService.getSelectedJoinRoomId()) {
+      this.socketService.send('selectAvatarInJoinForm', a);
+    }
   }
 
   toggleBonus(target: BonusTarget): void {
@@ -194,8 +199,23 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   }
 
   randomizeStats(): void {
-    this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
-    this.avatar.setValue(this.avatars[Math.floor(Math.random() * this.avatars.length)]);
+    this.characterName.setValue(
+      this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)],
+    );
+
+    const availableAvatars = this.avatars.filter(
+      (avatar) => !this.isAvatarUnavailable(avatar),
+    );
+
+    if (availableAvatars.length > 0) {
+      const randomAvatar =
+        availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+      this.avatar.setValue(randomAvatar);
+
+      if (this.gameService.getSelectedJoinRoomId()) {
+        this.socketService.send('selectAvatarInJoinForm', randomAvatar);
+      }
+    }
 
     const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'hp' : 'speed';
     const d6: DiceTarget = Math.random() < HALF_RANDOM ? 'attack' : 'defense';
@@ -205,21 +225,27 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.updateStatsHpSpeed();
   }
 
-  async submitCharacter(): Promise<void> {
-    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget || !this.d6Target) {
+  submitCharacter(): void {
+    if (
+      !this.characterName.value ||
+      !this.avatar.value ||
+      !this.bonusTarget.value ||
+      !this.d6Target.value
+    ) {
       alert('Veuillez remplir le formulaire au complet!');
       return;
     }
 
     if (!isStringValid(this.characterName.value)) {
-      alert(`Le nom du personnage est invalide!`);
+      alert('Le nom du personnage est invalide!');
       return;
     }
 
     const d6 = this.d6Target.value;
-    const d4target: 'attack' | 'defense' | null = d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
+    const d4target: 'attack' | 'defense' | null =
+      d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
 
-    this.clientPlayer = {
+    const player: Player = {
       id: '',
       name: this.characterName.value,
       imageUrl: this.avatar.value,
@@ -244,20 +270,104 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.connect();
     }
 
-    if (history.state.from === 'create') {
-      this.clientPlayer.isOrganizer = true;
-      const GAMEID = crypto.randomUUID();
-      this.gameIdSave = GAMEID;
-      this.socketService.joinRoom(GAMEID);
-      const DBID = this.route.snapshot.queryParams.gameId;
-      await new Promise<void>((resolve) => {
-        this.socketService.send('createGame', { gameDbId: DBID, gameId: GAMEID }, () => {
-          resolve();
-        });
-      });
-    } else {
-      this.socketService.joinRoom('default-room'); // TODO: remplacer 'default-room' par le gameId de la game que le joueur a rejoint
+    const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
+    const selectedHostGame = this.gameService.getSelectedHostGame();
+
+    const onJoinCurrentGameResult = (result: { success: boolean }) => {
+      this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
+
+      if (result.success) {
+        this.gameService.clearSelectedJoinRoomId();
+        this.gameService.clearSelectedHostGame();
+        this.router.navigate(['/waiting']);
+        return;
+      }
+
+      const retry = window.confirm(
+        "La partie n'est plus disponible. Appuyez sur OK pour réessayer ou Annuler pour retourner à l'accueil.",
+      );
+
+      if (!retry) {
+        this.gameService.clearSelectedJoinRoomId();
+        this.router.navigate(['/home']);
+      }
+    };
+
+    const onPlayerId = (p: Player) => {
+      this.socketService.off('playerId', onPlayerId);
+      player.id = p.id;
+      this.gameService.addPlayer(player);
+
+      this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
+
+      // rejoindre une partie existante
+      if (selectedJoinRoomId) {
+        this.socketService.joinRoom(selectedJoinRoomId);
+        this.socketService.send('addPlayerToCurrentGame', player);
+        return;
+      }
+
+      // créer une partie
+      if (selectedHostGame) {
+        player.isOrganizer = true;
+        const roomId = crypto.randomUUID();
+
+        this.socketService.joinRoom(roomId);
+
+        this.socketService.send(
+          'createGame',
+          {
+            gameDbId: selectedHostGame._id,
+            gameId: roomId,
+          },
+          () => {
+            this.socketService.send('addPlayerToCurrentGame',player) ;
+          },
+        );
+           return;
+      }
+
+      this.router.navigate(['/waiting']);
+    };
+
+    this.socketService.on('playerId', onPlayerId);
+    this.socketService.send('getPlayerId', player);
+  }
+
+  isAvatarUnavailable(avatar: string): boolean {
+    if (this.avatar.value === avatar) {
+      return false;
     }
-    this.socketService.send('getPlayerId', this.clientPlayer);
+
+    return this.unavailableAvatars.includes(avatar);
+  }
+
+  ngOnInit(): void {
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
+
+    if (!selectedRoomId) {
+      return;
+    }
+
+    if (!this.socketService.isSocketAlive()) {
+      this.socketService.connect();
+    }
+
+    this.socketService.joinRoom(selectedRoomId);
+    this.socketService.on<string[]>(
+      'unavailableAvatars',
+      this.onUnavailableAvatars,
+    );
+    this.socketService.send('getUnavailableAvatars');
+  }
+
+  ngOnDestroy(): void {
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
+
+    if (selectedRoomId) {
+      this.socketService.send('clearSelectedAvatarInJoinForm');
+    }
+
+    this.socketService.off('unavailableAvatars', this.onUnavailableAvatars);
   }
 }

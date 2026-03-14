@@ -31,6 +31,8 @@
               class="avatar-medallion"
               role="listitem"
               [class.selected]="avatar.value === a"
+              [disabled]="isAvatarUnavailable(a)"
+              [class.unavailable]="isAvatarUnavailable(a)"
               (click)="selectAvatar(a)"
             >
               <img [src]="a" [alt]="'Avatar ' + a" class="avatar" />

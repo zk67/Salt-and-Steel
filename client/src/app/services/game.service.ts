@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
-import { BattleWonPayload, GameInfoPayload } from '@common/types/game.interface';
+import { BattleWonPayload, GameInfoPayload, Game } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { MapService } from './map/map.service';
 
@@ -11,16 +11,21 @@ import { MapService } from './map/map.service';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
-    readonly activePlayer = computed(() => this.players().find(p => p.id === this.activePlayerId()) ?? null);
+    private selectedJoinRoomId: string | null =null;
+    private selectedHostGame: Game | null =null; 
+
+    readonly activePlayer = computed(() => this.players().find((p) => p.id === this.activePlayerId()) ?? null);
     private activePlayerId = signal<string | null>(null);
+
     private isGameStarted = false;
 
+
     readonly clientPlayer = computed(() =>
-        this.players().find(p => p.id === this.clientPlayerId) || null,
+        this.players().find((p) => p.id === this.clientPlayerId) || null,
     );
 
     readonly victoryLeaderboard = computed(() =>
-        this.players().map(p => ({ playerName: p.name, victoryPoints: p.victoryPoints || 0 })),
+        this.players().map((p) => ({ playerName: p.name, victoryPoints: p.victoryPoints || 0 })),
     );
 
     readonly isDebugMode = signal<boolean>(false);
@@ -45,8 +50,9 @@ export class GameService {
         this.hostId.set(hostId);
     }
 
+
     addPlayer(player: Player): void {
-        this.players.update(players => [...players, player]);
+        this.players.update((players) => [...players, player]);
     }
 
     removePlayer(playerId: string): void {
@@ -62,7 +68,9 @@ export class GameService {
     }
 
     addVictoryPoint(playerId: string): void {
-        this.updatePlayer(playerId, { victoryPoints: (this.players().find(p => p.id === playerId)?.victoryPoints || 0) + 1 });
+        this.updatePlayer(playerId, {
+            victoryPoints: (this.players().find((p) => p.id === playerId)?.victoryPoints || 0) + 1,
+        });
     }
 
     setClientPlayer(player: Player): void {
@@ -71,8 +79,8 @@ export class GameService {
     }
 
     updatePlayer(playerId: string, updates: Partial<Player>): void {
-        this.players.update(players =>
-            players.map(p =>
+        this.players.update((players) =>
+            players.map((p) =>
                 p.id === playerId ? { ...p, ...updates } : p,
             ),
         );
@@ -83,7 +91,7 @@ export class GameService {
         const tiles = this.mapService.getTileMap();
 
         if (player && tiles.length > 0) {
-            this.actionMode = this.actionMode ? false : true;
+            this.actionMode = !this.actionMode;
 
             if (this.actionMode) {
                 this.actionTile.set(getActionableTiles(tiles, player, this.getPlayers()));
@@ -93,15 +101,33 @@ export class GameService {
         }
     }
 
+    setSelectedJoinRoomId(roomId: string): void {
+        this.selectedJoinRoomId = roomId;
+    }
+
+    getSelectedJoinRoomId(): string | null {
+        return this.selectedJoinRoomId;
+    }
+
+    clearSelectedJoinRoomId(): void {
+        this.selectedJoinRoomId = null;
+    }
+
     setActivePlayer(id: string): void {
         this.activePlayerId.set(id);
     }
 
+    toggleDebugMode(): void {
+        this.isDebugMode.update((v) => !v);
+    }
+    
     setDebugMode(debugMode: boolean): void {
         this.isDebugMode.set(debugMode);
+
     }
 
     private handleStartGame(payload: GameInfoPayload): void {
+        this.isGameStarted = true;
         payload.players.forEach(p => {
             if (p.id !== this.clientPlayer()?.id) {
                 this.addPlayer(p);
@@ -120,5 +146,17 @@ export class GameService {
         alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
         this.addVictoryPoint(winner.id);
         this.updatePlayer(loser.id, { x: payload.loserPos.x, y: payload.loserPos.y });
+    }
+
+    setSelectedHostGame(game: Game): void {
+        this.selectedHostGame = game;
+    }
+
+    getSelectedHostGame(): Game | null {
+        return this.selectedHostGame;
+    }
+
+    clearSelectedHostGame(): void {
+        this.selectedHostGame = null;
     }
 }
