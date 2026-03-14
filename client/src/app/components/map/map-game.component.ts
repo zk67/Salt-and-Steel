@@ -6,7 +6,7 @@ import { SocketClientService } from '@app/services/socket-client.service';
 import { TimeService } from '@app/services/time.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
 import { MapObjectType, TileType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
@@ -44,7 +44,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
-            this.gameService.toggleDebugMode();
+            this.gameService.setDebugMode(!this.gameService.isDebugMode());
             alert('Debug mode: ' + (this.gameService.isDebugMode() ? 'ON' : 'OFF'));
         }
     }
@@ -63,6 +63,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
         this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayload.bind(this));
         this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOver.bind(this));
+        this.socketService.on<ToggleDebugPayload>('handleToggleDebugMode', this.handleToggleDebugMode.bind(this));
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -231,5 +232,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
         setTimeout(() => {
             this.router.navigate(['/home']);
         }, DELAY_BEFORE_NAVIGATE_HOME);
+    }
+
+    private handleToggleDebugMode(payload: ToggleDebugPayload): void {
+        this.gameService.setDebugMode(payload.debugMode);
+        this.gameService.setHostId(payload.hostId);
     }
 }
