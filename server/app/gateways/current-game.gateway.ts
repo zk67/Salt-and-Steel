@@ -1,7 +1,7 @@
 import { CurrentGamesService } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload } from '@common/types/game.interface';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
@@ -110,6 +110,12 @@ export class CurrentGameGateway implements OnGatewayInit {
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.validateEndTurnEarly(room, client.id);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
+        const isCurrentPlayer = client.id === game.turnOrder[game.currentTurnIndex];
+        const isHostDebug = client.id === game.idHost && game.debugMode;
+
+        if (!isCurrentPlayer && !isHostDebug) return;
         this.currentGamesService.nextPlayerTurn(room);
     }
 
@@ -125,7 +131,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         const room = getRoomIdFromSocket(client);
 
         if (this.currentGamesService.debugMove(room, payload.playerId, payload.x, payload.y)) {
-            this.server.emit('handleClickDebug', payload);
+            this.server.to(room).emit('handleClickDebug', payload);
         } else {
             this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.x}, ${payload.y})`);
         }
@@ -144,6 +150,7 @@ export class CurrentGameGateway implements OnGatewayInit {
             this.server.emit('handleBattleWon', updatedPayload);
             this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
 
+
             if (isGameOver) {
                 this.server.to(room).emit('gameOver', { winnerId: payload.winnerId });
             }
@@ -153,10 +160,37 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage('surrender')
     handleSurrender(client: Socket): void {
         const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
 
         if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
             this.server.to(room).emit('removePlayer', { playerId: client.id });
         }
+
+        if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
+            this.logger.log(`Host ${client.id} has surrendered. Debug mode disabled in room: ${room}`);
+            this.server.to(room).emit('handleToggleDebugMode');
+        }
+    }
+
+    @SubscribeMessage('toggleDebugMode')
+    handleToggleDebugMode(client: Socket, payload: ToggleDebugPayload): void {
+        const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+
+        if (!game) {
+            this.logger.warn(`Game not found for room ID: ${room}`);
+            return;
+        }
+
+        payload.hostId = game.idHost;
+        payload.debugMode = !game.debugMode;
+        if (client.id === game.idHost) {
+            this.currentGamesService.toggleDebugMode(game, payload);
+            this.server.to(room).emit('handleToggleDebugMode', payload);
+        }
+
+        this.logger.log(`Toggled debug mode to ${payload.debugMode} for room: ${room}`);
     }
 }
