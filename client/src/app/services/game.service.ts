@@ -28,6 +28,8 @@ export class GameService {
         this.players().map((p) => ({ playerName: p.name, victoryPoints: p.victoryPoints || 0 })),
     );
 
+    readonly isDebugMode = signal<boolean>(false);
+    readonly hostId = signal<string | null>(null);
     private actionMode: boolean = false;
     private clientPlayerId: string = '';
 
@@ -44,7 +46,9 @@ export class GameService {
         this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
     }
 
-    readonly isDebugMode = signal<boolean>(false);
+    setHostId(hostId: string): void {
+        this.hostId.set(hostId);
+    }
 
 
     addPlayer(player: Player): void {
@@ -115,6 +119,11 @@ export class GameService {
 
     toggleDebugMode(): void {
         this.isDebugMode.update((v) => !v);
+    }
+    
+    setDebugMode(debugMode: boolean): void {
+        this.isDebugMode.set(debugMode);
+
     }
 
     private handleStartGame(payload: GameInfoPayload): void {

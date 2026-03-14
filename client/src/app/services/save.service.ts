@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ToolService } from '@app/services/tool/tool.service';
-import { Game } from '@common/types/game.interface';
 import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@app/utils/validation';
+import { Game } from '@common/types/game.interface';
 import { MapObjectType, TileData, TileType } from '@common/types/map.interface';
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -18,11 +18,11 @@ export class SaveService {
     async validateBeforeSave(game: Game): Promise<string[]> {
         const errors: string[] = [];
 
-        if(!isStringValid(game.name)){
+        if (!isStringValid(game.name)) {
             errors.push('Le nom de la carte est invalide.');
         }
 
-        if(!isStringValid(game.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)){
+        if (!isStringValid(game.description, MIN_NAME_LENGTH, MAX_DESCRIPTION_LENGTH)) {
             errors.push('La description de la carte est invalide.');
         }
 
@@ -93,14 +93,10 @@ export class SaveService {
                 const newX = x + dx;
                 const newY = y + dy;
 
-                if (
-                    newX >= 0 &&
-                    newX < size &&
-                    newY >= 0 &&
-                    newY < size &&
-                    !visited[newY][newX] &&
-                    tiles[newY][newX].tileType !== TileType.Wall
-                ) {
+                const isInsideMap = newX >= 0 && newX < size && newY >= 0 && newY < size;
+                const isValidTile = !visited[newY][newX] && tiles[newY][newX].tileType !== TileType.Wall;
+
+                if (isInsideMap && isValidTile) {
                     visited[newY][newX] = true;
                     queue.push([newX, newY]);
                 }

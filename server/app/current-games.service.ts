@@ -1,6 +1,6 @@
 import { Timer } from '@app/game-timer';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, Game, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
+import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
 import { MapObjectType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
@@ -126,6 +126,7 @@ export class CurrentGamesService {
         });
     }
 
+
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game || !game.turnOrder) return;
@@ -177,6 +178,8 @@ export class CurrentGamesService {
 
         const player = game.players.find(p => p.id === playerId);
         if (!player) return false;
+
+        if (player.id !== game.turnOrder[game.currentTurnIndex]) return false;
 
         player.x = x;
         player.y = y;
@@ -261,6 +264,17 @@ export class CurrentGamesService {
         return true;
     }
 
+    isDebugMode(roomId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        return game.debugMode;
+    }
+
+    toggleDebugMode(game: PlayableGame, payload: ToggleDebugPayload): void {
+        game.debugMode = payload.debugMode;
+    }
+
     getJoinableGames(): JoinableGameSummary[] {
         return this.games
             .filter(game => game.players.length < game._game.maxPlayers)
@@ -330,6 +344,8 @@ export interface PlayableGame {
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
     spawnPoints?: Map<string, { x: number; y: number }>;
+    idHost?: string;
+    debugMode?: boolean;
 }
 
 export interface JoinableGameSummary {
@@ -337,3 +353,4 @@ export interface JoinableGameSummary {
     game: Game;
     playerCount: number;
 }
+

@@ -49,3 +49,8 @@ export interface DebugMovePayload {
     x: number;
     y: number;
 }
+
+export interface ToggleDebugPayload {
+    debugMode: boolean;
+    hostId: string;
+}
