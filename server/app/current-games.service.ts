@@ -291,7 +291,7 @@ export class CurrentGamesService {
 
     getJoinableGames(): JoinableGameSummary[] {
         return this.games
-            .filter(game => game.players.length < game._game.maxPlayers && !game.currentPhase)
+            .filter(game => game.players.length < game._game.maxPlayers && game.currentPhase === undefined)
             .map(game => {
                 return { roomId: game.roomId, game: game._game, playerCount: game.players.length };
             });
@@ -302,7 +302,7 @@ export class CurrentGamesService {
         if (!game) {
             return false;
         }
-        return game.players.length < game._game.maxPlayers && !game.currentPhase;
+        return game.players.length < game._game.maxPlayers && game.currentPhase === undefined;
     }
 
     getUnavailableAvatars(roomId: string): string[] {
