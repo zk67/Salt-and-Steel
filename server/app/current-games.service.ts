@@ -302,7 +302,7 @@ export class CurrentGamesService {
         if (!game) {
             return false;
         }
-        return game.players.length < game._game.maxPlayers;
+        return game.players.length < game._game.maxPlayers && !game.currentPhase;
     }
 
     getUnavailableAvatars(roomId: string): string[] {
