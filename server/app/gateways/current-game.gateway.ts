@@ -1,4 +1,4 @@
-import { CurrentGamesService,JoinableGameSummary } from '@app/current-games.service';
+import { CurrentGamesService, JoinableGameSummary } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/types/game.interface';
@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
-export class CurrentGameGateway implements OnGatewayInit  {
+export class CurrentGameGateway implements OnGatewayInit {
     @WebSocketServer() private server: Server;
 
     constructor(
@@ -104,6 +104,7 @@ export class CurrentGameGateway implements OnGatewayInit  {
     addPlayerToGame(client: Socket, player: Player): void {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.addPlayerToGame(room, player);
+        this.broadcastPlayers(room);
     }
 
     @SubscribeMessage('getPlayersToGame')
@@ -114,12 +115,17 @@ export class CurrentGameGateway implements OnGatewayInit  {
 
     }
 
+    private broadcastPlayers(roomId: string): void {
+        const players = this.currentGamesService.getPlayersToGame(roomId);
+        this.server.to(roomId).emit('playersToGame', players);
+    }
+
     @SubscribeMessage('getJoinableGames')
     handleGetJoinableGames(client: Socket): void {
         const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
         client.emit('joinableGames', joinableGames);
     }
-    
+
     @SubscribeMessage('endTurnEarly')
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
@@ -177,14 +183,51 @@ export class CurrentGameGateway implements OnGatewayInit  {
         const game = this.currentGamesService.getGameByRoomId(room);
         if (!game) return;
 
+        const player = game.players.find((p) => p.id === client.id);
+        const isHost = !!player?.isOrganizer;
+
+        if (isHost) {
+            this.logger.log(`Host ${client.id} is leaving: closing room ${room}`);
+            this.currentGamesService.removeGame(room);
+            this.server.to(room).emit('gameClosed');
+            this.emitJoinableGames();
+            return;
+        }
+
         if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
             this.server.to(room).emit('removePlayer', { playerId: client.id });
+            this.broadcastPlayers(room);
+            this.emitUnavailableAvatars(room);
+            this.emitJoinableGames();
         }
 
         if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
             this.logger.log(`Host ${client.id} has surrendered. Debug mode disabled in room: ${room}`);
             this.server.to(room).emit('handleToggleDebugMode');
+        }
+    }
+
+    @SubscribeMessage('kickPlayer')
+    handleKickPlayer(client: Socket, payload: { playerId: string; }): void {
+        const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
+
+        if (client.id !== game.idHost) {
+            this.logger.warn(`Non-host ${client.id} attempted to kick player ${payload.playerId} in room ${room}`);
+            return;
+        }
+
+        if (payload.playerId === client.id) {
+            return;
+        }
+
+        if (this.currentGamesService.removePlayerFromGame(room, payload.playerId)) {
+            this.server.to(payload.playerId).emit('kicked');
+
+            this.server.to(room).emit('removePlayer', { playerId: payload.playerId });
+            this.broadcastPlayers(room);
         }
     }
 
@@ -210,7 +253,12 @@ export class CurrentGameGateway implements OnGatewayInit  {
         }
 
         this.currentGamesService.addPlayerToGame(room, player);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (game && player.isOrganizer) {
+            game.idHost = player.id;
+        }
         this.logger.log(`Player ${player.name} added to current game in room ${room}`);
+        this.broadcastPlayers(room);
         client.emit('joinCurrentGameResult', { success: true });
         this.emitJoinableGames();
     }
@@ -221,7 +269,7 @@ export class CurrentGameGateway implements OnGatewayInit  {
         if (room) {
             const avatars = this.currentGamesService.getUnavailableAvatars(room);
             client.emit('unavailableAvatars', avatars);
-        }else{
+        } else {
             client.emit('unavailableAvatars', []);
             return;
         }

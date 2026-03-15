@@ -266,6 +266,14 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       turnOrder: 0,
     };
 
+    const tryJoinCurrentGame = () => {
+      if (!selectedJoinRoomId) {
+        return;
+      }
+      this.socketService.joinRoom(selectedJoinRoomId);
+      this.socketService.send('addPlayerToCurrentGame', player);
+    };
+
     if (!this.socketService.isSocketAlive()) {
       this.socketService.connect();
     }
@@ -277,7 +285,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.off('joinCurrentGameResult', onJoinCurrentGameResult);
 
       if (result.success) {
-        this.gameService.clearSelectedJoinRoomId();
         this.gameService.clearSelectedHostGame();
         this.router.navigate(['/waiting']);
         return;
@@ -290,20 +297,23 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       if (!retry) {
         this.gameService.clearSelectedJoinRoomId();
         this.router.navigate(['/home']);
+        return;
       }
+
+      this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
+      tryJoinCurrentGame();
     };
 
     const onPlayerId = (p: Player) => {
       this.socketService.off('playerId', onPlayerId);
       player.id = p.id;
-      this.gameService.addPlayer(player);
+      this.gameService.setClientPlayer(player);
 
       this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
 
       // rejoindre une partie existante
       if (selectedJoinRoomId) {
-        this.socketService.joinRoom(selectedJoinRoomId);
-        this.socketService.send('addPlayerToCurrentGame', player);
+        tryJoinCurrentGame();
         return;
       }
 
@@ -311,6 +321,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       if (selectedHostGame) {
         player.isOrganizer = true;
         const roomId = crypto.randomUUID();
+        this.gameService.setSelectedJoinRoomId(roomId);
 
         this.socketService.joinRoom(roomId);
 
@@ -321,10 +332,10 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
             gameId: roomId,
           },
           () => {
-            this.socketService.send('addPlayerToCurrentGame',player) ;
+            this.socketService.send('addPlayerToCurrentGame', player);
           },
         );
-           return;
+        return;
       }
 
       this.router.navigate(['/waiting']);
