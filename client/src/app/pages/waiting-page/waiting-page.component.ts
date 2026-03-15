@@ -4,6 +4,8 @@ import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { Player } from '@common/types/player.interface';
 
+const TIME_BEFORE_NAVIGATE_HOME = 5000;
+
 @Component({
     selector: 'app-waiting-page',
     templateUrl: './waiting-page.component.html',
@@ -31,7 +33,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.showClosedMessage = true;
             setTimeout(() => {
                 this.router.navigate(['/home']);
-            }, 5000);
+            }, TIME_BEFORE_NAVIGATE_HOME);
         });
     };
 
@@ -45,7 +47,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.showKickedMessage = true;
             setTimeout(() => {
                 this.router.navigate(['/home']);
-            }, 5000);
+            }, TIME_BEFORE_NAVIGATE_HOME);
         });
     };
 
