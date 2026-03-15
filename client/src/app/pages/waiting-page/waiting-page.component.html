@@ -2,6 +2,22 @@
     <div class="left">Clavardage</div>
     <div class="right">
         <h1 class="header-item">Salle d'attente</h1>
+        @if (showClosedMessage) {
+            <div class="popup-overlay">
+                <div class="popup">
+                    <p>L'organisateur a fermé la partie.</p>
+                    <p>Redirection vers l'accueil...</p>
+                </div>
+            </div>
+        }
+        @if (showKickedMessage) {
+            <div class="popup-overlay">
+                <div class="popup">
+                    <p>Vous avez été exclu de la salle.</p>
+                    <p>Redirection vers l'accueil...</p>
+                </div>
+            </div>
+        }
         <div class="slots">
             @for (player of players; track player.id; let i = $index) {
                 <div class="player-slot" [class.organizer]="player.isOrganizer">
@@ -17,6 +33,9 @@
                             <span class="organizer-badge">(Organisateur)</span>
                         }
                     </p>
+                    @if (isOrganizer && !player.isOrganizer && player.id !== clientPlayerId) {
+                        <button class="button small" (click)="kickPlayer(player.id)">Exclure</button>
+                    }
                 </div>
             }
 

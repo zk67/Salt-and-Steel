@@ -206,6 +206,29 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
     }
 
+    @SubscribeMessage('kickPlayer')
+    handleKickPlayer(client: Socket, payload: { playerId: string; }): void {
+        const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
+
+        if (client.id !== game.idHost) {
+            this.logger.warn(`Non-host ${client.id} attempted to kick player ${payload.playerId} in room ${room}`);
+            return;
+        }
+
+        if (payload.playerId === client.id) {
+            return;
+        }
+
+        if (this.currentGamesService.removePlayerFromGame(room, payload.playerId)) {
+            this.server.to(payload.playerId).emit('kicked');
+
+            this.server.to(room).emit('removePlayer', { playerId: payload.playerId });
+            this.broadcastPlayers(room);
+        }
+    }
+
     private emitJoinableGames(): void {
         const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
         this.server.emit('joinableGames', joinableGames);
