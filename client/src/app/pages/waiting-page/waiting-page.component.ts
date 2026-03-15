@@ -22,7 +22,14 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     private onGameClosed = () => {
         this.ngZone.run(() => {
             this.gameService.clearSelectedJoinRoomId();
+            alert('L\'organisateur a fermé la partie. Vous allez être redirigé vers l\'accueil.'); // ne marche pas
             this.router.navigate(['/home']);
+        });
+    };
+
+    private onGameStarted = () => {
+        this.ngZone.run(() => {
+            this.router.navigate(['/game']);
         });
     };
 
@@ -33,7 +40,15 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         private gameService: GameService,
     ) {}
 
+    get isOrganizer(): boolean {
+        return this.gameService.clientPlayer()?.isOrganizer ?? false;
+    }
+
     startGame(): void {
+        if (!this.isOrganizer || this.players.length < 2) {
+            return;
+        }
+
         this.router.navigate(['/game']);
         this.socketService.send('startGame');
     }
@@ -51,11 +66,13 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.socketService.on('playersToGame', this.onPlayersToGame);
         this.socketService.on('gameClosed', this.onGameClosed);
+        this.socketService.on('gameStartInfo', this.onGameStarted);
         this.socketService.send('getPlayersToGame');
     }
 
     ngOnDestroy(): void {
         this.socketService.off('playersToGame', this.onPlayersToGame);
         this.socketService.off('gameClosed', this.onGameClosed);
+        this.socketService.off('gameStartInfo', this.onGameStarted);
     }
 }

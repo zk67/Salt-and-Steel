@@ -295,7 +295,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     const onPlayerId = (p: Player) => {
       this.socketService.off('playerId', onPlayerId);
       player.id = p.id;
-      this.gameService.addPlayer(player);
+      this.gameService.setClientPlayer(player);
 
       this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
 
