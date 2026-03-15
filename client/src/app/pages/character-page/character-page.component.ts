@@ -266,6 +266,14 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       turnOrder: 0,
     };
 
+    const tryJoinCurrentGame = () => {
+      if (!selectedJoinRoomId) {
+        return;
+      }
+      this.socketService.joinRoom(selectedJoinRoomId);
+      this.socketService.send('addPlayerToCurrentGame', player);
+    };
+
     if (!this.socketService.isSocketAlive()) {
       this.socketService.connect();
     }
@@ -289,7 +297,11 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       if (!retry) {
         this.gameService.clearSelectedJoinRoomId();
         this.router.navigate(['/home']);
+        return;
       }
+
+      this.socketService.on('joinCurrentGameResult', onJoinCurrentGameResult);
+      tryJoinCurrentGame();
     };
 
     const onPlayerId = (p: Player) => {
@@ -301,8 +313,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
       // rejoindre une partie existante
       if (selectedJoinRoomId) {
-        this.socketService.joinRoom(selectedJoinRoomId);
-        this.socketService.send('addPlayerToCurrentGame', player);
+        tryJoinCurrentGame();
         return;
       }
 
