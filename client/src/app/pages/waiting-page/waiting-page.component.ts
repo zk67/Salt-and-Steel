@@ -5,6 +5,7 @@ import { SocketClientService } from '@app/services/socket-client.service';
 import { Player } from '@common/types/player.interface';
 
 const TIME_BEFORE_NAVIGATE_HOME = 5000;
+const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
 
 @Component({
     selector: 'app-waiting-page',
@@ -81,17 +82,35 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         this.socketService.send('startGame');
     }
 
-    goHome(): void {
+    private onBeforeUnload = (): void => {
+        sessionStorage.setItem(WAITING_PAGE_REFRESH_FLAG, '1');
+        this.goHome(true);
+    };
+
+    goHome(skipNavigate = false): void {
         const roomId = this.gameService.getSelectedJoinRoomId();
         this.socketService.send('surrender');
         if (roomId) {
             this.socketService.leaveRoom(roomId);
         }
         this.gameService.clearSelectedJoinRoomId();
-        this.router.navigate(['/home']);
+        if (!skipNavigate) {
+            this.router.navigate(['/home']);
+        }
     }
 
     ngOnInit(): void {
+        const wasRefreshing = sessionStorage.getItem(WAITING_PAGE_REFRESH_FLAG);
+        if (wasRefreshing) {
+            sessionStorage.removeItem(WAITING_PAGE_REFRESH_FLAG);
+            this.router.navigate(['/home']);
+            return;
+        }
+
+        window.addEventListener('beforeunload', this.onBeforeUnload);
+        window.addEventListener('unload', this.onBeforeUnload);
+        window.addEventListener('pagehide', this.onBeforeUnload);
+
         this.socketService.on('playersToGame', this.onPlayersToGame);
         this.socketService.on('gameClosed', this.onGameClosed);
         this.socketService.on('gameStartInfo', this.onGameStarted);
@@ -100,6 +119,10 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        window.removeEventListener('beforeunload', this.onBeforeUnload);
+        window.removeEventListener('unload', this.onBeforeUnload);
+        window.removeEventListener('pagehide', this.onBeforeUnload);
+
         this.socketService.off('playersToGame', this.onPlayersToGame);
         this.socketService.off('gameClosed', this.onGameClosed);
         this.socketService.off('gameStartInfo', this.onGameStarted);
