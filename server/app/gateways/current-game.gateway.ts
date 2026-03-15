@@ -198,6 +198,7 @@ export class CurrentGameGateway implements OnGatewayInit {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
             this.server.to(room).emit('removePlayer', { playerId: client.id });
             this.broadcastPlayers(room);
+            this.emitJoinableGames();
         }
 
         if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
