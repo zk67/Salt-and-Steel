@@ -291,7 +291,7 @@ export class CurrentGamesService {
 
     getJoinableGames(): JoinableGameSummary[] {
         return this.games
-            .filter(game => game.players.length < game._game.maxPlayers)
+            .filter(game => game.players.length < game._game.maxPlayers && !game.currentPhase)
             .map(game => {
                 return { roomId: game.roomId, game: game._game, playerCount: game.players.length };
             });
