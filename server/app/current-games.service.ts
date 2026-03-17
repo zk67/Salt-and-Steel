@@ -4,6 +4,7 @@ import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase }
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
 import { MapObjectType } from '@common/types/map.interface';
 import { Player } from '@common/types/player.interface';
+import { findNearestFreeSpawn } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 const RANDOM_RANGE = 0.5;
@@ -229,14 +230,14 @@ export class CurrentGamesService {
             return [battlePayload, false, false];
         }
 
-        //TODO: Vérifier que le point de départ n'est pas occupé. Sinon, trouver la case libre la plus proche.
+        const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
 
-        loser.x = loserSpawn.x;
-        loser.y = loserSpawn.y;
+        loser.x = respawnPos.x;
+        loser.y = respawnPos.y;
 
         battlePayload.loserPos = {
-            x: loserSpawn.x,
-            y: loserSpawn.y,
+            x: respawnPos.x,
+            y: respawnPos.y,
         };
 
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
