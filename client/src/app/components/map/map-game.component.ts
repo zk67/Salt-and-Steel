@@ -20,6 +20,20 @@ const PLAYER_DIRECTION: Record<string, string> = {
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
+export enum ContextMenuType {
+    PlayerToolTip = 'player',
+    Tile = 'tile',
+}
+
+interface ContextMenuContent {
+    type: ContextMenuType;
+    name?: string;
+    imageUrl?: string;
+    tileType?: string;
+    cost?: number;
+}
+
+
 @Component({
     selector: 'app-map-game',
     templateUrl: './map-game.component.html',
@@ -31,6 +45,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
     tileType = TileType;
     mapObjectType = MapObjectType;
     isClientPlayerTurn = signal<boolean>(false);
+
+    contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
 
     constructor(
         public mapService: MapService,
@@ -124,11 +140,38 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    onTileClick(x: number, y: number): void {
-        if (this.gameService.isDebugMode()) {
-            this.debugClick(x, y);
-        } else if (this.gameService.getActionMode() && this.getMovableTilesAt(x, y)) {
+    onTileClick(event: MouseEvent, x: number, y: number): void {
+        if (event.button === 2) { // clique droit
+            if (this.gameService.isDebugMode()) {
+                this.debugClick(x, y);
+            } else {
+                this.showContextMenu(event, x, y);
+            }
+        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(x, y)) { // clique gauche
             this.doActionAt(x, y);
+        }
+    }
+
+    showContextMenu(event: MouseEvent, x: number, y: number): void {
+        const player = this.getPlayerAt(x, y);
+        const tile = this.mapService.getTile(x, y);
+
+        if (player) {
+            this.contextMenu.set({
+                posX: event.clientX,
+                posY: event.clientY,
+                content: { type: ContextMenuType.PlayerToolTip, name: player.name, imageUrl: player.imageUrl },
+            });
+        } else if (tile) {
+            this.contextMenu.set({
+                posX: event.clientX,
+                posY: event.clientY,
+                content: {
+                    type: ContextMenuType.Tile,
+                    tileType: this.tileType[tile.tileType],
+                    cost: TILE_ENERGY_COST[tile.tileType],
+                },
+            });
         }
     }
 
