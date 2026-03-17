@@ -211,5 +211,19 @@
       </button>
 
     </footer>
+    @if (showInvalidFormMessage) {
+      <div class="popup-overlay">
+        <div class="popup">
+          <p>Veuillez remplir le formulaire au complet!</p>
+        </div>
+      </div>
+    }
+    @if (showInvalidNameMessage) {
+      <div class="popup-overlay">
+        <div class="popup">
+          <p>Le nom du personnage est invalide!</p>
+        </div>
+      </div>
+    }
   </div>
 </div>

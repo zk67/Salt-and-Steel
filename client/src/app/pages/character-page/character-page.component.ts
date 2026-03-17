@@ -12,6 +12,7 @@ const BASE_ATTACK = 4;
 const BASE_DEFENSE = 4;
 const NUMBER_OF_AVATARS = 12;
 const HALF_RANDOM = 0.5;
+const MESSAGE_SHOW_TIME = 1000;
 
 type StatKey = 'hp' | 'speed' | 'attack' | 'defense';
 type BonusTarget = 'hp' | 'speed';
@@ -42,6 +43,9 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   speed = new FormControl<number>(BASE_SPEED);
   attack = new FormControl<number>(BASE_ATTACK);
   defense = new FormControl<number>(BASE_DEFENSE);
+
+  showInvalidFormMessage = false;
+  showInvalidNameMessage = false;
 
   unavailableAvatars: string[] = [];
 
@@ -232,12 +236,18 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       !this.bonusTarget.value ||
       !this.d6Target.value
     ) {
-      alert('Veuillez remplir le formulaire au complet!');
+      this.showInvalidFormMessage = true;
+      setTimeout(() => {
+        this.showInvalidFormMessage = false;
+      }, MESSAGE_SHOW_TIME);
       return;
     }
 
     if (!isStringValid(this.characterName.value)) {
-      alert('Le nom du personnage est invalide!');
+      this.showInvalidNameMessage = true;
+      setTimeout(() => {
+        this.showInvalidNameMessage = false;
+      }, MESSAGE_SHOW_TIME);
       return;
     }
 
