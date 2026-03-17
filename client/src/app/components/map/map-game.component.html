@@ -1,21 +1,36 @@
-<div class="map-grid" [style.--grid-size]="mapService.getSize()">
-    @if (readyToLoad) {
-        @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
-            @for (tile of row; track $index; let colIndex = $index) {
-                <div class="tile"
-                    (contextmenu)="$event.preventDefault(); onTileClick(colIndex, rowIndex)"
-                    [attr.data-tile-type]="tileType[tile.tileType]"
-                    [attr.data-object]="mapObjectType[tile.mapObject]"
-                    [attr.data-movable]="getMovableTilesAt(colIndex, rowIndex) && isClientPlayerTurn() ? 'true' : null"
-                    [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
-                    [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'">
-                    @if (getPlayerAt(colIndex, rowIndex); as player) {
-                        <img class="player-avatar"
-                            [src]="player.imageUrl"
-                            [alt]="player.name" />
-                    }
-                </div>
+<div class="game-wrapper" (contextmenu)="$event.preventDefault()">
+    <div class="map-grid" [style.--grid-size]="mapService.getSize()">
+        @if (readyToLoad) {
+            @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
+                @for (tile of row; track $index; let colIndex = $index) {
+                    <div class="tile"
+                        (mousedown)="$event.preventDefault(); onTileClick($event, colIndex, rowIndex)"
+                        [attr.data-tile-type]="tileType[tile.tileType]"
+                        [attr.data-object]="mapObjectType[tile.mapObject]"
+                        [attr.data-movable]="getMovableTilesAt(colIndex, rowIndex) && isClientPlayerTurn() ? 'true' : null"
+                        [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
+                        [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'">
+                        @if (getPlayerAt(colIndex, rowIndex); as player) {
+                            <img class="player-avatar"
+                                [src]="player.imageUrl"
+                                [alt]="player.name" />
+                        }
+                    </div>
+                }
             }
         }
+    </div>
+
+    @if (contextMenu()) {
+        <div class="context-overlay" (mousedown)="contextMenu.set(null)"></div>
+        <div class="context-menu" [style.left.px]="contextMenu()!.posX" [style.top.px]="contextMenu()!.posY">
+            @if (contextMenu()!.content.type === 'player') {
+                <img [src]="contextMenu()!.content.imageUrl" [alt]="contextMenu()!.content.name" class="context-menu__avatar" />
+                <span class="context-menu__name">{{ contextMenu()!.content.name }}</span>
+            } @else {
+                <p><strong>Tuile :</strong> {{ contextMenu()!.content.tileType }}</p>
+                <p><strong>Coût :</strong> {{ contextMenu()!.content.cost }} PM</p>
+            }
+        </div>
     }
 </div>
