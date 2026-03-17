@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
-import { BattleWonPayload, GameInfoPayload, Game } from '@common/types/game.interface';
+import { BattleWonPayload, Game, GameInfoPayload } from '@common/types/game.interface';
 import { Player } from '@common/types/player.interface';
 import { MapService } from './map/map.service';
 
@@ -11,8 +11,8 @@ import { MapService } from './map/map.service';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
-    private selectedJoinRoomId: string | null =null;
-    private selectedHostGame: Game | null =null; 
+    private selectedJoinRoomId: string | null = null;
+    private selectedHostGame: Game | null = null;
 
     readonly activePlayer = computed(() => this.players().find((p) => p.id === this.activePlayerId()) ?? null);
     private activePlayerId = signal<string | null>(null);
@@ -120,7 +120,7 @@ export class GameService {
     toggleDebugMode(): void {
         this.isDebugMode.update((v) => !v);
     }
-    
+
     setDebugMode(debugMode: boolean): void {
         this.isDebugMode.set(debugMode);
 
