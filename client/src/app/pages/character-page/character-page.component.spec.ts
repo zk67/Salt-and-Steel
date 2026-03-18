@@ -1,11 +1,11 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { BonusTarget, DiceTarget } from '@common/enums/player.enums';
-import { GatewayEvents } from '@common/types/gateway.events';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { CharacterPageComponent } from './character-page.component';
 
 
