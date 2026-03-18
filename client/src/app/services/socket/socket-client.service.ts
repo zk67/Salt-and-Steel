@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { io, Socket } from 'socket.io-client';
 import { environment } from 'src/environments/environment';
 
@@ -19,27 +20,27 @@ export class SocketClientService {
         this.socket.disconnect();
     }
 
-    on<T>(event: string, action: (data: T) => void): void {
+    on<T>(event: GatewayEvents, action: (data: T) => void): void {
         this.socket.on(event, action);
     }
 
-    off<T>(event: string, action: (data: T) => void): void {
+    off<T>(event: GatewayEvents, action: (data: T) => void): void {
         this.socket.off(event, action);
     }
 
-    send<T>(event: string, data?: T, callback?: () => void): void {
+    send<T>(event: GatewayEvents, data?: T, callback?: () => void): void {
         this.socket.emit(event, ...([data, callback].filter((x) => x)));
     }
 
     joinRoom(room: string): void {
-        this.socket.emit('joinRoom', room);
+        this.socket.emit(GatewayEvents.JoinRoom, room);
     }
 
     leaveRoom(room: string): void {
-        this.socket.emit('leaveRoom', room);
+        this.socket.emit(GatewayEvents.LeaveRoom, room);
     }
 
     sendMessage(content: string): void {
-        this.socket.emit('sendMessage', { content });
+        this.socket.emit(GatewayEvents.SendMessage, { content });
     }
 }

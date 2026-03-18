@@ -3,9 +3,10 @@ import { ChatComponent } from '@app/components/chat/chat.component';
 import { LeftSidebarComponent } from '@app/components/game/left-sidebar/left-sidebar.component';
 import { RightSidebarComponent } from '@app/components/game/right-sidebar/right-sidebar.component';
 import { MapGameComponent } from '@app/components/map/map-game.component';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 
 @Component({
@@ -31,11 +32,11 @@ export class GamePageComponent implements OnInit, OnDestroy {
             this.currentPlayerName = currentPlayer.name;
             this.currentPlayerId = currentPlayer.id;
         }
-        this.socketService.on('message', this.addMessage);
+        this.socketService.on(GatewayEvents.Message, this.addMessage);
     }
 
     ngOnDestroy(): void {
-        this.socketService.off('message', this.addMessage);
+        this.socketService.off(GatewayEvents.Message, this.addMessage);
     }
 
     private addMessage = (msg: ChatMessage) => {

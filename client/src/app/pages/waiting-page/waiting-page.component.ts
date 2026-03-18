@@ -1,10 +1,11 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 const TIME_BEFORE_NAVIGATE_HOME = 5000;
 const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
@@ -86,7 +87,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         }
 
         this.router.navigate(['/game']);
-        this.socketService.send('startGame');
+        this.socketService.send(GatewayEvents.StartGame);
     }
 
     private onBeforeUnload = (): void => {
@@ -96,7 +97,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     goHome(skipNavigate = false): void {
         const roomId = this.gameService.getSelectedJoinRoomId();
-        this.socketService.send('surrender');
+        this.socketService.send(GatewayEvents.Surrender);
         if (roomId) {
             this.socketService.leaveRoom(roomId);
         }
@@ -118,12 +119,12 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.addEventListener('unload', this.onBeforeUnload);
         window.addEventListener('pagehide', this.onBeforeUnload);
 
-        this.socketService.on('playersToGame', this.onPlayersToGame);
-        this.socketService.on('message', this.addMessage);
-        this.socketService.on('gameClosed', this.onGameClosed);
-        this.socketService.on('gameStartInfo', this.onGameStarted);
-        this.socketService.on('kicked', this.onKicked);
-        this.socketService.send('getPlayersToGame');
+        this.socketService.on(GatewayEvents.PlayersToGame, this.onPlayersToGame);
+        this.socketService.on(GatewayEvents.Message, this.addMessage);
+        this.socketService.on(GatewayEvents.GameClosed, this.onGameClosed);
+        this.socketService.on(GatewayEvents.GameStartInfo, this.onGameStarted);
+        this.socketService.on(GatewayEvents.Kicked, this.onKicked);
+        this.socketService.send(GatewayEvents.GetPlayersToGame);
 
         this.messages = this.gameService.getChatMessages();
         const currentPlayer = this.gameService.clientPlayer();
@@ -138,11 +139,11 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.removeEventListener('unload', this.onBeforeUnload);
         window.removeEventListener('pagehide', this.onBeforeUnload);
 
-        this.socketService.off('playersToGame', this.onPlayersToGame);
-        this.socketService.off('message', this.addMessage);
-        this.socketService.off('gameClosed', this.onGameClosed);
-        this.socketService.off('gameStartInfo', this.onGameStarted);
-        this.socketService.off('kicked', this.onKicked);
+        this.socketService.off(GatewayEvents.PlayersToGame, this.onPlayersToGame);
+        this.socketService.off(GatewayEvents.Message, this.addMessage);
+        this.socketService.off(GatewayEvents.GameClosed, this.onGameClosed);
+        this.socketService.off(GatewayEvents.GameStartInfo, this.onGameStarted);
+        this.socketService.off(GatewayEvents.Kicked, this.onKicked);
     }
 
     kickPlayer(playerId: string): void {
@@ -150,7 +151,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.socketService.send('kickPlayer', { playerId });
+        this.socketService.send(GatewayEvents.KickPlayer, { playerId });
     }
 
 

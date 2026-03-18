@@ -1,4 +1,4 @@
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { GamesController } from '@app/database/game/controllers/games.controller';
 import { Game, gameSchema } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';

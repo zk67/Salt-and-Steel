@@ -1,11 +1,12 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { getActionableTiles, movableTiles } from '@common/utils/map.utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { BattleWonPayload, Game, GameInfoPayload, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { MapService } from '@app/services/map/map.service';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { MapService } from './map/map.service';
 import { TimeService } from './time.service';
 
 @Injectable({
@@ -41,7 +42,7 @@ export class GameService {
     private chatMessages: ChatMessage[] = [];
 
     constructor(private mapService: MapService, private socketService: SocketClientService, private timeService: TimeService) {
-        this.socketService.on('removePlayer', ({ playerId }: { playerId: string }) => {
+        this.socketService.on(GatewayEvents.RemovePlayer, ({ playerId }: { playerId: string }) => {
             if (!this.isGameStarted) {
                 this.removePlayer(playerId);
             } else {
@@ -49,9 +50,9 @@ export class GameService {
             }
         });
 
-        this.socketService.on<GameInfoPayload>('gameStartInfo', this.handleStartGame.bind(this));
-        this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
-        this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
+        this.socketService.on<GameInfoPayload>(GatewayEvents.GameStartInfo, this.handleStartGame.bind(this));
+        this.socketService.on<BattleWonPayload>(GatewayEvents.HandleBattleWon, this.handleBattleWon.bind(this));
+        this.socketService.on<NewTurnPayload>(GatewayEvents.NewTurn, this.handleNewTurn.bind(this));
     }
 
     setChatMessages(messages: ChatMessage[]): void {
@@ -149,10 +150,10 @@ export class GameService {
         payload.players.forEach(p => {
             if (p.id !== this.clientPlayer()?.id) {
                 this.addPlayer(p);
-                this.updatePlayer(p.id, { x: p.x, y: p.y });
+                this.updatePlayer(p.id, { position: p.position });
                 alert(`Player ${p.name} has joined the game!`);
             } else {
-                this.updatePlayer(p.id, { x: p.x, y: p.y });
+                this.updatePlayer(p.id, { position: p.position });
             }
         });
 
@@ -166,7 +167,7 @@ export class GameService {
 
         alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
         this.addVictoryPoint(winner.id);
-        this.updatePlayer(loser.id, { x: payload.loserPos.x, y: payload.loserPos.y });
+        this.updatePlayer(loser.id, { position: payload.loserPos });
     }
 
     setSelectedHostGame(game: Game): void {
@@ -179,6 +180,25 @@ export class GameService {
 
     clearSelectedHostGame(): void {
         this.selectedHostGame = null;
+    }
+
+    clearGameService(): void {
+        this.players.set([]);
+        this.activePlayerId.set(null);
+
+        if(this.selectedJoinRoomId) {
+            this.socketService.leaveRoom(this.selectedJoinRoomId);
+            this.clearSelectedJoinRoomId();
+        }
+
+        this.clearSelectedHostGame();
+        this.isGameStarted = false;
+        this.clientPlayerId = '';
+        this.actionMode = false;
+        this.isDebugMode.set(false);
+        this.hostId.set(null);
+        this.actionTile.set([]);
+        this.mapService.clearMapService();
     }
 
     private handleNewTurn(newTurn: NewTurnPayload) {
