@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
-import { BonusTarget, DiceTarget, DieKind, StatKey } from '@common/enums/player.enums';
+import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
@@ -43,7 +43,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   defense = new FormControl<number>(BASE_DEFENSE);
   readonly bonusTargetEnum = BonusTarget;
   readonly diceTargetEnum = DiceTarget;
-  readonly dieKindEnum = DieKind;
+  readonly dieKindEnum = DiceKind;
   readonly statKeyEnum = StatKey;
 
   showInvalidFormMessage = false;
@@ -117,20 +117,20 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.unavailableAvatars = avatars;
   };
 
-  getDieFor(target: DiceTarget): DieKind {
+  getDieFor(target: DiceTarget): DiceKind {
     const d6 = this.d6Target.value;
     if (!d6) {
-      return DieKind.None;
+      return DiceKind.None;
     }
-    return d6 === target ? DieKind.D6 : DieKind.D4;
+    return d6 === target ? DiceKind.D6 : DiceKind.D4;
   }
 
   getDieLabel(target: DiceTarget): string {
     const kind = this.getDieFor(target);
-    if (kind === DieKind.None) {
+    if (kind === DiceKind.None) {
       return 'D?';
     }
-    return kind === DieKind.D6 ? 'D6' : 'D4';
+    return kind === DiceKind.D6 ? 'D6' : 'D4';
   }
 
   getDieSummary(): string {

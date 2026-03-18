@@ -8,7 +8,7 @@ export enum BonusTarget {
     Speed = 'speed',
 }
 
-export enum DieKind {
+export enum DiceKind {
     D4 = 'd4',
     D6 = 'd6',
     None = 'none',
