@@ -79,6 +79,7 @@ export class CurrentGamesService {
         }
 
         this.games.splice(index, 1);
+        this.usedNameSuffixesByRoom.delete(roomId);
         return true;
     }
 
