@@ -1,6 +1,7 @@
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -26,7 +27,7 @@ export class ChatGateway implements OnGatewayInit {
         return `${h}:${m}:${s}`;
     }
 
-    @SubscribeMessage('sendMessage')
+    @SubscribeMessage(GatewayEvents.SendMessage)
     handleMessage(socket: Socket, payload: { content: string }) {
 
         const roomId = getRoomIdFromSocket(socket);
@@ -40,7 +41,7 @@ export class ChatGateway implements OnGatewayInit {
             playerId: author.id,
         };
 
-        this.server.to(roomId).emit('message', message);
+        this.server.to(roomId).emit(GatewayEvents.Message, message);
         this.logger.log(`Message from ${socket.id}: ${payload.content}`);
     }
 

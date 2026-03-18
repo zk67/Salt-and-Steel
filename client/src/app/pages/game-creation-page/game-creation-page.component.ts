@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink ,Router } from '@angular/router';
 import { GameCardComponent } from '@app/components/game/game-card/game-card.component';
-import { GameService } from '@app/services/game.service';
-import { SaveService } from '@app/services/save.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SaveService } from '@app/services/save/save.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 
 @Component({
@@ -32,11 +33,11 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
       this.getAllGames();
     };
 
-    this.socketService.on<Game>('update', this.refreshListener);
+    this.socketService.on<Game>(GatewayEvents.Update, this.refreshListener);
   }
 
   ngOnDestroy(): void {
-    this.socketService.off('update', this.refreshListener);
+    this.socketService.off(GatewayEvents.Update, this.refreshListener);
   }
 
   getAllGames(): void {
@@ -46,6 +47,7 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
   }
 
   selectGame(game: Game): void {
+    this.gameService.clearGameService();
     this.gameService.setSelectedHostGame(game);
     this.router.navigate(['/character-form']);
   }

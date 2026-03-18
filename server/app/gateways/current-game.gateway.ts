@@ -1,8 +1,9 @@
-import { CurrentGamesService, JoinableGameSummary } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
+import { CurrentGamesService, JoinableGameSummary } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -20,11 +21,11 @@ export class CurrentGameGateway implements OnGatewayInit {
 
     afterInit(): void {
         this.currentGamesService.setEmitCallback((roomId, payload) => {
-            this.server.to(roomId).emit('newTurn', payload);
+            this.server.to(roomId).emit(GatewayEvents.NewTurn, payload);
         });
     }
 
-    @SubscribeMessage('movePlayer')
+    @SubscribeMessage(GatewayEvents.MovePlayer)
     handleMovePlayer(client: Socket, payload: MovePlayerPayload): void {
         const room = getRoomIdFromSocket(client);
         this.logger.log(`Player ${payload.playerId} attempting to move ${payload.direction}`);
@@ -34,7 +35,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
 
         if (this.currentGamesService.movePlayer(room, payload.playerId, payload.direction)) {
-            this.server.to(room).emit('playerMoved', payload);
+            this.server.to(room).emit(GatewayEvents.PlayerMoved, payload);
             this.logger.log(`Player ${payload.playerId} moved ${payload.direction}`);
         } else {
             this.logger.warn(`Failed to move player ${payload.playerId} in direction ${payload.direction}`);
@@ -65,7 +66,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         return true;
     }
 
-    @SubscribeMessage('startGame')
+    @SubscribeMessage(GatewayEvents.StartGame)
     startGame(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         this.logger.log(`Starting game for room: ${room}`);
@@ -77,10 +78,10 @@ export class CurrentGameGateway implements OnGatewayInit {
             game: game._game,
         };
 
-        this.server.to(room).emit('gameStartInfo', gameInfoPayload);
+        this.server.to(room).emit(GatewayEvents.GameStartInfo, gameInfoPayload);
     }
 
-    @SubscribeMessage('createGame')
+    @SubscribeMessage(GatewayEvents.CreateGame)
     async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
         const room = getRoomIdFromSocket(client);
 
@@ -100,33 +101,33 @@ export class CurrentGameGateway implements OnGatewayInit {
         return true;
     }
 
-    @SubscribeMessage('addPlayerToGame')
+    @SubscribeMessage(GatewayEvents.AddPlayerToGame)
     addPlayerToGame(client: Socket, player: Player): void {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.addPlayerToGame(room, player);
         this.broadcastPlayers(room);
     }
 
-    @SubscribeMessage('getPlayersToGame')
+    @SubscribeMessage(GatewayEvents.GetPlayersToGame)
     getPlayersToGame(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         const players = this.currentGamesService.getPlayersToGame(room);
-        client.emit('playersToGame', players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
+        client.emit(GatewayEvents.PlayersToGame, players); // a tester pour savoir si c'est mieux ça ou client.emit (vérifier si ça envoie trop de requêtes (genre 1 pas personne alors qu'on a besoin d'un en tout))
 
     }
 
     private broadcastPlayers(roomId: string): void {
         const players = this.currentGamesService.getPlayersToGame(roomId);
-        this.server.to(roomId).emit('playersToGame', players);
+        this.server.to(roomId).emit(GatewayEvents.PlayersToGame, players);
     }
 
-    @SubscribeMessage('getJoinableGames')
+    @SubscribeMessage(GatewayEvents.GetJoinableGames)
     handleGetJoinableGames(client: Socket): void {
         const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
-        client.emit('joinableGames', joinableGames);
+        client.emit(GatewayEvents.JoinableGames, joinableGames);
     }
 
-    @SubscribeMessage('endTurnEarly')
+    @SubscribeMessage(GatewayEvents.EndTurnEarly)
     endTurnEarly(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.validateEndTurnEarly(room, client.id);
@@ -139,10 +140,9 @@ export class CurrentGameGateway implements OnGatewayInit {
         this.currentGamesService.nextPlayerTurn(room);
     }
 
-
-    @SubscribeMessage('debugMove')
+    @SubscribeMessage(GatewayEvents.DebugMove)
     handleDebugMove(client: Socket, payload: DebugMovePayload): void {
-        this.logger.log(`Player ${payload.playerId} attempting to move to (${payload.x}, ${payload.y})`);
+        this.logger.log(`Player ${payload.playerId} attempting to move to (${payload.targetPos.x}, ${payload.targetPos.y})`);
 
         if (!this.validatePlayer(client, payload.playerId)) {
             return;
@@ -150,16 +150,16 @@ export class CurrentGameGateway implements OnGatewayInit {
 
         const room = getRoomIdFromSocket(client);
 
-        if (this.currentGamesService.debugMove(room, payload.playerId, payload.x, payload.y)) {
-            this.server.to(room).emit('handleClickDebug', payload);
+        if (this.currentGamesService.debugMove(room, payload.playerId, payload.targetPos)) {
+            this.server.to(room).emit(GatewayEvents.HandleClickDebug, payload);
         } else {
-            this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.x}, ${payload.y})`);
+            this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.targetPos.x}, ${payload.targetPos.y})`);
         }
     }
 
-    @SubscribeMessage('battleWon')
+    @SubscribeMessage(GatewayEvents.BattleWon)
     handleBattleWon(client: Socket, payload: BattleWonPayload): void {
-        if (!this.validatePlayer(client, payload.winnerId) || !this.validatePlayer(client, payload.loserId)) {
+        if (!(this.validatePlayer(client, payload.winnerId) || this.validatePlayer(client, payload.loserId))) {
             return;
         }
 
@@ -167,17 +167,16 @@ export class CurrentGameGateway implements OnGatewayInit {
         const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload);
 
         if (battleValid) {
-            this.server.emit('handleBattleWon', updatedPayload);
+            this.server.to(room).emit(GatewayEvents.HandleBattleWon, updatedPayload);
             this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
 
-
             if (isGameOver) {
-                this.server.to(room).emit('gameOver', { winnerId: payload.winnerId });
+                this.server.to(room).emit(GatewayEvents.GameOver, { winnerId: payload.winnerId });
             }
         }
     }
 
-    @SubscribeMessage('surrender')
+    @SubscribeMessage(GatewayEvents.Surrender)
     handleSurrender(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         const game = this.currentGamesService.getGameByRoomId(room);
@@ -189,14 +188,14 @@ export class CurrentGameGateway implements OnGatewayInit {
         if (isHost) {
             this.logger.log(`Host ${client.id} is leaving: closing room ${room}`);
             this.currentGamesService.removeGame(room);
-            this.server.to(room).emit('gameClosed');
+            this.server.to(room).emit(GatewayEvents.GameClosed);
             this.emitJoinableGames();
             return;
         }
 
         if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
-            this.server.to(room).emit('removePlayer', { playerId: client.id });
+            this.server.to(room).emit(GatewayEvents.RemovePlayer, { playerId: client.id });
             this.broadcastPlayers(room);
             this.emitUnavailableAvatars(room);
             this.emitJoinableGames();
@@ -204,11 +203,11 @@ export class CurrentGameGateway implements OnGatewayInit {
 
         if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
             this.logger.log(`Host ${client.id} has surrendered. Debug mode disabled in room: ${room}`);
-            this.server.to(room).emit('handleToggleDebugMode');
+            this.server.to(room).emit(GatewayEvents.HandleToggleDebugMode);
         }
     }
 
-    @SubscribeMessage('kickPlayer')
+    @SubscribeMessage(GatewayEvents.KickPlayer)
     handleKickPlayer(client: Socket, payload: { playerId: string; }): void {
         const room = getRoomIdFromSocket(client);
         const game = this.currentGamesService.getGameByRoomId(room);
@@ -224,31 +223,31 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
 
         if (this.currentGamesService.removePlayerFromGame(room, payload.playerId)) {
-            this.server.to(payload.playerId).emit('kicked');
+            this.server.to(payload.playerId).emit(GatewayEvents.Kicked);
 
-            this.server.to(room).emit('removePlayer', { playerId: payload.playerId });
+            this.server.to(room).emit(GatewayEvents.RemovePlayer, { playerId: payload.playerId });
             this.broadcastPlayers(room);
         }
     }
 
     private emitJoinableGames(): void {
         const joinableGames: JoinableGameSummary[] = this.currentGamesService.getJoinableGames();
-        this.server.emit('joinableGames', joinableGames);
+        this.server.emit(GatewayEvents.JoinableGames, joinableGames);
     }
 
-    @SubscribeMessage('addPlayerToCurrentGame')
+    @SubscribeMessage(GatewayEvents.AddPlayerToCurrentGame)
     handleAddPlayerToCurrentGame(client: Socket, player: Player): void {
         const room = getRoomIdFromSocket(client);
 
         if (!room) {
             this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);
-            client.emit('joinCurrentGameResult', { success: false });
+            client.emit(GatewayEvents.JoinCurrentGameResult, { success: false });
             return;
         }
 
         if (!this.currentGamesService.canJoinGame(room)) {
             this.logger.warn(`Impossible d'ajouter le joueur ${player.name}: salle verrouillee ou pleine (${room})`);
-            client.emit('joinCurrentGameResult', { success: false });
+            client.emit(GatewayEvents.JoinCurrentGameResult, { success: false });
             return;
         }
 
@@ -259,18 +258,18 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
         this.logger.log(`Player ${player.name} added to current game in room ${room}`);
         this.broadcastPlayers(room);
-        client.emit('joinCurrentGameResult', { success: true });
+        client.emit(GatewayEvents.JoinCurrentGameResult, { success: true });
         this.emitJoinableGames();
     }
 
-    @SubscribeMessage('getUnavailableAvatars')
+    @SubscribeMessage(GatewayEvents.GetUnavailableAvatars)
     handleGetUnavailableAvatars(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         if (room) {
             const avatars = this.currentGamesService.getUnavailableAvatars(room);
-            client.emit('unavailableAvatars', avatars);
+            client.emit(GatewayEvents.UnavailableAvatars, avatars);
         } else {
-            client.emit('unavailableAvatars', []);
+            client.emit(GatewayEvents.UnavailableAvatars, []);
             return;
         }
 
@@ -278,10 +277,10 @@ export class CurrentGameGateway implements OnGatewayInit {
 
     private emitUnavailableAvatars(roomId: string): void {
         const avatars = this.currentGamesService.getUnavailableAvatars(roomId);
-        this.server.to(roomId).emit('unavailableAvatars', avatars);
+        this.server.to(roomId).emit(GatewayEvents.UnavailableAvatars, avatars);
     }
 
-    @SubscribeMessage('selectAvatarInJoinForm')
+    @SubscribeMessage(GatewayEvents.SelectAvatarInJoinForm)
     handleSelectAvatarInJoinForm(client: Socket, avatar: string): void {
         const room = getRoomIdFromSocket(client);
         if (room) {
@@ -290,7 +289,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
     }
 
-    @SubscribeMessage('clearSelectedAvatarInJoinForm')
+    @SubscribeMessage(GatewayEvents.ClearSelectedAvatarInJoinForm)
     handleClearSelectedAvatarInJoinForm(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         if (room) {
@@ -299,7 +298,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
     }
 
-    @SubscribeMessage('toggleDebugMode')
+    @SubscribeMessage(GatewayEvents.ToggleDebugMode)
     handleToggleDebugMode(client: Socket, payload: ToggleDebugPayload): void {
         const room = getRoomIdFromSocket(client);
         const game = this.currentGamesService.getGameByRoomId(room);
@@ -313,7 +312,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         payload.debugMode = !game.debugMode;
         if (client.id === game.idHost) {
             this.currentGamesService.toggleDebugMode(game, payload);
-            this.server.to(room).emit('handleToggleDebugMode', payload);
+            this.server.to(room).emit(GatewayEvents.HandleToggleDebugMode, payload);
         }
 
         this.logger.log(`Toggled debug mode to ${payload.debugMode} for room: ${room}`);

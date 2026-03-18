@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MapService } from '@app/services/map/map.service';
-import { SaveService } from '@app/services/save.service';
+import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { getObjectDescription } from '@app/utils/game-utils';
 import { GameMode, MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
 import { firstValueFrom } from 'rxjs';
+import { Position } from '@common/utils/map.utils';
 
 @Component({
     selector: 'app-map-editor',
@@ -47,19 +48,19 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         private router: Router,
     ) {}
 
-    onMouseDown(event: MouseEvent, x: number, y: number): void {
+    onMouseDown(event: MouseEvent, position: Position): void {
         this.isMouseDown = true;
         this.mouseButton = event.button;
-        this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
+        this.toolService.useTool(this.mouseButton, event.shiftKey, position);
     }
 
-    onMouseEnter(event: MouseEvent, x: number, y: number): void {
+    onMouseEnter(event: MouseEvent, position: Position): void {
         if (this.isMouseDown) {
             const isObjectTool = this.toolService.getToolType() === ToolType.Object;
             const canDrag = !isObjectTool || this.mouseButton === 2;
 
             if (canDrag) {
-                this.toolService.useTool(this.mouseButton, event.shiftKey, x, y);
+                this.toolService.useTool(this.mouseButton, event.shiftKey, position);
             }
         }
     }

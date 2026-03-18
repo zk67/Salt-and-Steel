@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-
-import { SaveService } from '@app/services/save.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { SaveService } from '@app/services/save/save.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 import { AdminPageComponent } from './admin-page.component';
 
@@ -134,7 +134,7 @@ describe('Page admin (AdminPageComponent)', () => {
     it('ngOnInit() devrait s abonner à l événement update du socket', () => {
         component.ngOnInit();
         expect(socketSpy.on).toHaveBeenCalled();
-        expect(socketSpy.on.calls.mostRecent().args[0]).toBe('update');
+        expect(socketSpy.on.calls.mostRecent().args[0]).toBe(GatewayEvents.Update);
     });
 
     it('deleteGame() devrait définir errorMsg si le service échoue', () => {

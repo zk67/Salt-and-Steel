@@ -1,11 +1,18 @@
-import { Timer } from '@app/game-timer';
+import { Timer } from '@app/utils/game-timer';
 import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { findNearestFreeSpawn } from '@common/utils/map.utils';
+import { DIRECTION_STRING } from '@common/types/game.record';
 import { Injectable, Logger } from '@nestjs/common';
+import {
+    addPositions,
+    arePositionAdjacent,
+    findNearestFreeSpawn,
+    isValidTile,
+    Position,
+    TILE_MOVEMENT_COST,
+} from '@common/utils/map.utils';
 
 const RANDOM_RANGE = 0.5;
 
@@ -90,17 +97,20 @@ export class CurrentGamesService {
         const player = game.players.find(p => p.id === playerId);
         if (!player) return false;
 
-        const [dx, dy] = DIRECTION[direction];
+        const directionVector = DIRECTION_STRING[direction];
+        if (!directionVector) return false;
 
-        const movementCost = TILE_ENERGY_COST[game._game.tiles[player.y + dy][player.x + dx].tileType];
+        const newPosition = addPositions(player.position, directionVector);
+        if (!isValidTile(game._game.tiles, newPosition)) return false;
+
+        const movementCost = TILE_MOVEMENT_COST[game._game.tiles[newPosition.y][newPosition.x].tileType];
 
         if (player.movementPoints < movementCost) {
             return false;
         }
 
         player.movementPoints -= movementCost;
-        player.x += dx;
-        player.y += dy;
+        player.position = newPosition;
 
         return true;
     }
@@ -136,7 +146,7 @@ export class CurrentGamesService {
 
         const nbPlayers = game.players.length;
 
-        const spawnPoints: { x: number; y: number }[] = [];
+        const spawnPoints: Position[] = [];
         for (let y = 0; y < game._game.tiles.length; y++) {
             for (let x = 0; x < game._game.tiles[y].length; x++) {
                 if (game._game.tiles[y][x].mapObject === MapObjectType.SpawnPoint) {
@@ -149,9 +159,8 @@ export class CurrentGamesService {
 
         game.spawnPoints = new Map();
         game.players.forEach((player, index) => {
-            player.x = shuffled[index].x;
-            player.y = shuffled[index].y;
-            game.spawnPoints.set(player.id, { x: shuffled[index].x, y: shuffled[index].y });
+            player.position = shuffled[index];
+            game.spawnPoints.set(player.id, shuffled[index]);
         });
 
         shuffled.slice(nbPlayers).forEach(({ x, y }) => {
@@ -204,7 +213,7 @@ export class CurrentGamesService {
         this.emitCallback?.(game.roomId, turnPayload);
     }
 
-    debugMove(roomId: string, playerId: string, x: number, y: number): boolean {
+    debugMove(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
@@ -213,8 +222,7 @@ export class CurrentGamesService {
 
         if (player.id !== game.turnOrder[game.currentTurnIndex]) return false;
 
-        player.x = x;
-        player.y = y;
+        player.position = position;
 
         return true;
     }
@@ -234,11 +242,9 @@ export class CurrentGamesService {
             return [battlePayload, false, false];
         }
 
-        const dx = Math.abs(winner.x - loser.x);
-        const dy = Math.abs(winner.y - loser.y);
-        const areAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
-        if (!areAdjacent) {
-            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.x},${winner.y}), loser (${loser.x},${loser.y})`);
+        if (!arePositionAdjacent(winner.position, loser.position)) {
+            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.position.x},${winner.position.y}),
+                 loser (${loser.position.x},${loser.position.y})`);
             return [battlePayload, false, false];
         }
 
@@ -253,13 +259,8 @@ export class CurrentGamesService {
 
         const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
 
-        loser.x = respawnPos.x;
-        loser.y = respawnPos.y;
-
-        battlePayload.loserPos = {
-            x: respawnPos.x,
-            y: respawnPos.y,
-        };
+        loser.position = respawnPos;
+        battlePayload.loserPos = respawnPos;
 
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
     }
@@ -379,7 +380,7 @@ export interface PlayableGame {
     turnOrder?: string[];
     currentTurnIndex?: number;
     currentPhase?: TurnPhase;
-    spawnPoints?: Map<string, { x: number; y: number }>;
+    spawnPoints?: Map<string, Position>;
     idHost?: string;
     debugMode?: boolean;
 }

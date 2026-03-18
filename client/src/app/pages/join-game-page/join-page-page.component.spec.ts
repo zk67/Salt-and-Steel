@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { JoinGameComponent } from './join-game-page.component';
 
 /**
@@ -75,6 +76,7 @@ describe('JoinGameComponent', () => {
         ]);
 
         gameServiceSpy = jasmine.createSpyObj<GameService>('GameService', [
+            'clearGameService',
             'setSelectedJoinRoomId',
         ]);
 
@@ -104,8 +106,8 @@ describe('JoinGameComponent', () => {
 
     it('devrait se connecter si le socket n’est pas actif et demander les parties joignables', () => {
         expect(socketServiceSpy.connect).toHaveBeenCalled();
-        expect(socketServiceSpy.on).toHaveBeenCalledWith('joinableGames', jasmine.any(Function));
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('getJoinableGames');
+        expect(socketServiceSpy.on).toHaveBeenCalledWith(GatewayEvents.JoinableGames, jasmine.any(Function));
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.GetJoinableGames);
     });
 
     it('devrait afficher toutes les parties en attente avec au moins une place disponible et le nombre de joueurs', () => {
@@ -137,6 +139,7 @@ describe('JoinGameComponent', () => {
     it('devrait permettre de choisir une partie et rediriger vers la création de personnage', () => {
         component.selectGame('room-1');
 
+        expect(gameServiceSpy.clearGameService).toHaveBeenCalled();
         expect(gameServiceSpy.setSelectedJoinRoomId).toHaveBeenCalledWith('room-1');
         expect(router.navigate).toHaveBeenCalledWith(['/character-form']);
     });
@@ -144,6 +147,6 @@ describe('JoinGameComponent', () => {
     it('devrait désenregistrer le listener socket à la destruction', () => {
         const callback = getJoinableGamesListener();
         component.ngOnDestroy();
-        expect(socketServiceSpy.off).toHaveBeenCalledWith('joinableGames', callback);
+        expect(socketServiceSpy.off).toHaveBeenCalledWith(GatewayEvents.JoinableGames, callback);
     });
 });

@@ -2,9 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
-import { SaveService } from '@app/services/save.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { SaveService } from '@app/services/save/save.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({
     selector: 'app-admin-page',
@@ -85,6 +86,6 @@ export class AdminPageComponent implements OnInit {
                 this.games = games;
             });
         };
-        this.socketService.on<Game>('update', this.refreshListener);
+        this.socketService.on<Game>(GatewayEvents.Update, this.refreshListener);
     }
 }

@@ -1,5 +1,6 @@
 import { DiceTarget } from '@common/enums/player.enums';
 import { NullableNumber } from '@common/types/shared.types';
+import { Position } from "@common/utils/map.utils";
 
 export interface Player {
     id: string;
@@ -14,6 +15,7 @@ export interface Player {
     defense: NullableNumber;
     d6target: DiceTarget | null;
     d4target: DiceTarget | null;
+    position: Position
     movementPoints: number;
     actionsLeft: number;
     victoryPoints: number;

@@ -1,14 +1,31 @@
 import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
-export const directions = [
-    [0, -1],
-    [0, 1],
-    [-1, 0],
-    [1, 0],
+export type Position = { x: number; y: number };
+type MovementState = Position & { movementPoints: number };
+
+export const DIRECTION: readonly Position[] = [
+    { x: 0, y: -1 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
 ];
 
-export const TILE_ENERGY_COST: Record<TileType, number> = {
+export function equalPositions(pos1: Position, pos2: Position): boolean {
+    return pos1.x === pos2.x && pos1.y === pos2.y;
+}
+
+export function arePositionAdjacent(pos1: Position, pos2: Position): boolean {
+    const dx = Math.abs(pos1.x - pos2.x);
+    const dy = Math.abs(pos1.y - pos2.y);
+    return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+}
+
+export function addPositions(pos1: Position, pos2: Position): Position {
+    return { x: pos1.x + pos2.x, y: pos1.y + pos2.y };
+}
+
+export const TILE_MOVEMENT_COST: Record<TileType, number> = {
     [TileType.Basic]: 1,
     [TileType.Water]: 2,
     [TileType.Ice]: 0,
@@ -16,62 +33,65 @@ export const TILE_ENERGY_COST: Record<TileType, number> = {
     [TileType.Door]: 1,
 };
 
-export function getPlayerAt(players: Player[] | undefined, x: number, y: number): Player | null {
+export function getPlayerAt(players: Player[] | undefined, position: Position): Player | null {
     if (!players) return null;
-    return players.find(p => p.x === x && p.y === y) || null;
+    return players.find(p => equalPositions(p.position, position)) || null;
+}
+
+export function createBooleanGrid(tiles: TileData[][]): boolean[][] {
+    return tiles.map(row => row.map(() => false));
+}
+
+export function isValidTile(tiles: TileData[][], position: Position): boolean {
+    return !(position.x < 0 || position.y < 0 || position.y >= tiles.length || position.x >= tiles[position.y].length);
+}
+
+function canMoveToTile(tiles: TileData[][], players: Player[], state: MovementState, target: Position): number | null {
+    if (!isValidTile(tiles, target)) return null;
+    if (getPlayerAt(players, target)) return null;
+
+    const tile = tiles[target.y][target.x];
+    const movementCost = TILE_MOVEMENT_COST[tile.tileType];
+    const remainingMovementPoints = state.movementPoints - movementCost;
+
+    return remainingMovementPoints < 0 ? null : remainingMovementPoints;
+}
+
+function getVisitedKey(position: Position): string {
+    return `${position.x},${position.y}`;
+}
+
+function shouldVisitTile(visited: Map<string, number>, position: Position, remainingMovementPoints: number): boolean {
+    const previousMovementPoints = visited.get(getVisitedKey(position));
+    return previousMovementPoints === undefined || remainingMovementPoints > previousMovementPoints;
 }
 
 export function movableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
-    const result: boolean[][] = [];
-
-    for (let y = 0; y < tiles.length; y++) {
-        result[y] = [];
-        for (let x = 0; x < tiles[y].length; x++) {
-            result[y][x] = false;
-        }
-    }
+    const result = createBooleanGrid(tiles);
 
     const visited = new Map<string, number>();
-    const queue: { x: number, y: number, movementPoints: number }[] = [];
+    const queue: MovementState[] = [];
+    const initialState: MovementState = { ...player.position, movementPoints: player.movementPoints };
 
-    // Position initiale du joueur
-    queue.push({ x: player.x, y: player.y, movementPoints: player.movementPoints });
-    visited.set(`${player.x},${player.y}`, player.movementPoints);
-    result[player.y][player.x] = true;
+    queue.push(initialState);
+    visited.set(getVisitedKey(initialState), initialState.movementPoints);
+    result[initialState.y][initialState.x] = true;
 
-    // BFS
     while (queue.length > 0) {
         const current = queue.shift();
         if (!current) continue;
 
-        for (const [dx, dy] of directions) {
-            const newX = current.x + dx;
-            const newY = current.y + dy;
+        for (const newPosition of getNeighborPositions(current)) {
+            const remainingMovementPoints = canMoveToTile(tiles, players, current, newPosition);
+            if (remainingMovementPoints === null) continue;
 
-            if (newX < 0 || newY < 0 || newY >= tiles.length || newX >= tiles[newY].length) {
-                continue;
-            }
+            if (!shouldVisitTile(visited, newPosition, remainingMovementPoints)) continue;
 
-            if (getPlayerAt(players, newX, newY)) {
-                continue;
-            }
+            const target: MovementState = { ...newPosition, movementPoints: remainingMovementPoints };
 
-            const tile = tiles[newY][newX];
-            const energyCost = TILE_ENERGY_COST[tile.tileType];
-            const remainingEnergy = current.movementPoints - energyCost;
-
-            if (remainingEnergy < 0) {
-                continue;
-            }
-
-            const key = `${newX},${newY}`;
-            const previousEnergy = visited.get(key);
-
-            if (previousEnergy === undefined || remainingEnergy > previousEnergy) {
-                visited.set(key, remainingEnergy);
-                result[newY][newX] = true;
-                queue.push({ x: newX, y: newY, movementPoints: remainingEnergy });
-            }
+            visited.set(getVisitedKey(target), target.movementPoints);
+            result[target.y][target.x] = true;
+            queue.push(target);
         }
     }
 
@@ -79,67 +99,62 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
 }
 
 export function getActionableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
-    const result: boolean[][] = [];
+    const result = createBooleanGrid(tiles);
 
-    for (let y = 0; y < tiles.length; y++) {
-        result[y] = [];
-        for (let x = 0; x < tiles[y].length; x++) {
-            result[y][x] = false;
-        }
-    }
+    DIRECTION.forEach(direction => {
+        const newPosition = addPositions(player.position, direction);
+        const tile = isValidTile(tiles, newPosition) ? tiles[newPosition.y][newPosition.x] : null;
 
-    directions.forEach(([dx, dy]) => {
-        const newX = player.x + dx;
-        const newY = player.y + dy;
-
-        if (newX < 0 || newY < 0 || newY >= tiles.length || newX >= tiles[newY].length) {
+        if (!tile) {
             return;
         }
 
-        if (getPlayerAt(players, newX, newY) || tiles[newY][newX].mapObject !== MapObjectType.None) {
-            result[newY][newX] = true;
+        if (getPlayerAt(players, newPosition) || (tile.mapObject !== MapObjectType.None) && (tile.mapObject !== MapObjectType.SpawnPoint)) {
+            result[newPosition.y][newPosition.x] = true;
         }
     });
 
     return result;
 }
 
+export function getNeighborPositions(position: Position): Position[] {
+    return DIRECTION.map(direction => ({ x: position.x + direction.x, y: position.y + direction.y }));
+}
+
 export function findNearestFreeSpawn(
     tiles: TileData[][],
-    spawn: { x: number; y: number },
+    spawn: Position,
     players: Player[],
     excludePlayerId: string,
-): { x: number; y: number } {
+): Position {
     const otherPlayers = players.filter(p => p.id !== excludePlayerId);
 
-    if (!getPlayerAt(otherPlayers, spawn.x, spawn.y)) {
+    if (!getPlayerAt(otherPlayers, spawn)) {
         return spawn;
     }
 
     const visited = new Set<string>();
-    const queue: { x: number; y: number }[] = [{ x: spawn.x, y: spawn.y }];
-    visited.add(`${spawn.x},${spawn.y}`);
+    const queue: Position[] = [spawn];
+    visited.add(getVisitedKey(spawn));
 
     while (queue.length > 0) {
-        const current = queue.shift()!;
+        const current = queue.shift();
+        if (!current) continue;
 
-        for (const [dx, dy] of directions) {
-            const nx = current.x + dx;
-            const ny = current.y + dy;
+        for (const possiblePosition of getNeighborPositions(current)) {
+            if (!isValidTile(tiles, possiblePosition)) continue;
 
-            if (nx < 0 || ny < 0 || ny >= tiles.length || nx >= tiles[ny].length) continue;
-
-            const key = `${nx},${ny}`;
+            const key = getVisitedKey(possiblePosition);
             if (visited.has(key)) continue;
             visited.add(key);
 
-            if (TILE_ENERGY_COST[tiles[ny][nx].tileType] === Infinity) continue;
+            if (TILE_MOVEMENT_COST[tiles[possiblePosition.y][possiblePosition.x].tileType] === Infinity) continue;
 
-            if (!getPlayerAt(otherPlayers, nx, ny)) {
-                return { x: nx, y: ny };
+            if (!getPlayerAt(otherPlayers, possiblePosition)) {
+                return possiblePosition;
             }
 
-            queue.push({ x: nx, y: ny });
+            queue.push(possiblePosition);
         }
     }
 

@@ -1,9 +1,9 @@
 import { Component, computed, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
+import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { getObjectDescription, movableTiles, TILE_ENERGY_COST } from '@app/utils/game-utils';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { getObjectDescription } from '@app/utils/game-utils';
 import {
     BattleWonPayload, DebugMovePayload,
     MovePlayerPayload,
@@ -11,7 +11,9 @@ import {
 } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { DIRECTION } from '@common/types/game.record';
+import { DIRECTION_STRING } from '@common/types/game.record';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { addPositions, equalPositions, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -89,10 +91,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     };
 
     async ngOnInit(): Promise<void> {
-        this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayloadBound);
-        this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayloadBound);
-        this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOverBound);
-        this.socketService.on<ToggleDebugPayload>('handleToggleDebugMode', this.handleToggleDebugModeBound);
+        this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
+        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
+        this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
+        this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -100,19 +102,19 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         window.removeEventListener('keyup', this.globalKeyUpListener);
-        this.socketService.off('playerMoved', this.handlePlayerMovePayloadBound);
-        this.socketService.off('handleClickDebug', this.handleClickDebugPayloadBound);
-        this.socketService.off('gameOver', this.handleGameOverBound);
-        this.socketService.off('handleToggleDebugMode', this.handleToggleDebugModeBound);
+        this.socketService.off(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
+        this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
+        this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
+        this.socketService.off(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
     }
 
-    getPlayerAt(x: number, y: number): Player | null {
-        return this.gameService.players().find(p => p.x === x && p.y === y) || null;
+    getPlayerAt(position: Position): Player | null {
+        return this.gameService.players().find(p => equalPositions(p.position, position)) || null;
     }
 
-    getMovableTilesAt(x: number, y: number): boolean {
+    getMovableTilesAt(position: Position): boolean {
         const movable = this.gameService.actionTile();
-        return movable[y] && movable[y][x] ? true : false;
+        return movable[position.y] && movable[position.y][position.x] ? true : false;
     }
 
     getObjectDescription(objectType: number): string {
@@ -120,17 +122,16 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
-        const [dx, dy] = DIRECTION[direction];
-        const newX = player.x + dx;
-        const newY = player.y + dy;
+        const directionVector = DIRECTION_STRING[direction];
+        const newPosition: Position = addPositions(player.position, directionVector);
 
-        if (this.getMovableTilesAt(newX, newY)) {
+        if (this.getMovableTilesAt(newPosition)) {
             const payload: MovePlayerPayload = {
                 playerId: player.id,
                 direction,
             };
 
-            this.socketService.send('movePlayer', payload);
+            this.socketService.send(GatewayEvents.MovePlayer, payload);
         }
     }
 
@@ -138,16 +139,15 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const player = this.gameService.players().find(p => p.id === payload.playerId);
         if (!player) return;
 
-        const [dx, dy] = DIRECTION[payload.direction];
-        const newX = player.x + dx;
-        const newY = player.y + dy;
+        const directionVector = DIRECTION_STRING[payload.direction];
+        const newPosition = addPositions(player.position, directionVector);
 
-        const tile = this.mapService.getTile(newX, newY);
+        const tile = this.mapService.getTile(newPosition);
         if (!tile) return;
 
         const updatedPlayer = {
-            ...player, x: newX, y: newY,
-            movementPoints: player.movementPoints - TILE_ENERGY_COST[tile.tileType],
+            ...player, position: newPosition,
+            movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tile.tileType],
         };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
@@ -157,21 +157,21 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    onTileClick(event: MouseEvent, x: number, y: number): void {
+    onTileClick(event: MouseEvent, position: Position): void {
         if (event.button === 2) { // clique droit
             if (this.gameService.isDebugMode()) {
-                this.debugClick(x, y);
+                this.debugClick(position);
             } else {
-                this.showContextMenu(event, x, y);
+                this.showContextMenu(event, position);
             }
-        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(x, y)) { // clique gauche
-            this.doActionAt(x, y);
+        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) { // clique gauche
+            this.doActionAt(position);
         }
     }
 
-    showContextMenu(event: MouseEvent, x: number, y: number): void {
-        const player = this.getPlayerAt(x, y);
-        const tile = this.mapService.getTile(x, y);
+    showContextMenu(event: MouseEvent, position: Position): void {
+        const player = this.getPlayerAt(position);
+        const tile = this.mapService.getTile(position);
 
         if (player) {
             this.contextMenu.set({
@@ -186,14 +186,14 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 content: {
                     type: ContextMenuType.Tile,
                     tileType: this.tileType[tile.tileType],
-                    cost: TILE_ENERGY_COST[tile.tileType],
+                    cost: TILE_MOVEMENT_COST[tile.tileType],
                 },
             });
         }
     }
 
-    doActionAt(x: number, y: number): void {
-        const player = this.getPlayerAt(x, y);
+    doActionAt(position: Position): void {
+        const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
         if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
@@ -201,9 +201,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (player) {
             this.killPlayer(player.id);
         } else {
-            const mapObject = this.mapService.getMapObject(x, y);
-            if (mapObject !== MapObjectType.None) {
-                alert(`Action on object ${getObjectDescription(mapObject)} at (${x}, ${y})`);
+            const mapObject = this.mapService.getMapObject(position);
+            if (mapObject !== MapObjectType.None && mapObject !== MapObjectType.SpawnPoint) {
+                alert(`Action on object ${getObjectDescription(mapObject)} at (${position.x}, ${position.y})`);
             }
         }
 
@@ -216,37 +216,35 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (!player || !clientPlayer) return;
 
         alert(`Player ${player.name} has been killed!`);
-        this.socketService.send('battleWon', { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
-        // Update player position + add victory send those info to server
+        this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
     }
 
-    debugClick(x: number, y: number): void {
+    debugClick(position: Position): void {
         if (!this.gameService.isDebugMode()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;
 
-        const tile = this.mapService.getTile(x, y);
+        const tile = this.mapService.getTile(position);
         if (!tile ||
             tile.tileType === TileType.Wall ||
-            this.getPlayerAt(x, y) ||
+            this.getPlayerAt(position) ||
             tile.mapObject !== MapObjectType.None)
             return;
 
         const debugPayload: DebugMovePayload = {
             playerId: player.id,
-            x,
-            y,
+            targetPos: position,
         };
 
-        this.socketService.send('debugMove', debugPayload);
+        this.socketService.send(GatewayEvents.DebugMove, debugPayload);
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
         const player = this.gameService.players().find(p => p.id === payload.playerId);
         if (!player) return;
 
-        const updatedPlayer: Player = { ...player, x: payload.x, y: payload.y };
+        const updatedPlayer: Player = { ...player, position: payload.targetPos };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
         this.gameService.actionTile.set(
