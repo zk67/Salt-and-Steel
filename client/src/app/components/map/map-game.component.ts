@@ -153,7 +153,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
         if (this.gameService.isClientPlayerTurn()) {
-            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+            if(!this.gameService.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
+            } else {
+                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+            }
         }
     }
 
@@ -247,9 +251,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const updatedPlayer: Player = { ...player, position: payload.targetPos };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        this.gameService.actionTile.set(
-            movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()),
-        );
+         if(!this.gameService.canPlayerStillDoAction()) {
+            this.socketService.send(GatewayEvents.EndTurnEarly);
+        } else {
+            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+        }
     }
 
     private handleGameOver(payload: { winnerId: string }): void {
