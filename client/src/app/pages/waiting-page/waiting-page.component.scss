@@ -2,14 +2,14 @@
     display: grid;
     grid-template-columns: 1fr 2fr;
     min-height: 100vh;
-    height: 100vh; // IMPORTANT
+    height: 100vh;
 }
 
 .left {
     display: flex;
     flex-direction: column;
-    height: 100%; // IMPORTANT
-    min-height: 0; // IMPORTANT
+    height: 100%;
+    min-height: 0;
     background-color: lightblue;
 }
 
@@ -19,7 +19,7 @@
 }
 
 .right {
-    background-color: lightcoral;
+    background-color: #2a2a2a;
     display: grid;
     grid-template-rows: auto 1fr auto; 
     padding: 20px;
