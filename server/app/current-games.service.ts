@@ -1,9 +1,9 @@
 import { Timer } from '@app/game-timer';
+import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/interfaces/game.interface';
+import { MapObjectType } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION, TILE_ENERGY_COST } from '@common/types/game.record';
-import { MapObjectType } from '@common/types/map.interface';
-import { Player } from '@common/types/player.interface';
 import { findNearestFreeSpawn } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 

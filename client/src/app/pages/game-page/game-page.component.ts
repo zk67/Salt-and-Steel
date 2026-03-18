@@ -1,12 +1,49 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChatComponent } from '@app/components/chat/chat.component';
 import { LeftSidebarComponent } from '@app/components/game/left-sidebar/left-sidebar.component';
 import { RightSidebarComponent } from '@app/components/game/right-sidebar/right-sidebar.component';
 import { MapGameComponent } from '@app/components/map/map-game.component';
+import { GameService } from '@app/services/game.service';
+import { SocketClientService } from '@app/services/socket-client.service';
+import { ChatMessage } from '@common/interfaces/chat.message.interface';
 
 
 @Component({
     templateUrl: './game-page.component.html',
     styleUrls: ['./game-page.component.scss'],
-    imports: [MapGameComponent, LeftSidebarComponent, RightSidebarComponent],
+    imports: [MapGameComponent, LeftSidebarComponent, RightSidebarComponent, ChatComponent],
 })
-export class GamePageComponent {}
+export class GamePageComponent implements OnInit, OnDestroy {
+
+    messages: ChatMessage[] = [];
+
+    currentPlayerName: string = '';
+    currentPlayerId: string = '';
+
+    constructor(private socketService: SocketClientService,
+        private gameService: GameService,
+    ) {}
+
+    ngOnInit(): void {
+        this.messages = this.gameService.getChatMessages();
+        const currentPlayer = this.gameService.clientPlayer();
+        if (currentPlayer) {
+            this.currentPlayerName = currentPlayer.name;
+            this.currentPlayerId = currentPlayer.id;
+        }
+        this.socketService.on('message', this.addMessage);
+    }
+
+    ngOnDestroy(): void {
+        this.socketService.off('message', this.addMessage);
+    }
+
+    private addMessage = (msg: ChatMessage) => {
+        this.messages = [...this.messages, msg];
+        this.gameService.setChatMessages(this.messages);
+    };
+
+    sendMessage(content: string): void {
+        this.socketService.sendMessage(content);
+    }
+}

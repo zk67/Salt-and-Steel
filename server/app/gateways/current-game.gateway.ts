@@ -1,8 +1,8 @@
 import { CurrentGamesService, JoinableGameSummary } from '@app/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/types/game.interface';
-import { Player } from '@common/types/player.interface';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { Player } from '@common/interfaces/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';

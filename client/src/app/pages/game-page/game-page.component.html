@@ -4,6 +4,12 @@
     </div>
     <div class="left-game-sidebar">
         <app-left-sidebar></app-left-sidebar>
+        <app-chat
+                [messages]="messages"
+                [playerName]="currentPlayerName"
+                [currentPlayerId]="currentPlayerId"
+                (messageSent)="sendMessage($event)">
+        </app-chat> 
     </div>
     <div class="right-game-sidebar">
         <app-right-sidebar></app-right-sidebar>

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
-import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
 
 const OBJECT_QUANTITY_SMALL = 2;
 const OBJECT_QUANTITY_MEDIUM = 4;

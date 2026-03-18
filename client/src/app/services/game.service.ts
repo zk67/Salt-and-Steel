@@ -1,8 +1,9 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
-import { BattleWonPayload, Game, GameInfoPayload } from '@common/types/game.interface';
-import { Player } from '@common/types/player.interface';
+import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { BattleWonPayload, Game, GameInfoPayload } from '@common/interfaces/game.interface';
+import { Player } from '@common/interfaces/player.interface';
 import { MapService } from './map/map.service';
 
 @Injectable({
@@ -33,6 +34,8 @@ export class GameService {
     private actionMode: boolean = false;
     private clientPlayerId: string = '';
 
+    private chatMessages: ChatMessage[] = [];
+
     constructor(private mapService: MapService, private socketService: SocketClientService) {
         this.socketService.on('removePlayer', ({ playerId }: { playerId: string }) => {
             if (!this.isGameStarted) {
@@ -46,10 +49,21 @@ export class GameService {
         this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
     }
 
+    setChatMessages(messages: ChatMessage[]): void {
+        this.chatMessages = [...messages];
+    }
+
+    getChatMessages(): ChatMessage[] {
+        return [...this.chatMessages];
+    }
+
+    clearChatMessages(): void {
+        this.chatMessages = [];
+    }
+
     setHostId(hostId: string): void {
         this.hostId.set(hostId);
     }
-
 
     addPlayer(player: Player): void {
         this.players.update((players) => [...players, player]);

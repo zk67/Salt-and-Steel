@@ -1,5 +1,5 @@
 import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/gameConst';
-import { MapObjectType, MapSize } from '@common/types/map.interface';
+import { MapObjectType, MapSize } from '@common/interfaces/map.interface';
 
 export { findNearestFreeSpawn, getActionableTiles, getPlayerAt, movableTiles, TILE_ENERGY_COST } from '@common/utils/map.utils';
 

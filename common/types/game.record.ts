@@ -1,4 +1,4 @@
-import {TileType } from '@common/types/map.interface';
+import { TileType } from '@common/interfaces/map.interface';
 
 export const TILE_ENERGY_COST: Record<TileType, number> = {
     [TileType.Basic]: 1,

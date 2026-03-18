@@ -5,7 +5,7 @@ import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { MapObjectType, TileType } from '@common/types/map.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({

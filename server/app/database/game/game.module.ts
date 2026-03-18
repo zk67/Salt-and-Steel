@@ -2,8 +2,9 @@ import { CurrentGamesService } from '@app/current-games.service';
 import { GamesController } from '@app/database/game/controllers/games.controller';
 import { Game, gameSchema } from '@app/database/game/game.schema';
 import { GamesService } from '@app/database/game/services/game.service';
-import { Gateway } from '@app/gateways/gateway';
+import { ChatGateway } from '@app/gateways/chat.gateway';
 import { CurrentGameGateway } from '@app/gateways/current-game.gateway';
+import { Gateway } from '@app/gateways/gateway';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -22,6 +23,6 @@ import { MongooseModule } from '@nestjs/mongoose';
         MongooseModule.forFeature([{ name: Game.name, schema: gameSchema }]),
     ],
     controllers: [GamesController],
-    providers: [Gateway, CurrentGameGateway, Logger, GamesService, CurrentGamesService],
+    providers: [Gateway, CurrentGameGateway, Logger, GamesService, CurrentGamesService, ChatGateway],
 })
 export class GamesModule {}

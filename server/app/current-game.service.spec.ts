@@ -1,5 +1,5 @@
 import { CurrentGamesService } from '@app/current-games.service';
-import { TurnPhase } from '@common/types/game.interface';
+import { TurnPhase } from '@common/interfaces/game.interface';
 
 /*
 Stratégie de tests:

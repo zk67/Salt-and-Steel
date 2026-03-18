@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { GameMode, MapSize } from '@common/types/map.interface';
+import { GameMode, MapSize } from '@common/interfaces/map.interface';
 
 @Component({
     selector: 'app-form-edition-page',

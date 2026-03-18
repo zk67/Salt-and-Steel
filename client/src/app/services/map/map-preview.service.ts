@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { MapObjectType, TileType } from '@common/types/map.interface';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 
 const DEFAULT_PREVIEW_SIZE = 256;
 const OBJECT_PADDING_RATIO = 0.15;
@@ -106,7 +106,7 @@ export class MapPreviewService {
                     if (objImg) {
                         //marge pour que l'objet soit un peu plus petit a changer si juge necessaire.
                         const pad = Math.floor(cell * OBJECT_PADDING_RATIO);
-                        ctx.drawImage( objImg,x * cell + pad,y * cell + pad,cell - 2 * pad, cell - 2 * pad);
+                        ctx.drawImage(objImg, x * cell + pad, y * cell + pad, cell - 2 * pad, cell - 2 * pad);
                     }
                 }
             }

@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
-import { Player } from '@common/types/player.interface';
+import { Player } from '@common/interfaces/player.interface';
 
 const BASE_HP = 6;
 const BASE_SPEED = 6;

@@ -11,6 +11,7 @@ export class SocketClientService {
     }
 
     connect(): void {
+        //changer le lien selon si je teste localement ou en ligne.
         this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
     }
 
@@ -36,5 +37,9 @@ export class SocketClientService {
 
     leaveRoom(room: string): void {
         this.socket.emit('leaveRoom', room);
+    }
+
+    sendMessage(content: string): void {
+        this.socket.emit('sendMessage', { content });
     }
 }

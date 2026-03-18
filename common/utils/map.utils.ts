@@ -1,5 +1,5 @@
-import { MapObjectType, TileData, TileType } from '@common/types/map.interface';
-import { Player } from '@common/types/player.interface';
+import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
 
 export const directions = [
     [0, -1],

@@ -20,7 +20,7 @@
     "paths": {
       "@common/*": ["../common/*"],
       "@app/*": ["./app/*"],
-      "@server/*": ["../server/*"]
+      "@server/*": ["server/*"]
     }
   }
 }

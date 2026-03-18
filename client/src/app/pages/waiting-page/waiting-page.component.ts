@@ -1,8 +1,10 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ChatComponent } from '@app/components/chat/chat.component';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Player } from '@common/types/player.interface';
+import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { Player } from '@common/interfaces/player.interface';
 
 const TIME_BEFORE_NAVIGATE_HOME = 5000;
 const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
@@ -11,12 +13,17 @@ const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
     selector: 'app-waiting-page',
     templateUrl: './waiting-page.component.html',
     styleUrls: ['./waiting-page.component.scss'],
-    imports: [],
+    imports: [ChatComponent],
 })
 export class WaitingPageComponent implements OnInit, OnDestroy {
+
+    messages: ChatMessage[] = [];
     players: Player[] = [];
     showClosedMessage = false;
     showKickedMessage = false;
+
+    currentPlayerName: string = '';
+    currentPlayerId: string = '';
 
     private onPlayersToGame = (p: Player[]) => {
         this.ngZone.run(() => {
@@ -112,10 +119,18 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.addEventListener('pagehide', this.onBeforeUnload);
 
         this.socketService.on('playersToGame', this.onPlayersToGame);
+        this.socketService.on('message', this.addMessage);
         this.socketService.on('gameClosed', this.onGameClosed);
         this.socketService.on('gameStartInfo', this.onGameStarted);
         this.socketService.on('kicked', this.onKicked);
         this.socketService.send('getPlayersToGame');
+
+        this.messages = this.gameService.getChatMessages();
+        const currentPlayer = this.gameService.clientPlayer();
+        if (currentPlayer) {
+            this.currentPlayerName = currentPlayer.name;
+            this.currentPlayerId = currentPlayer.id;
+        }
     }
 
     ngOnDestroy(): void {
@@ -124,6 +139,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.removeEventListener('pagehide', this.onBeforeUnload);
 
         this.socketService.off('playersToGame', this.onPlayersToGame);
+        this.socketService.off('message', this.addMessage);
         this.socketService.off('gameClosed', this.onGameClosed);
         this.socketService.off('gameStartInfo', this.onGameStarted);
         this.socketService.off('kicked', this.onKicked);
@@ -136,4 +152,15 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
         this.socketService.send('kickPlayer', { playerId });
     }
-}
+
+
+    private addMessage = (msg: ChatMessage) => {
+        this.messages = [...this.messages, msg];
+        this.gameService.setChatMessages(this.messages);
+    };
+
+    sendMessage(content: string): void {
+        this.socketService.sendMessage(content);
+    }
+};
+

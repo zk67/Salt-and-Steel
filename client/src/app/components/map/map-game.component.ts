@@ -5,11 +5,14 @@ import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { TimeService } from '@app/services/time.service';
 import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
+import {
+    BattleWonPayload, DebugMovePayload,
+    MovePlayerPayload, NewTurnPayload, ToggleDebugPayload, TurnPhase,
+} from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/types/game.interface';
 import { DIRECTION } from '@common/types/game.record';
-import { MapObjectType, TileType } from '@common/types/map.interface';
-import { Player } from '@common/types/player.interface';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
