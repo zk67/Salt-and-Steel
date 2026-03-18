@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
 
 @Component({
     selector: 'app-admin-page',

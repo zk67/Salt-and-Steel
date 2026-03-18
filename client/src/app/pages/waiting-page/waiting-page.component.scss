@@ -2,6 +2,20 @@
     display: grid;
     grid-template-columns: 1fr 2fr;
     min-height: 100vh;
+    height: 100vh; // IMPORTANT
+}
+
+.left {
+    display: flex;
+    flex-direction: column;
+    height: 100%; // IMPORTANT
+    min-height: 0; // IMPORTANT
+    background-color: lightblue;
+}
+
+.left app-chat {
+    height: 100%;
+    min-height: 0;
 }
 
 .right {
@@ -26,7 +40,6 @@
     display: flex;
     align-items: center;
     gap: 12px;
-
     background: rgba(255,255,255,0.2);
     padding: 10px;
     border-radius: 8px;
@@ -44,7 +57,6 @@
 }
 
 .player-slot.empty {
-    justify-content: center;
     opacity: 0.6;
 }
 

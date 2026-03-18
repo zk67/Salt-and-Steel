@@ -1,4 +1,4 @@
-import { GameMode, TileData } from '@common/types/map.interface';
+import { GameMode, TileData } from '@common/interfaces/map.interface';
 import { Player } from './player.interface';
 
 export interface Game {

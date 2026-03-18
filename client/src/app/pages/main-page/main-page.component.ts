@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
 @Component({
     selector: 'app-main-page',
     templateUrl: './main-page.component.html',
@@ -7,5 +8,4 @@ import { RouterLink } from '@angular/router';
     imports: [RouterLink],
 })
 
-export class MainPageComponent {
-}
+export class MainPageComponent {}

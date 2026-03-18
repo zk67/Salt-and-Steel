@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Game } from '@common/types/game.interface';
-import { MapSize } from '@common/types/map.interface';
+import { Game } from '@common/interfaces/game.interface';
+import { MapSize } from '@common/interfaces/map.interface';
 
 @Component({
     selector: 'app-game-created',
@@ -11,7 +11,6 @@ import { MapSize } from '@common/types/map.interface';
 })
 export class GameCreatedComponent {
     @Input() game: Game;
-
     @Output() toggle = new EventEmitter<Game>();
     @Output() editGame = new EventEmitter<string>();
     @Output() deleteGame = new EventEmitter<string>();

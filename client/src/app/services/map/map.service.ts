@@ -1,8 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile } from '@app/utils/tile';
-import { Game } from '@common/types/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/types/map.interface';
+import { Game } from '@common/interfaces/game.interface';
+import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 
 @Injectable({
     providedIn: 'root',

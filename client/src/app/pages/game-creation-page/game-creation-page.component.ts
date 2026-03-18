@@ -4,7 +4,7 @@ import { GameCardComponent } from '@app/components/game/game-card/game-card.comp
 import { GameService } from '@app/services/game.service';
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
 
 
 @Component({
@@ -15,8 +15,6 @@ import { Game } from '@common/types/game.interface';
 })
 
 export class GameCreationPageComponent implements OnInit, OnDestroy {
-  private refreshListener: () => void;
-
   constructor(
     private saveService: SaveService,
     private socketService: SocketClientService,
@@ -24,6 +22,7 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
     private gameService : GameService,
   ) {}
 
+  private refreshListener: () => void;
   games: Game[] = [];
 
   ngOnInit(): void {

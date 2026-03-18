@@ -1,5 +1,5 @@
+import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { Player } from '@common/types/player.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -30,15 +30,17 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage('joinRoom')
-    handleJoinRoom(client: Socket, room: string): void {
-        this.logger.log(`Client ${client.id} joining room: ${room}`);
-        client.join(room);
+    handleJoinRoom(socket: Socket, roomId: string): void {
+        if (!roomId) return;
+        socket.join(roomId);
+        this.logger.log(`${socket.id} joined room ${roomId}`);
     }
 
     @SubscribeMessage('leaveRoom')
-    handleLeaveRoom(client: Socket, room: string): void {
-        this.logger.log(`Client ${client.id} leaving room: ${room}`);
-        client.leave(room);
+    handleLeaveRoom(socket: Socket, roomId: string): void {
+        if (!roomId) return;
+        socket.leave(roomId);
+        this.logger.log(`${socket.id} left room ${roomId}`);
     }
 
     @SubscribeMessage('getPlayerId')

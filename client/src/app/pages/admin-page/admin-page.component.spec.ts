@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { SaveService } from '@app/services/save.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
 
 import { AdminPageComponent } from './admin-page.component';
 
@@ -151,8 +151,8 @@ describe('Page admin (AdminPageComponent)', () => {
     it('ngOnInit() devrait recharger les jeux quand le socket émet update', () => {
         component.ngOnInit();
         saveServiceSpy.getAllGames.calls.reset();
-        const onUpdateHandler  = socketSpy.on.calls.mostRecent().args[1] as unknown as () => void;
-        onUpdateHandler ();//simule l eve update
+        const onUpdateHandler = socketSpy.on.calls.mostRecent().args[1] as unknown as () => void;
+        onUpdateHandler();//simule l eve update
         expect(saveServiceSpy.getAllGames).toHaveBeenCalled();
     });
 });

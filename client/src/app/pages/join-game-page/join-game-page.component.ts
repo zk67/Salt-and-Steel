@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit ,signal} from '@angular/core';
-import { RouterLink , Router } from '@angular/router';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { GameService } from '@app/services/game.service';
+import { SocketClientService } from '@app/services/socket-client.service';
+import { Game } from '@common/interfaces/game.interface';
 
 interface JoinableGame {
     roomId: string;
@@ -23,7 +23,7 @@ export class JoinGameComponent implements OnInit, OnDestroy {
         this.joinableGames.set(games);
     };
 
-    constructor(private socketService: SocketClientService,private gameService: GameService,private router: Router) {}
+    constructor(private socketService: SocketClientService, private gameService: GameService, private router: Router) {}
 
     selectGame(roomId: string): void {
         this.gameService.setSelectedJoinRoomId(roomId);

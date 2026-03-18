@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed } from '@angular/core';
 import { GameService } from '@app/services/game.service';
-import { Player } from '@common/types/player.interface';
+import { Player } from '@common/interfaces/player.interface';
 
 @Component({
     selector: 'app-player-info',

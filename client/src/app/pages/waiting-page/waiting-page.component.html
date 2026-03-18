@@ -1,5 +1,13 @@
 <div class="container">
-    <div class="left">Clavardage</div>
+    <div class="left">
+       <app-chat
+                [messages]="messages"
+                [playerName]="currentPlayerName"
+                [currentPlayerId]="currentPlayerId"
+                (messageSent)="sendMessage($event)">
+        </app-chat> 
+    </div>
+
     <div class="right">
         <h1 class="header-item">Salle d'attente</h1>
         @if (showClosedMessage) {
