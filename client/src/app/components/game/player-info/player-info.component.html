@@ -22,11 +22,11 @@
             </div>
             <div class="stat">
                 <span class="label">Attaque</span>
-                <span class="value">{{ player()!.attack }} <em class="dice">({{ player()!.d6target === 'attack' ? 'D6' : 'D4' }})</em></span>
+                <span class="value">{{ player()!.attack }} <em class="dice">({{ player()!.d6target === diceTarget.Attack ? 'D6' : 'D4' }})</em></span>
             </div>
             <div class="stat">
                 <span class="label">Défense</span>
-                <span class="value">{{ player()!.defense }} <em class="dice">({{ player()!.d6target === 'defense' ? 'D6' : 'D4' }})</em></span>
+                <span class="value">{{ player()!.defense }} <em class="dice">({{ player()!.d6target === diceTarget.Defense ? 'D6' : 'D4' }})</em></span>
             </div>
             <div class="stat">
                 <span class="label">Mouvement</span>
