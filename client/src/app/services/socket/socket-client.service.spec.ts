@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Socket } from 'socket.io-client';
 import { SocketClientService } from './socket-client.service';
 
@@ -71,19 +72,19 @@ describe('SocketClientService', () => {
 
     it('on() devrait appeler socket.on avec le bon événement et callback', () => {
         const callback = jasmine.createSpy('callback');
-        service.on('testEvent', callback);
-        expect(mockSocket.on).toHaveBeenCalledWith('testEvent', callback);
+        service.on(GatewayEvents.Update, callback);
+        expect(mockSocket.on).toHaveBeenCalledWith(GatewayEvents.Update, callback);
     });
 
     it('off() devrait appeler socket.off avec le bon événement et callback', () => {
         const callback = jasmine.createSpy('callback');
-        service.off('testEvent', callback);
-        expect(mockSocket.off).toHaveBeenCalledWith('testEvent', callback);
+        service.off(GatewayEvents.Update, callback);
+        expect(mockSocket.off).toHaveBeenCalledWith(GatewayEvents.Update, callback);
     });
 
     it('send() devrait inclure data et callback dans emit si fournis', () => {
         const callback = jasmine.createSpy('callback');
-        service.send('action', { type: 'jump' }, callback);
-        expect(mockSocket.emit).toHaveBeenCalledWith('action', { type: 'jump' }, callback);
+        service.send(GatewayEvents.MovePlayer, { type: 'jump' }, callback);
+        expect(mockSocket.emit).toHaveBeenCalledWith(GatewayEvents.MovePlayer, { type: 'jump' }, callback);
     });
 });

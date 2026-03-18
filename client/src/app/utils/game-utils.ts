@@ -1,27 +1,21 @@
-import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/gameConst';
+import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/game-const';
 import { MapObjectType, MapSize } from '@common/interfaces/map.interface';
 
-export { findNearestFreeSpawn, getActionableTiles, getPlayerAt, movableTiles, TILE_ENERGY_COST } from '@common/utils/map.utils';
-
 export function getMinMaxPlayers(size: number): { minPlayers: number; maxPlayers: number } {
-    let minPlayers: number;
+    const minPlayers: number = MIN_PLAYERS;
     let maxPlayers: number;
 
     switch (size) {
         case MapSize.Small:
-            minPlayers = MIN_PLAYERS;
             maxPlayers = MAX_PLAYERS_SMALL;
             break;
         case MapSize.Medium:
-            minPlayers = MIN_PLAYERS;
             maxPlayers = MAX_PLAYERS_MEDIUM;
             break;
         case MapSize.Large:
-            minPlayers = MIN_PLAYERS;
             maxPlayers = MAX_PLAYERS_LARGE;
             break;
         default:
-            minPlayers = MIN_PLAYERS;
             maxPlayers = MAX_PLAYERS_SMALL;
     }
 

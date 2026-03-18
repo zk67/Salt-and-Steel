@@ -1,3 +1,4 @@
+import { Position } from '@common/utils/map.utils';
 import { GameMode, TileData } from '@common/interfaces/map.interface';
 import { Player } from './player.interface';
 
@@ -33,10 +34,7 @@ export interface NewTurnPayload {
 export interface BattleWonPayload {
     loserId: string;
     winnerId: string;
-    loserPos: {
-        x: number;
-        y: number;
-    };
+    loserPos: Position;
 }
 
 export enum TurnPhase {
@@ -46,8 +44,7 @@ export enum TurnPhase {
 
 export interface DebugMovePayload {
     playerId: string;
-    x: number;
-    y: number;
+    targetPos: Position;
 }
 
 export interface ToggleDebugPayload {

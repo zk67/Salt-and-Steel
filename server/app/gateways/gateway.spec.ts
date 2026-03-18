@@ -1,4 +1,4 @@
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';

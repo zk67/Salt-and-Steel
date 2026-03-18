@@ -7,6 +7,7 @@ import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interf
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { createBooleanGrid, isValidTile, getNeighborPositions,Position } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -30,7 +31,7 @@ export class SaveService {
             errors.push('Le nombre de tuiles de terrain doit couvrir plus de la moitié de la zone de jeu.');
         }
 
-        if (!this.isMapAccessible(game.tiles, game.size)) {
+        if (!this.isMapAccessible(game.tiles)) {
             errors.push('Certaines tuiles sur le jeu sont inaccessibles.');
         }
 
@@ -55,59 +56,54 @@ export class SaveService {
         return numberTiles >= (size * size) / 2;
     }
 
-    private isMapAccessible(tiles: TileData[][], size: number): boolean {
-        const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+    private isMapAccessible(tiles: TileData[][]): boolean {
+        const visited = createBooleanGrid(tiles);
+        const startPosition = this.findFirstAccessibleTile(tiles);
 
-        let startX = -1;
-        let startY = -1;
+        if (!startPosition) return false;
 
-        tiles.some((row, y) => {
-            const x = row.findIndex(tile => tile.tileType !== TileType.Wall);
-            if (x !== -1) {
-                startX = x;
-                startY = y;
-                return true;
-            }
-            return false;
-        });
+        this.floodFillAccessibleTiles(tiles, visited, startPosition);
+        return !this.hasUnvisitedAccessibleTile(tiles, visited);
+    }
 
-        if (startX === -1) return false;
-
-        const queue: [number, number][] = [[startX, startY]];
-        visited[startY][startX] = true;
-
-        const directions = [
-            [1, 0],
-            [-1, 0],
-            [0, 1],
-            [0, -1],
-        ];
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-            if (!current) break;
-
-            const [x, y] = current;
-
-            for (const [dx, dy] of directions) {
-                const newX = x + dx;
-                const newY = y + dy;
-
-                const isInsideMap = newX >= 0 && newX < size && newY >= 0 && newY < size;
-                const isValidTile = !visited[newY][newX] && tiles[newY][newX].tileType !== TileType.Wall;
-
-                if (isInsideMap && isValidTile) {
-                    visited[newY][newX] = true;
-                    queue.push([newX, newY]);
-                }
-            }
+    private findFirstAccessibleTile(tiles: TileData[][]): Position | null {
+        for (let y = 0; y < tiles.length; y++) {
+            const x = tiles[y].findIndex(tile => this.isTileAccessible(tile));
+            if (x !== -1) return { x, y };
         }
 
-        return !tiles.some((row, y) =>
-            row.some((tile, x) =>
-                tile.tileType !== TileType.Wall && !visited[y][x],
-            ),
-        );
+        return null;
+    }
+
+    private floodFillAccessibleTiles(
+        tiles: TileData[][],
+        visited: boolean[][],
+        startPosition: Position,
+    ): void {
+        const queue: Position[] = [startPosition];
+        visited[startPosition.y][startPosition.x] = true;
+
+        while (queue.length > 0) {
+            const currentPosition = queue.shift();
+            if (!currentPosition) continue;
+
+            for (const newPosition of getNeighborPositions(currentPosition)) {
+                if (!isValidTile(tiles, newPosition)) continue;
+                if (visited[newPosition.y][newPosition.x]) continue;
+                if (!this.isTileAccessible(tiles[newPosition.y][newPosition.x])) continue;
+
+                visited[newPosition.y][newPosition.x] = true;
+                queue.push(newPosition);
+            }
+        }
+    }
+
+    private isTileAccessible(tile: TileData): boolean {
+        return tile.tileType !== TileType.Wall;
+    }
+
+    private hasUnvisitedAccessibleTile(tiles: TileData[][], visited: boolean[][]): boolean {
+        return tiles.some((row, y) => row.some((tile, x) => this.isTileAccessible(tile) && !visited[y][x]));
     }
 
     private hasCorrectSpawnPoints(): boolean {

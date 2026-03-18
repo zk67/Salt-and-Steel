@@ -1,9 +1,10 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { WaitingPageComponent } from './waiting-page.component';
 
 /**
@@ -84,20 +85,31 @@ describe('WaitingPageComponent', () => {
     it('devrait charger la salle d’attente avec le joueur courant', () => {
         expect(component.currentPlayerId).toBe('host-1');
         expect(component.currentPlayerName).toBe('Host');
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('getPlayersToGame');
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.GetPlayersToGame);
     });
 
     it('devrait permettre de quitter la salle d’attente à tout moment et revenir à la vue initiale', () => {
         component.goHome();
 
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('surrender');
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.Surrender);
         expect(socketServiceSpy.leaveRoom).toHaveBeenCalledWith('room-1');
         expect(gameServiceSpy.clearSelectedJoinRoomId).toHaveBeenCalled();
         expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
     it('devrait rediriger vers la partie quand elle commence', () => {
-        const onGameStarted = socketServiceSpy.on.calls.all().find((call) => call.args[0] === 'gameStartInfo')?.args[1] as () => void;
+        let onGameStarted: (() => void) | undefined;
+        for (const recordedCall of socketServiceSpy.on.calls.all()) {
+            if (recordedCall.args[0] === GatewayEvents.GameStartInfo) {
+                onGameStarted = recordedCall.args[1] as () => void;
+                break;
+            }
+        }
+
+        if (!onGameStarted) {
+            fail('No listener registered for GameStartInfo');
+            return;
+        }
 
         onGameStarted();
 

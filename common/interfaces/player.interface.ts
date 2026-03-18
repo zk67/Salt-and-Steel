@@ -1,9 +1,10 @@
+import { Position } from "@common/utils/map.utils";
+
 export interface Player {
     id: string;
     name: string;
     imageUrl?: string;
-    x: number;
-    y: number;
+    position: Position
     speed: number | null;
     hp: number | null;
     maxHp: number | null;

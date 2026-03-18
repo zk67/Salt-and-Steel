@@ -1,8 +1,9 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
-import { SocketClientService } from '@app/services/socket-client.service';
+import { GameService } from '@app/services/game/game.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { Player } from '@common/interfaces/player.interface';
 import { CharacterPageComponent } from './character-page.component';
 
@@ -90,22 +91,27 @@ describe('CharacterPageComponent', () => {
         spyOn(router, 'navigate');
     });
 
-    function getListener<T>(eventName: string): (payload: T) => void {
-        const matchingCall = socketServiceSpy.on.calls.all().find((call) => call.args[0] === eventName);
-        return matchingCall?.args[1] as (payload: T) => void;
+    function getListener<T>(eventName: GatewayEvents): (payload: T) => void {
+        for (const recordedCall of socketServiceSpy.on.calls.all()) {
+            if (recordedCall.args[0] === eventName) {
+                return recordedCall.args[1] as (payload: T) => void;
+            }
+        }
+
+        throw new Error(`No socket listener registered for event ${eventName}`);
     }
 
     it('devrait s’abonner aux avatars indisponibles et demander la liste à l’initialisation pour une partie rejointe', () => {
         fixture.detectChanges();
 
         expect(socketServiceSpy.joinRoom).toHaveBeenCalledWith('room-1');
-        expect(socketServiceSpy.on).toHaveBeenCalledWith('unavailableAvatars', jasmine.any(Function));
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('getUnavailableAvatars');
+        expect(socketServiceSpy.on).toHaveBeenCalledWith(GatewayEvents.UnavailableAvatars, jasmine.any(Function));
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.GetUnavailableAvatars);
     });
 
     it('devrait mettre à jour dynamiquement les avatars indisponibles selon les autres choix', () => {
         fixture.detectChanges();
-        getListener<string[]>('unavailableAvatars')(['assets/avatars/avatar-2.png']);
+        getListener<string[]>(GatewayEvents.UnavailableAvatars)(['assets/avatars/avatar-2.png']);
 
         expect(component.isAvatarUnavailable('assets/avatars/avatar-2.png')).toBeTrue();
         expect(component.isAvatarUnavailable('assets/avatars/avatar-3.png')).toBeFalse();
@@ -117,12 +123,12 @@ describe('CharacterPageComponent', () => {
         component.selectAvatar('assets/avatars/avatar-3.png');
 
         expect(component.avatar.value).toBe('assets/avatars/avatar-3.png');
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('selectAvatarInJoinForm', 'assets/avatars/avatar-3.png');
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.SelectAvatarInJoinForm, 'assets/avatars/avatar-3.png');
     });
 
     it('devrait empêcher de sélectionner un avatar déjà réservé par un autre joueur', () => {
         fixture.detectChanges();
-        getListener<string[]>('unavailableAvatars')(['assets/avatars/avatar-4.png']);
+        getListener<string[]>(GatewayEvents.UnavailableAvatars)(['assets/avatars/avatar-4.png']);
         component.selectAvatar('assets/avatars/avatar-4.png');
 
         expect(component.avatar.value).toBeNull();
@@ -137,16 +143,16 @@ describe('CharacterPageComponent', () => {
 
         component.submitCharacter();
 
-        const onPlayerId = getListener<Player>('playerId');
+        const onPlayerId = getListener<Player>(GatewayEvents.PlayerId);
         onPlayerId({ id: 'socket-1' } as Player);
 
         expect(socketServiceSpy.joinRoom).toHaveBeenCalledWith('room-1');
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('addPlayerToCurrentGame', jasmine.objectContaining({
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.AddPlayerToCurrentGame, jasmine.objectContaining({
             name: 'Anne',
             imageUrl: 'assets/avatars/avatar-1.png',
         }));
 
-        const onJoinResult = getListener<{ success: boolean }>('joinCurrentGameResult');
+        const onJoinResult = getListener<{ success: boolean }>(GatewayEvents.JoinCurrentGameResult);
         onJoinResult({ success: true });
 
         expect(router.navigate).toHaveBeenCalledWith(['/waiting']);
@@ -161,13 +167,13 @@ describe('CharacterPageComponent', () => {
         spyOn(window, 'confirm').and.returnValue(true);
 
         component.submitCharacter();
-        getListener<Player>('playerId')({ id: 'socket-1' } as Player);
+        getListener<Player>(GatewayEvents.PlayerId)({ id: 'socket-1' } as Player);
 
-        const onJoinResult = getListener<{ success: boolean }>('joinCurrentGameResult');
+        const onJoinResult = getListener<{ success: boolean }>(GatewayEvents.JoinCurrentGameResult);
         onJoinResult({ success: false });
 
         expect(window.confirm).toHaveBeenCalled();
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('addPlayerToCurrentGame', jasmine.anything());
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.AddPlayerToCurrentGame, jasmine.anything());
         expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     });
 
@@ -180,8 +186,8 @@ describe('CharacterPageComponent', () => {
         spyOn(window, 'confirm').and.returnValue(false);
 
         component.submitCharacter();
-        getListener<Player>('playerId')({ id: 'socket-1' } as Player);
-        getListener<{ success: boolean }>('joinCurrentGameResult')({ success: false });
+        getListener<Player>(GatewayEvents.PlayerId)({ id: 'socket-1' } as Player);
+        getListener<{ success: boolean }>(GatewayEvents.JoinCurrentGameResult)({ success: false });
 
         expect(gameServiceSpy.clearSelectedJoinRoomId).toHaveBeenCalled();
         expect(router.navigate).toHaveBeenCalledWith(['/home']);
@@ -192,8 +198,8 @@ describe('CharacterPageComponent', () => {
 
         component.ngOnDestroy();
 
-        expect(socketServiceSpy.send).toHaveBeenCalledWith('clearSelectedAvatarInJoinForm');
-        expect(socketServiceSpy.off).toHaveBeenCalledWith('unavailableAvatars', jasmine.any(Function));
+        expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.ClearSelectedAvatarInJoinForm);
+        expect(socketServiceSpy.off).toHaveBeenCalledWith(GatewayEvents.UnavailableAvatars, jasmine.any(Function));
     });
 
     it('devrait afficher un message si le nom est invalide', fakeAsync(() => {
