@@ -53,7 +53,7 @@
                 </div>
             }
         </div>
-        <button class="button" (click)="startGame()" [disabled]="!isOrganizer" title="Seul l'organisateur peut démarrer la partie">Commencer</button>
+        <button class="button" (click)="startGame()" [disabled]="!isOrganizer || players.length < 2" title="Seul l'organisateur peut démarrer la partie et il faut au moins 2 joueurs">Commencer</button>
         <button class="button" (click)="goHome()">Retour</button>
     </div>
 </div>

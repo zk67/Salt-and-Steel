@@ -126,6 +126,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         this.socketService.on(GatewayEvents.Kicked, this.onKicked);
         this.socketService.send(GatewayEvents.GetPlayersToGame);
 
+        this.gameService.clearChatMessages();
         this.messages = this.gameService.getChatMessages();
         const currentPlayer = this.gameService.clientPlayer();
         if (currentPlayer) {

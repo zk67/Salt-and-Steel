@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import { Button } from '@app/components/game/game-button/game-button.component';
 import { PlayerInfoComponent } from '@app/components/game/player-info/player-info.component';
 import { GameService } from '@app/services/game/game.service';
-import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { TimeService } from '@app/services/game/time.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({

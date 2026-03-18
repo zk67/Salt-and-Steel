@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { TILE_MOVEMENT_COST, movableTiles, equalPositions, Position, addPositions } from '@common/utils/map.utils';
 import { getObjectDescription } from '@app/utils/game-utils';
 import {
     BattleWonPayload, DebugMovePayload,
@@ -12,8 +11,9 @@ import {
 } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { GatewayEvents } from '@common/types/gateway.events';
 import { DIRECTION_STRING } from '@common/types/game.record';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { addPositions, equalPositions, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
