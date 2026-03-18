@@ -1,12 +1,12 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { getActionableTiles, movableTiles } from '@common/utils/map.utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { BattleWonPayload, Game, GameInfoPayload, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { GatewayEvents } from '@common/types/gateway.events';
-import { MapService } from '@app/services/map/map.service';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { getActionableTiles, movableTiles } from '@common/utils/map.utils';
 import { TimeService } from './time.service';
 
 @Injectable({
@@ -186,7 +186,7 @@ export class GameService {
         this.players.set([]);
         this.activePlayerId.set(null);
 
-        if(this.selectedJoinRoomId) {
+        if (this.selectedJoinRoomId) {
             this.socketService.leaveRoom(this.selectedJoinRoomId);
             this.clearSelectedJoinRoomId();
         }

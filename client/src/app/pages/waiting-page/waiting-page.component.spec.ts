@@ -59,6 +59,7 @@ describe('WaitingPageComponent', () => {
             'clearSelectedJoinRoomId',
             'getChatMessages',
             'setChatMessages',
+            'clearChatMessages',
         ], {
             clientPlayer: clientPlayerSignal,
         });

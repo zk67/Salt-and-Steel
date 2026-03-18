@@ -1,5 +1,5 @@
-import { CurrentGamesService, JoinableGameSummary } from '@app/service/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
+import { CurrentGamesService, JoinableGameSummary } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
@@ -159,7 +159,7 @@ export class CurrentGameGateway implements OnGatewayInit {
 
     @SubscribeMessage(GatewayEvents.BattleWon)
     handleBattleWon(client: Socket, payload: BattleWonPayload): void {
-        if (!this.validatePlayer(client, payload.winnerId) || !this.validatePlayer(client, payload.loserId)) {
+        if (!(this.validatePlayer(client, payload.winnerId) || this.validatePlayer(client, payload.loserId))) {
             return;
         }
 
@@ -167,9 +167,8 @@ export class CurrentGameGateway implements OnGatewayInit {
         const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload);
 
         if (battleValid) {
-            this.server.emit(GatewayEvents.HandleBattleWon, updatedPayload);
+            this.server.to(room).emit(GatewayEvents.HandleBattleWon, updatedPayload);
             this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
-
 
             if (isGameOver) {
                 this.server.to(room).emit(GatewayEvents.GameOver, { winnerId: payload.winnerId });
