@@ -15,6 +15,7 @@ export class CurrentGamesService {
     private timer: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
     private selectedAvatarsByRoom = new Map<string, Map<string, string>>();//cle1:roomId ,(2:clientId ,3:avatar)
+    private usedNameSuffixesByRoom = new Map<string, Map<string, number>>();
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
@@ -25,16 +26,36 @@ export class CurrentGamesService {
         this.games.push({ _game: game, roomId, players: [] });
     }
 
+    private getOrCreateRoomNameRegistry(roomId: string): Map<string, number> {
+        let roomRegistry = this.usedNameSuffixesByRoom.get(roomId);
+        if (!roomRegistry) {
+            roomRegistry = new Map<string, number>();
+            this.usedNameSuffixesByRoom.set(roomId, roomRegistry);
+        }
+        return roomRegistry;
+    }
+
+    private buildUniquePlayerName(roomId: string, requestedName: string, currentPlayers: Player[]): string {
+        const baseName = requestedName.trim();
+        const roomRegistry = this.getOrCreateRoomNameRegistry(roomId);
+
+        const baseNameAlreadyUsed = currentPlayers.some((p) => p.name === baseName);
+        const trackedSuffix = roomRegistry.get(baseName) ?? 1;
+
+        if (!baseNameAlreadyUsed && trackedSuffix === 1) {
+            roomRegistry.set(baseName, 1);
+            return baseName;
+        }
+
+        const nextSuffix = trackedSuffix + 1;
+        roomRegistry.set(baseName, nextSuffix);
+        return `${baseName}-${nextSuffix}`;
+    }
+
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
         if (game) {
-            let newName = player.name;
-            let counter = 2;
-            while (game.players.some((p) => p.name === newName)) {
-                newName = `${player.name}-${counter}`;
-                counter++;
-            }
-            player.name = newName;
+            player.name = this.buildUniquePlayerName(roomId, player.name, game.players);
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         } else {
@@ -58,6 +79,7 @@ export class CurrentGamesService {
         }
 
         this.games.splice(index, 1);
+        this.usedNameSuffixesByRoom.delete(roomId);
         return true;
     }
 
@@ -136,7 +158,6 @@ export class CurrentGamesService {
             game._game.tiles[y][x].mapObject = MapObjectType.None;
         });
     }
-
 
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
