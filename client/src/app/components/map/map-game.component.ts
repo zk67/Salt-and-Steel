@@ -1,17 +1,16 @@
-import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { GameService } from '@app/services/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { TimeService } from '@app/services/time.service';
-import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
+import { getObjectDescription, movableTiles, TILE_ENERGY_COST } from '@app/utils/game-utils';
 import {
     BattleWonPayload, DebugMovePayload,
-    MovePlayerPayload, NewTurnPayload, ToggleDebugPayload, TurnPhase,
+    MovePlayerPayload,
+    ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { DIRECTION } from '@common/types/game.record';
 
 const PLAYER_DIRECTION: Record<string, string> = {
@@ -47,21 +46,29 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     tileType = TileType;
     mapObjectType = MapObjectType;
-    isClientPlayerTurn = signal<boolean>(false);
 
     contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
+    isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
+
+    private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
+    private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
+    private handleGameOverBound = this.handleGameOver.bind(this);
+    private handleToggleDebugModeBound = this.handleToggleDebugMode.bind(this);
 
     constructor(
         public mapService: MapService,
         public gameService: GameService,
         private readonly socketService: SocketClientService,
-        private readonly timeService: TimeService,
         private router: Router,
     ) {}
 
     // TODO: check si M vient de clavardage, const M a bouger lorsque permanent
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+            return;
+        }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
             this.gameService.setDebugMode(!this.gameService.isDebugMode());
             alert('Debug mode: ' + (this.gameService.isDebugMode() ? 'ON' : 'OFF'));
@@ -69,6 +76,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private globalKeyUpListener = (event: KeyboardEvent) => {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+            return;
+        }
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -78,11 +89,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     };
 
     async ngOnInit(): Promise<void> {
-        this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
-        this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
-        this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayload.bind(this));
-        this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOver.bind(this));
-        this.socketService.on<ToggleDebugPayload>('handleToggleDebugMode', this.handleToggleDebugMode.bind(this));
+        this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayloadBound);
+        this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayloadBound);
+        this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOverBound);
+        this.socketService.on<ToggleDebugPayload>('handleToggleDebugMode', this.handleToggleDebugModeBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -90,6 +100,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         window.removeEventListener('keyup', this.globalKeyUpListener);
+        this.socketService.off('playerMoved', this.handlePlayerMovePayloadBound);
+        this.socketService.off('handleClickDebug', this.handleClickDebugPayloadBound);
+        this.socketService.off('gameOver', this.handleGameOverBound);
+        this.socketService.off('handleToggleDebugMode', this.handleToggleDebugModeBound);
     }
 
     getPlayerAt(x: number, y: number): Player | null {
@@ -138,7 +152,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        if (this.isClientPlayerTurn()) {
+        if (this.gameService.isClientPlayerTurn()) {
             this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
         }
     }
@@ -238,36 +252,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.actionTile.set(
             movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()),
         );
-    }
-
-    private handleNewTurn(newTurn: NewTurnPayload) {
-        const player = this.gameService.clientPlayer();
-        if (!player) return;
-
-        if (newTurn.phase === TurnPhase.WaitTurn) {
-            this.timeService.stopTimer();
-            this.timeService.startTimer(TIMER_WAIT_TURN);
-            this.gameService.setActivePlayer(newTurn.playerId);
-
-            if (newTurn.playerId === player.id) {
-                this.isClientPlayerTurn.set(true);
-                player.movementPoints = player.speed ?? 0;
-                player.actionsLeft = 1;
-            } else {
-                this.isClientPlayerTurn.set(false);
-                player.movementPoints = 0;
-                player.actionsLeft = 0;
-            }
-
-            this.gameService.updatePlayer(player.id, player);
-        } else {
-            this.timeService.stopTimer();
-            this.timeService.startTimer(TIMER_TURN);
-
-            if (player.id === newTurn.playerId) {
-                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
-            }
-        }
     }
 
     private handleGameOver(payload: { winnerId: string }): void {

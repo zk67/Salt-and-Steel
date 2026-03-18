@@ -1,10 +1,10 @@
 import { Component, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { Button } from '@app/components/game/game-button/game-button.component';
 import { PlayerInfoComponent } from '@app/components/game/player-info/player-info.component';
-import { TimeService } from '@app/services/time.service';
 import { GameService } from '@app/services/game.service';
 import { SocketClientService } from '@app/services/socket-client.service';
-import { Router } from '@angular/router';
+import { TimeService } from '@app/services/time.service';
 
 @Component({
     selector: 'app-right-sidebar',
@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
 })
 export class RightSidebarComponent {
     currentTime = computed(() => this.timerService.time());
-    isYourTurn = computed(() => this.gameService.activePlayer()?.id === this.gameService.clientPlayer()?.id);
+    isYourTurn = computed(() => this.gameService.activePlayer()?.id === this.gameService.clientPlayer()?.id && !this.gameService.isWaitTurn());
     actionPointsLeft = computed(() => (this.gameService.clientPlayer()?.actionsLeft ?? 0) > 0);
 
     constructor(private timerService: TimeService, private gameService: GameService,

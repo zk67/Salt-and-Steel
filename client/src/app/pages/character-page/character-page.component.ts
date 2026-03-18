@@ -13,6 +13,7 @@ const BASE_DEFENSE = 4;
 const NUMBER_OF_AVATARS = 12;
 const HALF_RANDOM = 0.5;
 const MESSAGE_SHOW_TIME = 1000;
+const CHARACTER_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
 
 type StatKey = 'hp' | 'speed' | 'attack' | 'defense';
 type BonusTarget = 'hp' | 'speed';
@@ -363,7 +364,19 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     return this.unavailableAvatars.includes(avatar);
   }
 
+  private onBeforeUnload = (): void => {
+    sessionStorage.setItem(CHARACTER_PAGE_REFRESH_FLAG, '1');
+    this.gameService.clearSelectedJoinRoomId();
+    this.router.navigate(['/home']);
+  };
+
   ngOnInit(): void {
+    const wasRefreshing = sessionStorage.getItem(CHARACTER_PAGE_REFRESH_FLAG);
+    if (wasRefreshing) {
+      sessionStorage.removeItem(CHARACTER_PAGE_REFRESH_FLAG);
+      this.router.navigate(['/home']);
+      return;
+    }
     const selectedRoomId = this.gameService.getSelectedJoinRoomId();
 
     if (!selectedRoomId) {
@@ -380,6 +393,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.onUnavailableAvatars,
     );
     this.socketService.send('getUnavailableAvatars');
+    window.addEventListener('beforeunload', this.onBeforeUnload);
   }
 
   ngOnDestroy(): void {
@@ -390,5 +404,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     this.socketService.off('unavailableAvatars', this.onUnavailableAvatars);
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
   }
 }

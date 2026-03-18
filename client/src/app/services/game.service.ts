@@ -2,9 +2,11 @@ import { computed, Injectable, signal } from '@angular/core';
 import { SocketClientService } from '@app/services/socket-client.service';
 import { getActionableTiles, movableTiles } from '@app/utils/game-utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { BattleWonPayload, Game, GameInfoPayload } from '@common/interfaces/game.interface';
+import { BattleWonPayload, Game, GameInfoPayload, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { MapService } from './map/map.service';
+import { TimeService } from './time.service';
 
 @Injectable({
     providedIn: 'root',
@@ -12,6 +14,8 @@ import { MapService } from './map/map.service';
 export class GameService {
     readonly players = signal<Player[]>([]);
     readonly actionTile = signal<boolean[][]>([]);
+    readonly isClientPlayerTurn = signal<boolean>(false);
+    readonly isWaitTurn = signal<boolean>(false);
     private selectedJoinRoomId: string | null = null;
     private selectedHostGame: Game | null = null;
 
@@ -36,17 +40,18 @@ export class GameService {
 
     private chatMessages: ChatMessage[] = [];
 
-    constructor(private mapService: MapService, private socketService: SocketClientService) {
+    constructor(private mapService: MapService, private socketService: SocketClientService, private timeService: TimeService) {
         this.socketService.on('removePlayer', ({ playerId }: { playerId: string }) => {
             if (!this.isGameStarted) {
                 this.removePlayer(playerId);
             } else {
-                this.players.update(players => players.map(p => p.id === playerId ? { ...p, isSurrendered: true } : p));
+                this.players.update(players => players.map(p => p.id === playerId ? { ...p, hasAbandoned: true } : p));
             }
         });
 
         this.socketService.on<GameInfoPayload>('gameStartInfo', this.handleStartGame.bind(this));
         this.socketService.on<BattleWonPayload>('handleBattleWon', this.handleBattleWon.bind(this));
+        this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
     }
 
     setChatMessages(messages: ChatMessage[]): void {
@@ -137,7 +142,6 @@ export class GameService {
 
     setDebugMode(debugMode: boolean): void {
         this.isDebugMode.set(debugMode);
-
     }
 
     private handleStartGame(payload: GameInfoPayload): void {
@@ -145,7 +149,10 @@ export class GameService {
         payload.players.forEach(p => {
             if (p.id !== this.clientPlayer()?.id) {
                 this.addPlayer(p);
+                this.updatePlayer(p.id, { x: p.x, y: p.y });
                 alert(`Player ${p.name} has joined the game!`);
+            } else {
+                this.updatePlayer(p.id, { x: p.x, y: p.y });
             }
         });
 
@@ -172,5 +179,37 @@ export class GameService {
 
     clearSelectedHostGame(): void {
         this.selectedHostGame = null;
+    }
+
+    private handleNewTurn(newTurn: NewTurnPayload) {
+        const player = this.clientPlayer();
+        if (!player) return;
+
+        if (newTurn.phase === TurnPhase.WaitTurn) {
+            this.isWaitTurn.set(true);
+            this.timeService.stopTimer();
+            this.timeService.startTimer(TIMER_WAIT_TURN);
+            this.setActivePlayer(newTurn.playerId);
+
+            if (newTurn.playerId === player.id) {
+                this.isClientPlayerTurn.set(true);
+                player.movementPoints = player.speed ?? 0;
+                player.actionsLeft = 1;
+            } else {
+                this.isClientPlayerTurn.set(false);
+                player.movementPoints = 0;
+                player.actionsLeft = 0;
+            }
+
+            this.updatePlayer(player.id, player);
+        } else {
+            this.isWaitTurn.set(false);
+            this.timeService.stopTimer();
+            this.timeService.startTimer(TIMER_TURN);
+
+            if (player.id === newTurn.playerId) {
+                this.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.getPlayers()));
+            }
+        }
     }
 }

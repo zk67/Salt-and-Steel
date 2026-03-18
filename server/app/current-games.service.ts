@@ -119,7 +119,7 @@ export class CurrentGamesService {
         sorted.forEach((player, idx) => {
             player.turnOrder = idx;
         });
-
+        this.allocateSpawnPoints(roomId);
         this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
 
         game.currentPhase = TurnPhase.WaitTurn;

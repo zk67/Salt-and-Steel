@@ -11,9 +11,11 @@
                         [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                         [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'">
                         @if (getPlayerAt(colIndex, rowIndex); as player) {
-                            <img class="player-avatar"
-                                [src]="player.imageUrl"
-                                [alt]="player.name" />
+                            @if (!player.hasAbandoned) {
+                                <img class="player-avatar"
+                                    [src]="player.imageUrl"
+                                    [alt]="player.name" />
+                            }
                         }
                     </div>
                 }
