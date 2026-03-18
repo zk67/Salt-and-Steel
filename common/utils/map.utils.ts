@@ -46,7 +46,7 @@ export function isValidTile(tiles: TileData[][], position: Position): boolean {
     return !(position.x < 0 || position.y < 0 || position.y >= tiles.length || position.x >= tiles[position.y].length);
 }
 
-function canMoveToTile(tiles: TileData[][], players: Player[], state: MovementState, target: Position): number | null {
+export function canMoveToTile(tiles: TileData[][], players: Player[], state: MovementState, target: Position): number | null {
     if (!isValidTile(tiles, target)) return null;
     if (getPlayerAt(players, target)) return null;
 

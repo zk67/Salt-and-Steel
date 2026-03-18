@@ -1,12 +1,12 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { BattleWonPayload, Game, GameInfoPayload, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { getActionableTiles, movableTiles } from '@common/utils/map.utils';
 import { TimeService } from './time.service';
 
 @Injectable({
@@ -113,10 +113,14 @@ export class GameService {
         if (player && tiles.length > 0) {
             this.actionMode = !this.actionMode;
 
-            if (this.actionMode) {
-                this.actionTile.set(getActionableTiles(tiles, player, this.getPlayers()));
+            if(!this.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
             } else {
-                this.actionTile.set(movableTiles(tiles, player, this.getPlayers()));
+                if (this.actionMode) {
+                    this.actionTile.set(getActionableTiles(tiles, player, this.getPlayers()));
+                } else {
+                    this.actionTile.set(movableTiles(tiles, player, this.getPlayers()));
+                }
             }
         }
     }
@@ -168,6 +172,14 @@ export class GameService {
         alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
         this.addVictoryPoint(winner.id);
         this.updatePlayer(loser.id, { position: payload.loserPos });
+
+        if(this.clientPlayerId === winner.id && this.isClientPlayerTurn()) {
+            if(!this.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
+            } else {
+                this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
+            }
+        }
     }
 
     setSelectedHostGame(game: Game): void {
@@ -210,6 +222,7 @@ export class GameService {
             this.timeService.stopTimer();
             this.timeService.startTimer(TIMER_WAIT_TURN);
             this.setActivePlayer(newTurn.playerId);
+            this.actionTile.set([]);
 
             if (newTurn.playerId === player.id) {
                 this.isClientPlayerTurn.set(true);
@@ -228,8 +241,36 @@ export class GameService {
             this.timeService.startTimer(TIMER_TURN);
 
             if (player.id === newTurn.playerId) {
-                this.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.getPlayers()));
+                if(!this.canPlayerStillDoAction()) {
+                    this.socketService.send(GatewayEvents.EndTurnEarly);
+                } else {
+                    this.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.getPlayers()));
+                }
             }
         }
+    }
+
+    canPlayerStillDoAction(): boolean {
+        const player = this.clientPlayer();
+        if (!player) return false;
+
+        const possibleActionTiles = getActionableTiles(this.mapService.getTileMap(), player, this.getPlayers());
+        const tiles = this.mapService.getTileMap();
+
+        for (const possiblePosition of getNeighborPositions(player.position)) {
+            if (!isValidTile(tiles, possiblePosition)){
+                continue;
+            }
+
+            if (player.actionsLeft > 0 && possibleActionTiles[possiblePosition.y][possiblePosition.x]) {
+                return true;
+            }
+
+            if(canMoveToTile(tiles, this.getPlayers(), { ...player.position, movementPoints: player.movementPoints }, possiblePosition) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
