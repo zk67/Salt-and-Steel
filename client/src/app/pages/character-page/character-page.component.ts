@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
+import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
@@ -15,11 +16,6 @@ const NUMBER_OF_AVATARS = 12;
 const HALF_RANDOM = 0.5;
 const MESSAGE_SHOW_TIME = 1000;
 const CHARACTER_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
-
-type StatKey = 'hp' | 'speed' | 'attack' | 'defense';
-type BonusTarget = 'hp' | 'speed';
-type DiceTarget = 'attack' | 'defense';
-type DieKind = 'd4' | 'd6' | 'none';
 
 @Component({
   selector: 'app-character-page',
@@ -45,6 +41,10 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   speed = new FormControl<number>(BASE_SPEED);
   attack = new FormControl<number>(BASE_ATTACK);
   defense = new FormControl<number>(BASE_DEFENSE);
+  readonly bonusTargetEnum = BonusTarget;
+  readonly diceTargetEnum = DiceTarget;
+  readonly dieKindEnum = DiceKind;
+  readonly statKeyEnum = StatKey;
 
   showInvalidFormMessage = false;
   showInvalidNameMessage = false;
@@ -52,10 +52,10 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   unavailableAvatars: string[] = [];
 
   statDescriptions: Record<StatKey, string> = {
-    hp: 'Points de vie. À 0, ton personnage est vaincu.',
-    speed: 'Détermine qui agit en premier et aide à esquiver les coups.',
-    attack: 'Ta force offensive. En combat, tu lances le dé assigné à Attaque.',
-    defense: 'Ta résistance. En combat, tu lances le dé assigné à Défense.',
+    [StatKey.Hp]: 'Points de vie. À 0, ton personnage est vaincu.',
+    [StatKey.Speed]: 'Détermine qui agit en premier et aide à esquiver les coups.',
+    [StatKey.Attack]: 'Ta force offensive. En combat, tu lances le dé assigné à Attaque.',
+    [StatKey.Defense]: 'Ta résistance. En combat, tu lances le dé assigné à Défense.',
   };
 
   pirateNames: string[] = [
@@ -117,20 +117,20 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.unavailableAvatars = avatars;
   };
 
-  getDieFor(target: DiceTarget): DieKind {
+  getDieFor(target: DiceTarget): DiceKind {
     const d6 = this.d6Target.value;
     if (!d6) {
-      return 'none';
+      return DiceKind.None;
     }
-    return d6 === target ? 'd6' : 'd4';
+    return d6 === target ? DiceKind.D6 : DiceKind.D4;
   }
 
   getDieLabel(target: DiceTarget): string {
     const kind = this.getDieFor(target);
-    if (kind === 'none') {
+    if (kind === DiceKind.None) {
       return 'D?';
     }
-    return kind === 'd6' ? 'D6' : 'D4';
+    return kind === DiceKind.D6 ? 'D6' : 'D4';
   }
 
   getDieSummary(): string {
@@ -138,14 +138,14 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       return 'Non assignés';
     }
 
-    const atk = this.getDieLabel('attack');
-    const def = this.getDieLabel('defense');
+    const atk = this.getDieLabel(DiceTarget.Attack);
+    const def = this.getDieLabel(DiceTarget.Defense);
     return `Attaque: ${atk} · Défense: ${def}`;
   }
 
   get bonusSummary(): string {
     if (!this.bonusTarget.value) return 'Non choisi';
-    return this.bonusTarget.value === 'hp' ? '+2 Vie' : '+2 Rapidité';
+    return this.bonusTarget.value === BonusTarget.Hp ? '+2 Vie' : '+2 Rapidité';
   }
 
   get pirateTitle(): string {
@@ -195,8 +195,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
   private updateStatsHpSpeed(): void {
     const target = this.bonusTarget.value;
-    const nextHp = BASE_HP + (target === 'hp' ? 2 : 0);
-    const nextSpeed = BASE_SPEED + (target === 'speed' ? 2 : 0);
+    const nextHp = BASE_HP + (target === BonusTarget.Hp ? 2 : 0);
+    const nextSpeed = BASE_SPEED + (target === BonusTarget.Speed ? 2 : 0);
 
     this.hp.setValue(nextHp);
     this.speed.setValue(nextSpeed);
@@ -221,8 +221,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       }
     }
 
-    const bonus: BonusTarget = Math.random() < HALF_RANDOM ? 'hp' : 'speed';
-    const d6: DiceTarget = Math.random() < HALF_RANDOM ? 'attack' : 'defense';
+    const bonus: BonusTarget = Math.random() < HALF_RANDOM ? BonusTarget.Hp : BonusTarget.Speed;
+    const d6: DiceTarget = Math.random() < HALF_RANDOM ? DiceTarget.Attack : DiceTarget.Defense;
 
     this.bonusTarget.setValue(bonus);
     this.d6Target.setValue(d6);
@@ -230,12 +230,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   }
 
   submitCharacter(): void {
-    if (
-      !this.characterName.value ||
-      !this.avatar.value ||
-      !this.bonusTarget.value ||
-      !this.d6Target.value
-    ) {
+    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget.value || !this.d6Target.value) {
       this.showInvalidFormMessage = true;
       setTimeout(() => {
         this.showInvalidFormMessage = false;
@@ -252,8 +247,12 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     const d6 = this.d6Target.value;
-    const d4target: 'attack' | 'defense' | null =
-      d6 === 'attack' ? 'defense' : d6 === 'defense' ? 'attack' : null;
+    let d4target: DiceTarget | null = null;
+    if (d6 === DiceTarget.Attack) {
+      d4target = DiceTarget.Defense;
+    } else if (d6 === DiceTarget.Defense) {
+      d4target = DiceTarget.Attack;
+    }
 
     const player: Player = {
       id: '',

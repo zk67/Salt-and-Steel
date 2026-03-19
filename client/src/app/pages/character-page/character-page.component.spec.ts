@@ -3,9 +3,11 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { provideRouter, Router } from '@angular/router';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { GatewayEvents } from '@common/types/gateway.events';
+import { BonusTarget, DiceTarget } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { CharacterPageComponent } from './character-page.component';
+
 
 /**
  * Description:
@@ -138,8 +140,8 @@ describe('CharacterPageComponent', () => {
         fixture.detectChanges();
         component.characterName.setValue('Anne');
         component.avatar.setValue('assets/avatars/avatar-1.png');
-        component.toggleBonus('hp');
-        component.toggleDiceBonus('attack');
+        component.toggleBonus(BonusTarget.Hp);
+        component.toggleDiceBonus(DiceTarget.Attack);
 
         component.submitCharacter();
 
@@ -162,8 +164,8 @@ describe('CharacterPageComponent', () => {
         fixture.detectChanges();
         component.characterName.setValue('Anne');
         component.avatar.setValue('assets/avatars/avatar-1.png');
-        component.toggleBonus('hp');
-        component.toggleDiceBonus('attack');
+        component.toggleBonus(BonusTarget.Hp);
+        component.toggleDiceBonus(DiceTarget.Attack);
         spyOn(window, 'confirm').and.returnValue(true);
 
         component.submitCharacter();
@@ -181,8 +183,8 @@ describe('CharacterPageComponent', () => {
         fixture.detectChanges();
         component.characterName.setValue('Anne');
         component.avatar.setValue('assets/avatars/avatar-1.png');
-        component.toggleBonus('hp');
-        component.toggleDiceBonus('attack');
+        component.toggleBonus(BonusTarget.Hp);
+        component.toggleDiceBonus(DiceTarget.Attack);
         spyOn(window, 'confirm').and.returnValue(false);
 
         component.submitCharacter();
@@ -206,8 +208,8 @@ describe('CharacterPageComponent', () => {
         fixture.detectChanges();
         component.characterName.setValue('***');
         component.avatar.setValue('assets/avatars/avatar-1.png');
-        component.toggleBonus('hp');
-        component.toggleDiceBonus('attack');
+        component.toggleBonus(BonusTarget.Hp);
+        component.toggleDiceBonus(DiceTarget.Attack);
 
         component.submitCharacter();
 
