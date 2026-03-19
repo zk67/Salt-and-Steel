@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
 import { LeftSidebarComponent } from '@app/components/game/left-sidebar/left-sidebar.component';
 import { RightSidebarComponent } from '@app/components/game/right-sidebar/right-sidebar.component';
@@ -21,17 +22,21 @@ export class GamePageComponent implements OnInit, OnDestroy {
     currentPlayerName: string = '';
     currentPlayerId: string = '';
 
-    constructor(private socketService: SocketClientService,
+    constructor(
+        private socketService: SocketClientService,
         private gameService: GameService,
+        private router: Router,
     ) {}
 
     ngOnInit(): void {
-        this.messages = this.gameService.getChatMessages();
         const currentPlayer = this.gameService.clientPlayer();
-        if (currentPlayer) {
-            this.currentPlayerName = currentPlayer.name;
-            this.currentPlayerId = currentPlayer.id;
+        if (!currentPlayer) {
+            this.router.navigate(['/home']);
+            return;
         }
+        this.messages = this.gameService.getChatMessages();
+        this.currentPlayerName = currentPlayer.name;
+        this.currentPlayerId = currentPlayer.id;
         this.socketService.on(GatewayEvents.Message, this.addMessage);
     }
 
