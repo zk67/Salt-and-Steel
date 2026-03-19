@@ -1,3 +1,9 @@
+@if (popupService.show()) {
+    <app-popup [show]="true">
+        <p>{{ popupService.message() }}</p>
+        <button class="button" (click)="popupService.close()">Fermer</button>
+    </app-popup>
+}
 <div class="games-admin">
     <header class="admin-header">
         <div class="header-content">
@@ -11,10 +17,6 @@
 
     @if (loading) {
     <p class="empty-state">Chargement...</p>
-    }
-
-    @if (errorMsg) {
-    <p class="empty-state">{{ errorMsg }}</p>
     }
 
     <button class="btn-create-game btn-primary" (click)="createGame()">
