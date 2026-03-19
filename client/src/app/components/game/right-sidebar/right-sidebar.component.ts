@@ -1,4 +1,4 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Button } from '@app/components/game/game-button/game-button.component';
 import { PlayerInfoComponent } from '@app/components/game/player-info/player-info.component';
@@ -20,6 +20,11 @@ export class RightSidebarComponent {
 
     constructor(private timerService: TimeService, private gameService: GameService,
         private socketService: SocketClientService, private router: Router) {}
+
+    @HostListener('window:beforeunload')
+    onBeforeUnload(): void {
+        this.socketService.send(GatewayEvents.Surrender);
+    }
 
     onAction = () => {
         if (this.isYourTurn() && this.actionPointsLeft()) {
