@@ -11,20 +11,16 @@
     <div class="right">
         <h1 class="header-item">Salle d'attente</h1>
         @if (showClosedMessage) {
-            <div class="popup-overlay">
-                <div class="popup">
-                    <p>L'organisateur a fermé la partie.</p>
-                    <p>Redirection vers l'accueil...</p>
-                </div>
-            </div>
+            <app-popup [show]="true">
+                <p>L'organisateur a fermé la partie.</p>
+                <p>Redirection vers l'accueil...</p>
+            </app-popup>
         }
         @if (showKickedMessage) {
-            <div class="popup-overlay">
-                <div class="popup">
-                    <p>Vous avez été exclu de la salle.</p>
-                    <p>Redirection vers l'accueil...</p>
-                </div>
-            </div>
+            <app-popup [show]="true">
+                <p>Vous avez été exclu de la salle.</p>
+                <p>Redirection vers l'accueil...</p>
+            </app-popup>
         }
         <div class="slots">
             @for (player of players; track player.id; let i = $index) {

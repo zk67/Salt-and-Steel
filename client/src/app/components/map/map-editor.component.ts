@@ -81,7 +81,6 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         if (id) {
             const game = await firstValueFrom(this.saveService.getGame(id));
             if (!game) {
-                alert('Map introuvable, retour a la page principal.');
                 this.router.navigate([APP_ROUTES.admin]);
                 return;
             }
@@ -95,13 +94,11 @@ export class MapEditorComponent implements OnInit, OnDestroy {
             if (Object.values(MapSize).includes(sizeParam)) {
                 this.gridSize = sizeParam as MapSize;
             } else {
-                alert('Taille de carte invalide, taille petite utilisee.');
                 this.gridSize = MapSize.Small;
             }
 
             if (!Object.values(GameMode).includes(this.route.snapshot.queryParams.mode)) {
                 mode = GameMode.Classic;
-                alert('Mode de jeu invalide, mode classique utilise.');
             }
 
             this.mapService.initializeMap(this.gridSize, mode);

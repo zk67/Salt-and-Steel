@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
+import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { getObjectDescription } from '@app/utils/game-utils';
 import {
@@ -63,6 +64,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         public gameService: GameService,
         private readonly socketService: SocketClientService,
         private router: Router,
+        public popupService: PopupService,
     ) {}
 
     // TODO: check si M vient de clavardage, const M a bouger lorsque permanent
@@ -74,7 +76,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
             this.gameService.setDebugMode(!this.gameService.isDebugMode());
-            alert('Debug mode: ' + (this.gameService.isDebugMode() ? 'ON' : 'OFF'));
         }
     }
 
@@ -208,7 +209,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         } else {
             const mapObject = this.mapService.getMapObject(position);
             if (mapObject !== MapObjectType.None && mapObject !== MapObjectType.SpawnPoint) {
-                alert(`Action on object ${getObjectDescription(mapObject)} at (${position.x}, ${position.y})`);
+                this.popupService.open(`Action on object ${getObjectDescription(mapObject)} at (${position.x}, ${position.y})`);
             }
         }
 
@@ -220,7 +221,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const clientPlayer = this.gameService.clientPlayer();
         if (!player || !clientPlayer) return;
 
-        alert(`Player ${player.name} has been killed!`);
         this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
     }
 
@@ -263,8 +263,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
-        alert(`Game Over! The winner is ${winner.name}!`);
+        this.popupService.open(`Game Over! The winner is ${winner.name}!`);
         setTimeout(() => {
+            this.popupService.close();
             this.router.navigate([APP_ROUTES.home]);
         }, DELAY_BEFORE_NAVIGATE_HOME);
     }

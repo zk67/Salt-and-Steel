@@ -4,7 +4,9 @@ import { ChatComponent } from '@app/components/chat/chat.component';
 import { LeftSidebarComponent } from '@app/components/game/left-sidebar/left-sidebar.component';
 import { RightSidebarComponent } from '@app/components/game/right-sidebar/right-sidebar.component';
 import { MapGameComponent } from '@app/components/map/map-game.component';
+import { PopupComponent } from '@app/components/popup/popup.component';
 import { GameService } from '@app/services/game/game.service';
+import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -13,7 +15,7 @@ import { GatewayEvents } from '@common/types/gateway.events';
 @Component({
     templateUrl: './game-page.component.html',
     styleUrls: ['./game-page.component.scss'],
-    imports: [MapGameComponent, LeftSidebarComponent, RightSidebarComponent, ChatComponent],
+    imports: [MapGameComponent, LeftSidebarComponent, RightSidebarComponent, ChatComponent, PopupComponent],
 })
 export class GamePageComponent implements OnInit, OnDestroy {
 
@@ -25,6 +27,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     constructor(
         private socketService: SocketClientService,
         private gameService: GameService,
+        public popupService: PopupService,
         private router: Router,
     ) {}
 
