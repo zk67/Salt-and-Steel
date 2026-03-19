@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { BonusTarget, DiceTarget } from '@common/enums/player.enums';
@@ -157,7 +158,7 @@ describe('CharacterPageComponent', () => {
         const onJoinResult = getListener<{ success: boolean }>(GatewayEvents.JoinCurrentGameResult);
         onJoinResult({ success: true });
 
-        expect(router.navigate).toHaveBeenCalledWith(['/waiting']);
+        expect(router.navigate).toHaveBeenCalledWith([APP_ROUTES.waiting]);
     });
 
     it('devrait avertir le joueur si la partie est verrouillée puis lui permettre de réessayer', () => {
@@ -176,7 +177,7 @@ describe('CharacterPageComponent', () => {
 
         expect(window.confirm).toHaveBeenCalled();
         expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.AddPlayerToCurrentGame, jasmine.anything());
-        expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
+        expect(router.navigate).not.toHaveBeenCalledWith([APP_ROUTES.home]);
     });
 
     it('devrait retourner à l’accueil si la partie est verrouillée et que le joueur refuse de réessayer', () => {
@@ -192,7 +193,7 @@ describe('CharacterPageComponent', () => {
         getListener<{ success: boolean }>(GatewayEvents.JoinCurrentGameResult)({ success: false });
 
         expect(gameServiceSpy.clearSelectedJoinRoomId).toHaveBeenCalled();
-        expect(router.navigate).toHaveBeenCalledWith(['/home']);
+        expect(router.navigate).toHaveBeenCalledWith([APP_ROUTES.home]);
     });
 
     it('devrait libérer l’avatar temporairement choisi quand on quitte le formulaire', () => {

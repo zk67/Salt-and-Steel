@@ -1,13 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
 import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-
 const BASE_HP = 6;
 const BASE_SPEED = 6;
 const BASE_ATTACK = 4;
@@ -294,7 +294,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
       if (result.success) {
         this.gameService.clearSelectedHostGame();
-        this.router.navigate(['/waiting']);
+        this.router.navigate([APP_ROUTES.waiting]);
         return;
       }
 
@@ -304,7 +304,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
       if (!retry) {
         this.gameService.clearSelectedJoinRoomId();
-        this.router.navigate(['/home']);
+        this.router.navigate([APP_ROUTES.home]);
         return;
       }
 
@@ -346,7 +346,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.router.navigate(['/waiting']);
+      this.router.navigate([APP_ROUTES.waiting]);
     };
 
     this.socketService.on(GatewayEvents.PlayerId, onPlayerId);
@@ -364,14 +364,14 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   private onBeforeUnload = (): void => {
     sessionStorage.setItem(CHARACTER_PAGE_REFRESH_FLAG, '1');
     this.gameService.clearSelectedJoinRoomId();
-    this.router.navigate(['/home']);
+    this.router.navigate([APP_ROUTES.home]);
   };
 
   ngOnInit(): void {
     const wasRefreshing = sessionStorage.getItem(CHARACTER_PAGE_REFRESH_FLAG);
     if (wasRefreshing) {
       sessionStorage.removeItem(CHARACTER_PAGE_REFRESH_FLAG);
-      this.router.navigate(['/home']);
+      this.router.navigate([APP_ROUTES.home]);
       return;
     }
     const selectedRoomId = this.gameService.getSelectedJoinRoomId();
