@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { SaveService } from '@app/services/save/save.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
@@ -27,11 +28,11 @@ export class AdminPageComponent implements OnInit {
     errorMsg = '';
 
     back(): void {
-        this.router.navigate(['/home']);
+        this.router.navigate([APP_ROUTES.home]);
     }
 
     createGame(): void {
-        this.router.navigate(['/form-edition']);
+        this.router.navigate([APP_ROUTES.formEdition]);
     }
 
     toggleVisibility(game: Game): void {
@@ -60,7 +61,7 @@ export class AdminPageComponent implements OnInit {
             return;
         }
 
-        this.router.navigate(['/edition'], { queryParams: { id: gameId } });
+        this.router.navigate([APP_ROUTES.edition], { queryParams: { id: gameId } });
     }
 
     refresh(): void {
