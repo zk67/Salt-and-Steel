@@ -10,13 +10,40 @@ import { ChatMessage } from '@common/interfaces/chat.message.interface';
     styleUrls: ['./chat.component.scss'],
 })
 export class ChatComponent implements AfterViewChecked {
-    @Input() messages: ChatMessage[] = [];
-    @Input() playerName: string = '';
-    @Input() currentPlayerId: string = '';
+    private _messages: ChatMessage[] = [];
+    private _playerName: string = '';
+    private _currentPlayerId: string = '';
     @Output() messageSent = new EventEmitter<string>();
     @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
     private messageCount = this.messages.length;
+
+    @Input()
+    set messages(messages: ChatMessage[]) {
+        this._messages = messages;
+    }
+
+    @Input()
+    set playerName(playerName: string) {
+        this._playerName = playerName;
+    }
+
+    @Input()
+    set currentPlayerId(currentPlayerId: string) {
+        this._currentPlayerId = currentPlayerId;
+    }
+
+    get messages(): ChatMessage[] {
+        return this._messages;
+    }
+
+    get playerName(): string {
+        return this._playerName;
+    }
+
+    get currentPlayerId(): string {
+        return this._currentPlayerId;
+    }
 
     ngAfterViewChecked(): void {
         if (this.messages.length === 0) return;

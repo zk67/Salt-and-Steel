@@ -10,36 +10,45 @@ import { MapSize } from '@common/interfaces/map.interface';
     imports: [CommonModule],
 })
 export class GameCreatedComponent {
-    @Input() game: Game;
+    private _game: Game;
     @Output() toggle = new EventEmitter<Game>();
     @Output() editGame = new EventEmitter<string>();
     @Output() deleteGame = new EventEmitter<string>();
 
+    @Input()
+    set game(game: Game) {
+        this._game = game;
+    }
+
+    get game(): Game {
+        return this._game;
+    }
+
     get previewSrc(): string {
-        return this.game.imageUrl || '';
+        return this._game.imageUrl || '';
     }
 
     get hasDescription(): boolean {
-        return !!this.game.description.trim();
+        return !!this._game.description.trim();
     }
 
     get size(): string {
-        return MapSize[this.game.size];
+        return MapSize[this._game.size];
     }
 
     get mode(): string {
-        return this.game.gameMode;
+        return this._game.gameMode;
     }
 
     onToggle(): void {
-        this.toggle.emit(this.game);
+        this.toggle.emit(this._game);
     }
 
     onEdit(): void {
-        if (this.game._id) this.editGame.emit(this.game._id);
+        if (this._game._id) this.editGame.emit(this._game._id);
     }
 
     onDelete(): void {
-        if (this.game._id) this.deleteGame.emit(this.game._id);
+        if (this._game._id) this.deleteGame.emit(this._game._id);
     }
 }
