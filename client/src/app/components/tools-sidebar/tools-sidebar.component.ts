@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save/save.service';
@@ -75,12 +76,12 @@ export class ToolsSidebarComponent {
                     await firstValueFrom(this.saveService.replaceGame(game._id, game));
                     alert(`Jeu "${game.name}" modifié avec succès !`);
                 }
-            }else{
+            } else {
                 await firstValueFrom(this.saveService.addGame(game));
                 alert(`Jeu "${game.name}" créé avec succès !`);
             }
 
-            this.router.navigate(['/admin']);
+            this.router.navigate([APP_ROUTES.admin]);
         } catch (err) {
             const action = game._id ? 'modification' : 'création';
             alert(`Erreur lors de la ${action} : ` + JSON.stringify(err));
@@ -88,6 +89,6 @@ export class ToolsSidebarComponent {
     }
 
     goToMenu(): void {
-        this.router.navigate(['/home']);
+        this.router.navigate([APP_ROUTES.home]);
     }
 }
