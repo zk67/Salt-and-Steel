@@ -12,7 +12,6 @@ export class SocketClientService {
     }
 
     connect(): void {
-        //changer le lien selon si je teste localement ou en ligne.
         this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
     }
 

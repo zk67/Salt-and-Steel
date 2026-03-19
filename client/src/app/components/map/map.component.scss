@@ -15,51 +15,51 @@
     background-color: white;
 
     &[data-tile-type="Basic"] {
-        background-image: url("/assets/tiles/basic.png");
+        background-image: url("assets/tiles/basic.png");
         background-size: cover;
         background-position: center;
     }
     &[data-tile-type="Water"] {
-        background-image: url("/assets/tiles/water.png");
+        background-image: url("assets/tiles/water.png");
         background-size: cover;
         background-position: center;
     }
     &[data-tile-type="Ice"] {
-        background-image: url("/assets/tiles/ice.png");
+        background-image: url("assets/tiles/ice.png");
         background-size: cover;
         background-position: center;
     }
     &[data-tile-type="Wall"] {
-        background-image: url("/assets/tiles/wall.png");
+        background-image: url("assets/tiles/wall.png");
         background-size: cover;
         background-position: center;
     }
     &[data-tile-type="Door"] {
-        background-image: url("/assets/tiles/door.png");
+        background-image: url("assets/tiles/door.png");
         background-size: cover;
         background-position: center;
     }
 
     &[data-object="SpawnPoint"] {
-        background-image: url("/assets/objects/spawn.png"), var(--tile-image);
+        background-image: url("assets/objects/spawn.png"), var(--tile-image);
         background-size: 80%, cover;
         background-repeat: no-repeat, no-repeat;
         background-position: center, center;
     }
     &[data-object="Flag"] {
-        background-image: url("/assets/objects/flag.png"), var(--tile-image);
+        background-image: url("assets/objects/flag.png"), var(--tile-image);
         background-size: 80%, cover;
         background-repeat: no-repeat, no-repeat;
         background-position: center, center;
     }
     &[data-object="HealingShrine"] {
-        background-image: url("/assets/objects/heal.png"), var(--tile-image);
+        background-image: url("assets/objects/heal.png"), var(--tile-image);
         background-size: 80%, cover;
         background-repeat: no-repeat, no-repeat;
         background-position: center, center;
     }
     &[data-object="CombatShrine"] {
-        background-image: url("/assets/objects/combat.png"), var(--tile-image);
+        background-image: url("assets/objects/combat.png"), var(--tile-image);
         background-size: 80%, cover;
         background-repeat: no-repeat, no-repeat;
         background-position: center, center;

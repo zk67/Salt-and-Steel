@@ -27,8 +27,12 @@ export class AdminPageComponent implements OnInit {
         public popupService: PopupService,
     ) {}
 
-    games: Game[] = [];
+    private _games: Game[] = [];
     loading = false;
+
+    get games(): Game[] {
+        return this._games;
+    }
 
     back(): void {
         this.router.navigate([APP_ROUTES.home]);
@@ -78,7 +82,7 @@ export class AdminPageComponent implements OnInit {
 
         this.saveService.getAllGames().subscribe({
             next: (games) => {
-                this.games = games;
+                this._games = games;
                 this.loading = false;
             },
             error: () => {
@@ -92,7 +96,7 @@ export class AdminPageComponent implements OnInit {
         this.refresh();
         this.refreshListener = () => {
             this.saveService.getAllGames().subscribe(games => {
-                this.games = games;
+                this._games = games;
             });
         };
         this.socketService.on<Game>(GatewayEvents.Update, this.refreshListener);
