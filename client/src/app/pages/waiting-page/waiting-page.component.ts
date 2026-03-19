@@ -32,7 +32,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     private onPopState = () => {
         this.goHome();
         setTimeout(() => {
-            this.router.navigate(['/home']);
+            this.router.navigate([APP_ROUTES.home]);
         }, TIME_BEFORE_NAVIGATING_HOME);
     };
 
