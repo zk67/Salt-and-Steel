@@ -15,7 +15,7 @@ import { firstValueFrom } from 'rxjs';
     styleUrls: ['./map.component.scss'],
 })
 export class MapEditorComponent implements OnInit, OnDestroy {
-    private _gridSize: MapSize = MapSize.Small;
+    _gridSize: MapSize = MapSize.Small;
     readyToLoad = false;
 
     tileType = TileType;

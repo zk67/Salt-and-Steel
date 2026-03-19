@@ -1,4 +1,4 @@
-<div class="map-grid" [style.--grid-size]="gridSize">
+<div class="map-grid" [style.--grid-size]="_gridSize">
     @if (readyToLoad) {
         @for (row of mapService.getTileMap(); track $index; let rowIndex = $index) {
             @for (tile of row; track $index; let colIndex = $index) {
