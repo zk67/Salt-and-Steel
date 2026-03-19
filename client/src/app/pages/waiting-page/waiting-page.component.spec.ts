@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Player } from '@common/interfaces/player.interface';
@@ -114,6 +115,6 @@ describe('WaitingPageComponent', () => {
 
         onGameStarted();
 
-        expect(router.navigate).toHaveBeenCalledWith(['/game']);
+        expect(router.navigate).toHaveBeenCalledWith([APP_ROUTES.game]);
     });
 });

@@ -1,6 +1,7 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
@@ -41,7 +42,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.gameService.clearSelectedJoinRoomId();
             this.showClosedMessage = true;
             setTimeout(() => {
-                this.router.navigate(['/home']);
+                this.router.navigate([APP_ROUTES.home]);
             }, TIME_BEFORE_NAVIGATE_HOME);
         });
     };
@@ -55,14 +56,14 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.gameService.clearSelectedJoinRoomId();
             this.showKickedMessage = true;
             setTimeout(() => {
-                this.router.navigate(['/home']);
+                this.router.navigate([APP_ROUTES.home]);
             }, TIME_BEFORE_NAVIGATE_HOME);
         });
     };
 
     private onGameStarted = () => {
         this.ngZone.run(() => {
-            this.router.navigate(['/game']);
+            this.router.navigate([APP_ROUTES.game]);
         });
     };
 
@@ -86,7 +87,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.router.navigate(['/game']);
+        this.router.navigate([APP_ROUTES.game]);
         this.socketService.send(GatewayEvents.StartGame);
     }
 
@@ -103,7 +104,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         }
         this.gameService.clearSelectedJoinRoomId();
         if (!skipNavigate) {
-            this.router.navigate(['/home']);
+            this.router.navigate([APP_ROUTES.home]);
         }
     }
 
@@ -111,7 +112,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         const wasRefreshing = sessionStorage.getItem(WAITING_PAGE_REFRESH_FLAG);
         if (wasRefreshing) {
             sessionStorage.removeItem(WAITING_PAGE_REFRESH_FLAG);
-            this.router.navigate(['/home']);
+            this.router.navigate([APP_ROUTES.home]);
             return;
         }
 
