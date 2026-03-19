@@ -151,15 +151,9 @@ export class GameService {
 
     private handleStartGame(payload: GameInfoPayload): void {
         this.isGameStarted = true;
-        payload.players.forEach(p => {
-            if (p.id !== this.clientPlayer()?.id) {
-                this.addPlayer(p);
-                this.updatePlayer(p.id, { position: p.position });
-                alert(`Player ${p.name} has joined the game!`);
-            } else {
-                this.updatePlayer(p.id, { position: p.position });
-            }
-        });
+
+        const sorted = [...payload.players].sort((a, b) => a.turnOrder - b.turnOrder);
+        this.players.set(sorted);
 
         this.mapService.loadFromDB(payload.game);
     }
