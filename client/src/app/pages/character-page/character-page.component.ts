@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { isStringValid } from '@app/utils/validation';
+import { generateUUID, isStringValid } from '@app/utils/validation';
 import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -328,7 +328,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       // créer une partie
       if (selectedHostGame) {
         player.isOrganizer = true;
-        const roomId = crypto.randomUUID();
+        const roomId = generateUUID();
         this.gameService.setSelectedJoinRoomId(roomId);
 
         this.socketService.joinRoom(roomId);
@@ -345,10 +345,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
         );
         return;
       }
-
       this.router.navigate([APP_ROUTES.waiting]);
     };
-
     this.socketService.on(GatewayEvents.PlayerId, onPlayerId);
     this.socketService.send(GatewayEvents.GetPlayerId, player);
   }
@@ -402,13 +400,5 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
     this.socketService.off(GatewayEvents.UnavailableAvatars, this.onUnavailableAvatars);
     window.removeEventListener('beforeunload', this.onBeforeUnload);
-  }
-
-  private generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 }
