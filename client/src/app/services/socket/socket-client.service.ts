@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { io, Socket } from 'socket.io-client';
-import { environment } from 'src/environments/environment';
+import { environment } from 'src/environments/environment.prod';
 
 @Injectable({ providedIn: 'root' })
 export class SocketClientService {
@@ -12,7 +12,6 @@ export class SocketClientService {
     }
 
     connect(): void {
-        //changer le lien selon si je teste localement ou en ligne.
         this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
     }
 

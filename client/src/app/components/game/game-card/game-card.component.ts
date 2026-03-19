@@ -7,21 +7,30 @@ import { Game } from '@common/interfaces/game.interface';
   styleUrl: './game-card.component.scss',
 })
 export class GameCardComponent {
-  @Input() game: Game;
+  private _game: Game;
   @Output() click = new EventEmitter<void>();
 
   handleClick() {
     this.click.emit();
   }
 
+  @Input()
+  set game(game: Game) {
+    this._game = game;
+  }
+
+  get game(): Game {
+    return this._game;
+  }
+
   get previewSrc() {
-    if (this.game.imageUrl) {
-      return this.game.imageUrl;
+    if (this._game.imageUrl) {
+      return this._game.imageUrl;
     }
     return '';
   }
 
   get hasDescription(): boolean {
-    return !!this.game.description?.trim();
+    return !!this._game.description?.trim();
   }
 }

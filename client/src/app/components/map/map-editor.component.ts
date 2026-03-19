@@ -15,7 +15,7 @@ import { firstValueFrom } from 'rxjs';
     styleUrls: ['./map.component.scss'],
 })
 export class MapEditorComponent implements OnInit, OnDestroy {
-    gridSize: MapSize = MapSize.Small;
+    private _gridSize: MapSize = MapSize.Small;
     readyToLoad = false;
 
     tileType = TileType;
@@ -85,23 +85,23 @@ export class MapEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.gridSize = game.size;
+            this._gridSize = game.size;
             this.mapService.loadFromDB(game);
         } else {
             const sizeParam = Number(this.route.snapshot.queryParams.size);
             let mode = this.route.snapshot.queryParams.mode as GameMode;
 
             if (Object.values(MapSize).includes(sizeParam)) {
-                this.gridSize = sizeParam as MapSize;
+                this._gridSize = sizeParam as MapSize;
             } else {
-                this.gridSize = MapSize.Small;
+                this._gridSize = MapSize.Small;
             }
 
             if (!Object.values(GameMode).includes(this.route.snapshot.queryParams.mode)) {
                 mode = GameMode.Classic;
             }
 
-            this.mapService.initializeMap(this.gridSize, mode);
+            this.mapService.initializeMap(this._gridSize, mode);
         }
 
         this.toolService.defaultNumbers();

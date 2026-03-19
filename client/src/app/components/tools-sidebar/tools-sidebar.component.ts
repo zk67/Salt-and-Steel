@@ -19,9 +19,9 @@ import { firstValueFrom } from 'rxjs';
 export class ToolsSidebarComponent {
 
     // Pour le html
-    tileType = TileType;
-    mapObjectType = MapObjectType;
-    toolType = ToolType;
+    private _tileType = TileType;
+    private _mapObjectType = MapObjectType;
+    private _toolType = ToolType;
 
     showPopup = false;
     popupMessage = '';
@@ -33,6 +33,18 @@ export class ToolsSidebarComponent {
         private saveService: SaveService,
         private mapPreviewService: MapPreviewService,
     ) {}
+
+    get tileType(): typeof TileType {
+        return this._tileType;
+    }
+
+    get mapObjectType(): typeof MapObjectType {
+        return this._mapObjectType;
+    }
+
+    get toolType(): typeof ToolType {
+        return this._toolType;
+    }
 
     selectTile(type: TileType): void {
         this.toolService.setTileType(type);
