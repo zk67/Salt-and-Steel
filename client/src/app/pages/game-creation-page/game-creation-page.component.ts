@@ -1,9 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { GameCardComponent } from '@app/components/game/game-card/game-card.component';
-import { SaveService } from '@app/services/save.service';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { APP_ROUTES } from '@app/const/routes-const';
+import { GameService } from '@app/services/game/game.service';
+import { SaveService } from '@app/services/save/save.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { Game } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 
 @Component({
@@ -14,13 +17,14 @@ import { Game } from '@common/types/game.interface';
 })
 
 export class GameCreationPageComponent implements OnInit, OnDestroy {
-  private refreshListener: () => void;
-
   constructor(
     private saveService: SaveService,
     private socketService: SocketClientService,
+    private router: Router,
+    private gameService: GameService,
   ) {}
 
+  private refreshListener: () => void;
   games: Game[] = [];
 
   ngOnInit(): void {
@@ -30,16 +34,22 @@ export class GameCreationPageComponent implements OnInit, OnDestroy {
       this.getAllGames();
     };
 
-    this.socketService.on<Game>('update', this.refreshListener);
+    this.socketService.on<Game>(GatewayEvents.Update, this.refreshListener);
   }
 
   ngOnDestroy(): void {
-    this.socketService.off('update', this.refreshListener);
+    this.socketService.off(GatewayEvents.Update, this.refreshListener);
   }
 
   getAllGames(): void {
     this.saveService.getAllVisibleGames().subscribe(games => {
       this.games = games;
     });
+  }
+
+  selectGame(game: Game): void {
+    this.gameService.clearGameService();
+    this.gameService.setSelectedHostGame(game);
+    this.router.navigate([APP_ROUTES.characterForm]);
   }
 }

@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
-import { MapObjectType, TileType } from '@common/types/map.interface';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { Position } from '@common/utils/map.utils';
 
 const DEFAULT_PREVIEW_SIZE = 256;
 const OBJECT_PADDING_RATIO = 0.15;
+type PreviewCanvas = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; cellSize: number };
 
 @Injectable({
     providedIn: 'root',
@@ -32,7 +34,7 @@ export class MapPreviewService {
         const cached = this.imageCache.get(src);
         if (cached) return cached;
 
-        const p = new Promise<HTMLImageElement>((resolve, reject) => {
+        const imagePromise = new Promise<HTMLImageElement>((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
             img.onerror = () => {
@@ -42,76 +44,131 @@ export class MapPreviewService {
             img.src = src;
         });
 
-        this.imageCache.set(src, p);
-        return p;
+        this.imageCache.set(src, imagePromise);
+        return imagePromise;
     }
 
     async generatePreview(map: Game, pixelSize: number = DEFAULT_PREVIEW_SIZE): Promise<string> {
+        const preview = this.createPreviewCanvas(map.size, pixelSize);
+        if (!preview) return '';
 
-        const size = map.size;
+        const tileImages = await this.loadUsedTileImages(map);
+        const objectImages = await this.loadUsedObjectImages(map);
 
-        const cell = Math.floor(pixelSize / size);
-        const finalSize = cell * size;
+        this.drawMap(preview.ctx, map, preview.cellSize, tileImages, objectImages);
+
+        return preview.canvas.toDataURL('image/png');
+    }
+
+    private createPreviewCanvas(size: number, pixelSize: number): PreviewCanvas | null {
+        const cellSize = Math.floor(pixelSize / size);
+        const finalSize = cellSize * size;
 
         const canvas = document.createElement('canvas');
         canvas.width = finalSize;
         canvas.height = finalSize;
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) return '';
+        if (!ctx) return null;
 
         ctx.imageSmoothingEnabled = false;
-
         ctx.fillRect(0, 0, finalSize, finalSize);
 
-        // caches locaux évite await répété sur même type
-        const tileImgs = new Map<TileType, HTMLImageElement>();
-        const objImgs = new Map<MapObjectType, HTMLImageElement>();
+        return { canvas, ctx, cellSize };
+    }
 
-        const getTileImg = async (t: TileType): Promise<HTMLImageElement | null> => {
-            const cached = tileImgs.get(t);
-            if (cached) return cached;
-            const path = this.tilePaths.get(t);
-            if (!path) return null;
-            const img = await this.loadImage(path);
-            tileImgs.set(t, img);
-            return img;
-        };
+    private async loadUsedTileImages(map: Game): Promise<Map<TileType, HTMLImageElement>> {
+        const usedTiles = new Set<TileType>();
+        this.forEachTile(map, (_, tileType) => usedTiles.add(tileType));
+        return this.loadImagesByType(usedTiles, this.tilePaths);
+    }
 
-        const getObjImg = async (obj: MapObjectType): Promise<HTMLImageElement | null> => {
-            const cached = objImgs.get(obj);
-            if (cached) return cached;
+    private async loadUsedObjectImages(map: Game): Promise<Map<MapObjectType, HTMLImageElement>> {
+        const usedObjects = new Set<MapObjectType>();
+        this.forEachTile(map, (_, __, mapObject) => {
+            if (mapObject !== MapObjectType.None) usedObjects.add(mapObject);
+        });
+        return this.loadImagesByType(usedObjects, this.objPaths);
+    }
 
-            const path = this.objPaths.get(obj);
-            if (!path) return null;
+    private async loadImagesByType<T>(usedTypes: Set<T>, pathMap: Map<T, string>): Promise<Map<T, HTMLImageElement>> {
+        const entries = await Promise.all(
+            [...usedTypes].map(async type => {
+                const path = pathMap.get(type);
+                if (!path) return null;
 
-            const img = await this.loadImage(path);
-            objImgs.set(obj, img);
-            return img;
-        };
+                const image = await this.loadImage(path);
+                return [type, image] as const;
+            }),
+        );
 
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
+        const images = new Map<T, HTMLImageElement>();
+        entries.forEach(entry => {
+            if (!entry) return;
+            images.set(entry[0], entry[1]);
+        });
+
+        return images;
+    }
+
+    private drawMap(
+        ctx: CanvasRenderingContext2D,
+        map: Game,
+        cellSize: number,
+        tileImages: Map<TileType, HTMLImageElement>,
+        objectImages: Map<MapObjectType, HTMLImageElement>,
+    ): void {
+        this.forEachTile(map, (position, tileType, mapObject) => {
+            this.drawTile(ctx, position, cellSize, tileType, tileImages);
+
+            if (mapObject !== MapObjectType.None) {
+                this.drawObject(ctx, position, cellSize, mapObject, objectImages);
+            }
+        });
+    }
+
+    private drawTile(
+        ctx: CanvasRenderingContext2D,
+        position: Position,
+        cellSize: number,
+        tileType: TileType,
+        tileImages: Map<TileType, HTMLImageElement>,
+    ): void {
+        const tileImage = tileImages.get(tileType);
+        if (!tileImage) return;
+
+        ctx.drawImage(tileImage, position.x * cellSize, position.y * cellSize, cellSize, cellSize);
+    }
+
+    private drawObject(
+        ctx: CanvasRenderingContext2D,
+        position: Position,
+        cellSize: number,
+        mapObject: MapObjectType,
+        objectImages: Map<MapObjectType, HTMLImageElement>,
+    ): void {
+        const objectImage = objectImages.get(mapObject);
+        if (!objectImage) return;
+
+        const pad = Math.floor(cellSize * OBJECT_PADDING_RATIO);
+        ctx.drawImage(
+            objectImage,
+            position.x * cellSize + pad,
+            position.y * cellSize + pad,
+            cellSize - 2 * pad,
+            cellSize - 2 * pad,
+        );
+    }
+
+    private forEachTile(
+        map: Game,
+        callback: (position: Position, tileType: TileType, mapObject: MapObjectType) => void,
+    ): void {
+        for (let y = 0; y < map.size; y++) {
+            for (let x = 0; x < map.size; x++) {
                 const tile = map.tiles[y][x];
-                const type = tile.tileType;
-                const obj = tile.mapObject;
-
-                const tileImg = await getTileImg(type);
-                if (tileImg) {
-                    ctx.drawImage(tileImg, x * cell, y * cell, cell, cell);
-                }
-
-                if (obj !== MapObjectType.None) {
-                    const objImg = await getObjImg(obj);
-                    if (objImg) {
-                        //marge pour que l'objet soit un peu plus petit a changer si juge necessaire.
-                        const pad = Math.floor(cell * OBJECT_PADDING_RATIO);
-                        ctx.drawImage( objImg,x * cell + pad,y * cell + pad,cell - 2 * pad, cell - 2 * pad);
-                    }
-                }
+                callback({ x, y }, tile.tileType, tile.mapObject);
             }
         }
-
-        return canvas.toDataURL('image/png');
     }
 }

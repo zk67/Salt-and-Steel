@@ -1,3 +1,9 @@
+@if (showPopup) {
+    <app-popup [show]="true">
+        <p>{{ popupMessage }}</p>
+        <button class="button" (click)="closePopup()">Fermer</button>
+    </app-popup>
+}
 <div class="sidebar-left">
     <div class="sidebar-content">
         <h3>Options de placement</h3>

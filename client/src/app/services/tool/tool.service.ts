@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
-import { MapObjectType, MapSize, TileType } from '@common/types/map.interface';
+import { MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
+import { Position } from '@common/utils/map.utils';
 
 const OBJECT_QUANTITY_SMALL = 2;
 const OBJECT_QUANTITY_MEDIUM = 4;
@@ -43,41 +44,41 @@ export class ToolService {
         return this.toolType;
     }
 
-    useTool(button: number, shiftKey: boolean, x: number, y: number): void {
+    useTool(button: number, shiftKey: boolean, position: Position): void {
         if (button === 0) {
-            this.place(x, y);
+            this.place(position);
         } else if (button === 2) {
-            this.delete(x, y, shiftKey);
+            this.delete(position, shiftKey);
         }
     }
 
-    place(x: number, y: number): void {
+    place(position: Position): void {
         if (this.toolType === ToolType.None) return;
-        const tile = this.mapService.getTile(x, y);
+        const tile = this.mapService.getTile(position);
         if (!tile) return;
 
         if (this.toolType === ToolType.Tile) {
             if (this.tileType === TileType.Wall) {
                 this.setNumberObject(tile.mapObject, false);
-                this.mapService.setMapObject(x, y, MapObjectType.None);
+                this.mapService.setMapObject(position, MapObjectType.None);
             }
-            this.mapService.setTile(x, y, this.tileType);
+            this.mapService.setTile(position, this.tileType);
         } else if (this.mapObjectType !== MapObjectType.None) {
             if (tile.mapObject !== this.mapObjectType && tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
                 if (tile.mapObject !== MapObjectType.None)
                     this.setNumberObject(tile.mapObject, false);
-                this.mapService.setMapObject(x, y, this.mapObjectType);
+                this.mapService.setMapObject(position, this.mapObjectType);
                 this.setNumberObject(this.mapObjectType);
             }
         }
     }
 
-    delete(x: number, y: number, shiftKeyPressed: boolean = false): void {
+    delete(position: Position, shiftKeyPressed: boolean = false): void {
         if (shiftKeyPressed) {
-            this.setNumberObject(this.mapService.getMapObject(x, y), false);
-            this.mapService.setMapObject(x, y, MapObjectType.None);
+            this.setNumberObject(this.mapService.getMapObject(position), false);
+            this.mapService.setMapObject(position, MapObjectType.None);
         } else {
-            this.mapService.setTile(x, y, TileType.Basic);
+            this.mapService.setTile(position, TileType.Basic);
         }
     }
 
@@ -104,7 +105,7 @@ export class ToolService {
 
         const gameData = this.mapService.getGameData();
 
-        if(gameData) {
+        if (gameData) {
             gameData.tiles.flat().filter(t => t.mapObject !== MapObjectType.None).forEach((tile) => {
                 this.setNumberObject(tile.mapObject);
             });

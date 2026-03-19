@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { PlayerListComponent } from '@app/components/game/player-list/player-list.component';
-import { GameService } from '@app/services/game.service';
+import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
 
 @Component({

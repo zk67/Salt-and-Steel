@@ -4,6 +4,11 @@
         <p>Joueurs: {{ playerCount() }}</p>
         <p>Joueur actif: <strong>{{ activePlayer()?.name ?? '—' }}</strong></p>
     </div>
+    @if (isDebugMode()) {
+        <div class="debug-indicator">
+            <p class="debug-indicator">Mode débogage actif</p>
+        </div>
+    }
     <div class="player-list">
         <app-player-list></app-player-list>
     </div>

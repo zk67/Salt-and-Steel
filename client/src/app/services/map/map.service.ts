@@ -1,9 +1,9 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile } from '@app/utils/tile';
-import { Game } from '@common/types/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/types/map.interface';
-
+import { Game } from '@common/interfaces/game.interface';
+import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { Position } from '@common/utils/map.utils';
 @Injectable({
     providedIn: 'root',
 })
@@ -72,32 +72,32 @@ export class MapService {
         return this.size();
     }
 
-    setTile(x: number, y: number, type: TileType): void {
+    setTile(position: Position, type: TileType): void {
         this.gameSignal.update(game => {
             if (!game) return null;
             const updatedGame = { ...game };
-            updatedGame.tiles[y][x].tileType = type;
+            updatedGame.tiles[position.y][position.x].tileType = type;
             return updatedGame;
         });
     }
 
-    getTile(x: number, y: number): TileData | null {
+    getTile(position: Position): TileData | null {
         const game = this.gameSignal();
-        return game?.tiles[y]?.[x] ?? null;
+        return game?.tiles[position.y]?.[position.x] ?? null;
     }
 
-    setMapObject(x: number, y: number, mapObject: MapObjectType): void {
+    setMapObject(position: Position, mapObject: MapObjectType): void {
         this.gameSignal.update(game => {
             if (!game) return null;
             const updatedGame = { ...game };
-            updatedGame.tiles[y][x].mapObject = mapObject;
+            updatedGame.tiles[position.y][position.x].mapObject = mapObject;
             return updatedGame;
         });
     }
 
-    getMapObject(x: number, y: number): MapObjectType {
+    getMapObject(position: Position): MapObjectType {
         const game = this.gameSignal();
-        return game?.tiles[y]?.[x]?.mapObject ?? MapObjectType.None;
+        return game?.tiles[position.y]?.[position.x]?.mapObject ?? MapObjectType.None;
     }
 
     resetMap(): void {
@@ -115,5 +115,10 @@ export class MapService {
 
     setVisibility(visible: boolean): void {
         this.gameSignal.update(game => game ? { ...game, visible } : null);
+    }
+
+    clearMapService(): void {
+        this.gameSignal.set(null);
+        this.originalGame = null;
     }
 }

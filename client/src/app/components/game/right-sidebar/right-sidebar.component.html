@@ -8,7 +8,7 @@
             <app-game-button label="Action" variant="action" [disabled]="!isYourTurn() || !actionPointsLeft()" (clicked)="onAction()"></app-game-button>
         </div>
         <div class="end-turn-button">
-            <app-game-button label="Terminer le tour" variant="end-turn" [disabled]="!isYourTurn()" (clicked)="onEndTurn()"></app-game-button>
+            <app-game-button label="Terminer le tour" variant="end-turn" [disabled]="!(this.isYourTurn() || (this.isDebugMode() && this.isHost()))" (clicked)="onEndTurn()"></app-game-button>
         </div>
         <div class="surrender-button">
             <app-game-button label="Abandonner" variant="surrender" (clicked)="onSurrender()"></app-game-button>

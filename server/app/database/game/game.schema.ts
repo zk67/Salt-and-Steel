@@ -1,6 +1,6 @@
+import { GameMode, TileData } from '@common/interfaces/map.interface';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { GameMode, TileData } from '@common/types/map.interface';
 
 
 @Schema()

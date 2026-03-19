@@ -1,4 +1,4 @@
-import { CurrentGamesService } from '@app/current-games.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 
 export class Timer {
     private readonly tick = 1000;

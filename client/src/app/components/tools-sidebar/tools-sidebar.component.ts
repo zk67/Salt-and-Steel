@@ -1,16 +1,18 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PopupComponent } from '@app/components/popup/popup.component';
 import { Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
-import { SaveService } from '@app/services/save.service';
+import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { MapObjectType, TileType } from '@common/types/map.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-tools-sidebar',
-    imports: [FormsModule],
+    imports: [FormsModule, PopupComponent],
     templateUrl: './tools-sidebar.component.html',
     styleUrls: ['./tools-sidebar.component.scss'],
 })
@@ -20,6 +22,9 @@ export class ToolsSidebarComponent {
     tileType = TileType;
     mapObjectType = MapObjectType;
     toolType = ToolType;
+
+    showPopup = false;
+    popupMessage = '';
 
     constructor(
         public toolService: ToolService,
@@ -53,13 +58,15 @@ export class ToolsSidebarComponent {
     async saveMap(): Promise<void> {
         const game = this.mapService.getGameData();
         if (!game) {
-            alert('Aucune carte à sauvegarder.');
+            this.popupMessage = 'Aucune carte à sauvegarder.';
+            this.showPopup = true;
             return;
         }
 
         const errors = await this.saveService.validateBeforeSave(game);
         if (errors.length > 0) {
-            alert(errors.join('\n'));
+            this.popupMessage = errors.join('\n');
+            this.showPopup = true;
             return;
         }
 
@@ -70,24 +77,33 @@ export class ToolsSidebarComponent {
                 const updatedGame = await firstValueFrom(this.saveService.getGame(game._id));
                 if (updatedGame === undefined || updatedGame === null) {
                     await firstValueFrom(this.saveService.addGame(game));
-                    alert(`Jeu "${game.name}" créé avec succès !`);
+                    this.popupMessage = `Jeu "${game.name}" créé avec succès !`;
+                    this.showPopup = true;
                 } else {
                     await firstValueFrom(this.saveService.replaceGame(game._id, game));
-                    alert(`Jeu "${game.name}" modifié avec succès !`);
+                    this.popupMessage = `Jeu "${game.name}" modifié avec succès !`;
+                    this.showPopup = true;
                 }
-            }else{
+            } else {
                 await firstValueFrom(this.saveService.addGame(game));
-                alert(`Jeu "${game.name}" créé avec succès !`);
+                this.popupMessage = `Jeu "${game.name}" créé avec succès !`;
+                this.showPopup = true;
             }
 
-            this.router.navigate(['/admin']);
+            this.router.navigate([APP_ROUTES.admin]);
         } catch (err) {
             const action = game._id ? 'modification' : 'création';
-            alert(`Erreur lors de la ${action} : ` + JSON.stringify(err));
+            this.popupMessage = `Erreur lors de la ${action} : ` + JSON.stringify(err);
+            this.showPopup = true;
         }
     }
 
     goToMenu(): void {
-        this.router.navigate(['/home']);
+        this.router.navigate([APP_ROUTES.home]);
+    }
+
+    closePopup(): void {
+        this.showPopup = false;
+        this.popupMessage = '';
     }
 }

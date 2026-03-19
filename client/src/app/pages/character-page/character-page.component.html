@@ -17,7 +17,7 @@
               class="input-engraved"
               type="text"
               [formControl]="characterName"
-              maxlength="32"
+              maxlength="30"
               placeholder="Capitaine sans nom…"
             />
           </div>
@@ -31,6 +31,8 @@
               class="avatar-medallion"
               role="listitem"
               [class.selected]="avatar.value === a"
+              [disabled]="isAvatarUnavailable(a)"
+              [class.unavailable]="isAvatarUnavailable(a)"
               (click)="selectAvatar(a)"
             >
               <img [src]="a" [alt]="'Avatar ' + a" class="avatar" />
@@ -49,12 +51,12 @@
               <span class="stat-icon stat-icon--hp" aria-hidden="true"></span>
               Vie
             </div>
-            <div class="stat-desc">{{ statDescriptions.hp }}</div>
+            <div class="stat-desc">{{ statDescriptions[statKeyEnum.Hp] }}</div>
           </div>
 
           <div class="stat-value">
             {{ hp.value }}
-            @if (bonusTarget.value === 'hp') {
+            @if (bonusTarget.value === bonusTargetEnum.Hp) {
               <span class="badge badge--bonus">+2</span>
             }
           </div>
@@ -62,8 +64,8 @@
           <button
             type="button"
             class="btn btn--brass btn--toggle"
-            [class.selected]="bonusTarget.value === 'hp'"
-            (click)="toggleBonus('hp')"
+            [class.selected]="bonusTarget.value === bonusTargetEnum.Hp"
+            (click)="toggleBonus(bonusTargetEnum.Hp)"
           >
             Bonus +2
           </button>
@@ -75,12 +77,12 @@
               <span class="stat-icon stat-icon--speed" aria-hidden="true"></span>
               Rapidité
             </div>
-            <div class="stat-desc">{{ statDescriptions.speed }}</div>
+            <div class="stat-desc">{{ statDescriptions[statKeyEnum.Speed] }}</div>
           </div>
 
           <div class="stat-value">
             {{ speed.value }}
-            @if (bonusTarget.value === 'speed') {
+            @if (bonusTarget.value === bonusTargetEnum.Speed) {
               <span class="badge badge--bonus">+2</span>
             }
           </div>
@@ -88,8 +90,8 @@
           <button
             type="button"
             class="btn btn--brass btn--toggle"
-            [class.selected]="bonusTarget.value === 'speed'"
-            (click)="toggleBonus('speed')"
+            [class.selected]="bonusTarget.value === bonusTargetEnum.Speed"
+            (click)="toggleBonus(bonusTargetEnum.Speed)"
           >
             Bonus +2
           </button>
@@ -101,26 +103,26 @@
               <span class="stat-icon stat-icon--attack" aria-hidden="true"></span>
               Attaque
             </div>
-            <div class="stat-desc">{{ statDescriptions.attack }}</div>
+            <div class="stat-desc">{{ statDescriptions[statKeyEnum.Attack] }}</div>
           </div>
 
           <div class="stat-value">
             {{ attack.value }}
             <span
               class="die-badge"
-              [class.die-badge--d6]="getDieFor('attack') === 'd6'"
-              [class.die-badge--d4]="getDieFor('attack') === 'd4'"
-              [class.die-badge--none]="getDieFor('attack') === 'none'"
+              [class.die-badge--d6]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D6"
+              [class.die-badge--d4]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D4"
+              [class.die-badge--none]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.None"
             >
-              {{ getDieLabel('attack') }}
+              {{ getDieLabel(diceTargetEnum.Attack) }}
             </span>
           </div>
 
           <button
             type="button"
             class="btn btn--brass btn--toggle"
-            [class.selected]="d6Target.value === 'attack'"
-            (click)="toggleDiceBonus('attack')"
+            [class.selected]="d6Target.value === diceTargetEnum.Attack"
+            (click)="toggleDiceBonus(diceTargetEnum.Attack)"
           >
             D6
           </button>
@@ -132,26 +134,26 @@
               <span class="stat-icon stat-icon--defense" aria-hidden="true"></span>
               Défense
             </div>
-            <div class="stat-desc">{{ statDescriptions.defense }}</div>
+            <div class="stat-desc">{{ statDescriptions[statKeyEnum.Defense] }}</div>
           </div>
 
           <div class="stat-value">
             {{ defense.value }}
             <span
               class="die-badge"
-              [class.die-badge--d6]="getDieFor('defense') === 'd6'"
-              [class.die-badge--d4]="getDieFor('defense') === 'd4'"
-              [class.die-badge--none]="getDieFor('defense') === 'none'"
+              [class.die-badge--d6]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D6"
+              [class.die-badge--d4]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D4"
+              [class.die-badge--none]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.None"
             >
-              {{ getDieLabel('defense') }}
+              {{ getDieLabel(diceTargetEnum.Defense) }}
             </span>
           </div>
 
           <button
             type="button"
             class="btn btn--brass btn--toggle"
-            [class.selected]="d6Target.value === 'defense'"
-            (click)="toggleDiceBonus('defense')"
+            [class.selected]="d6Target.value === diceTargetEnum.Defense"
+            (click)="toggleDiceBonus(diceTargetEnum.Defense)"
           >
             D6
           </button>
@@ -209,5 +211,19 @@
       </button>
 
     </footer>
+    @if (showInvalidFormMessage) {
+      <div class="popup-overlay">
+        <div class="popup">
+          <p>Veuillez remplir le formulaire au complet!</p>
+        </div>
+      </div>
+    }
+    @if (showInvalidNameMessage) {
+      <div class="popup-overlay">
+        <div class="popup">
+          <p>Le nom du personnage est invalide!</p>
+        </div>
+      </div>
+    }
   </div>
 </div>

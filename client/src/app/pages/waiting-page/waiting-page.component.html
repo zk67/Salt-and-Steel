@@ -1,7 +1,27 @@
 <div class="container">
-    <div class="left">Clavardage</div>
+    <div class="left">
+       <app-chat
+                [messages]="messages"
+                [playerName]="currentPlayerName"
+                [currentPlayerId]="currentPlayerId"
+                (messageSent)="sendMessage($event)">
+        </app-chat> 
+    </div>
+
     <div class="right">
         <h1 class="header-item">Salle d'attente</h1>
+        @if (showClosedMessage) {
+            <app-popup [show]="true">
+                <p>L'organisateur a fermé la partie.</p>
+                <p>Redirection vers l'accueil...</p>
+            </app-popup>
+        }
+        @if (showKickedMessage) {
+            <app-popup [show]="true">
+                <p>Vous avez été exclu de la salle.</p>
+                <p>Redirection vers l'accueil...</p>
+            </app-popup>
+        }
         <div class="slots">
             @for (player of players; track player.id; let i = $index) {
                 <div class="player-slot" [class.organizer]="player.isOrganizer">
@@ -17,6 +37,9 @@
                             <span class="organizer-badge">(Organisateur)</span>
                         }
                     </p>
+                    @if (isOrganizer && !player.isOrganizer && player.id !== clientPlayerId) {
+                        <button class="button small" (click)="kickPlayer(player.id)">Exclure</button>
+                    }
                 </div>
             }
 
@@ -26,7 +49,7 @@
                 </div>
             }
         </div>
-        <button class="button" (click)="startGame()">Commencer</button>
+        <button class="button" (click)="startGame()" [disabled]="!isOrganizer || players.length < 2" title="Seul l'organisateur peut démarrer la partie et il faut au moins 2 joueurs">Commencer</button>
         <button class="button" (click)="goHome()">Retour</button>
     </div>
 </div>

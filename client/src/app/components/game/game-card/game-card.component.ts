@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Router } from '@angular/router';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
 
 @Component({
   selector: 'app-game-card',
@@ -11,15 +10,7 @@ export class GameCardComponent {
   @Input() game: Game;
   @Output() click = new EventEmitter<void>();
 
-  constructor(private router: Router) {}
   handleClick() {
-    const queryParams = {
-      gameId: this.game._id,
-    };
-    this.router.navigate(['/character-form'], {
-      queryParams,
-      state: { from: 'create' },  // si ce fichier est aussi utiliser dans la page joindre un partie, alors il faut changer cette ligne
-    });
     this.click.emit();
   }
 

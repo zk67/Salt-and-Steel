@@ -13,19 +13,19 @@ export class GamesService {
   }
 
   async getAllGames(): Promise<Game[]> {
-    return await this.gameModel.find().select('-tiles -minPlayers -maxPlayers').exec();
+    return this.gameModel.find().select('-tiles -minPlayers -maxPlayers').exec();
   }
 
   async getVisibleGames(): Promise<Game[]> {
-    return await this.gameModel.find({ visible: true }).select('-tiles -visible -gameMode -size').exec();
+    return this.gameModel.find({ visible: true }).select('-tiles -visible -gameMode -size').exec();
   }
 
   async getOneGame(_id: string): Promise<Game> {
-    return await this.gameModel.findById(_id).exec();
+    return this.gameModel.findById(_id).exec();
   }
 
   async updateGame(_id: string, data: Partial<Game>): Promise<Game> {
-    return await this.gameModel.findByIdAndUpdate(_id, data, { new: true }).exec();
+    return this.gameModel.findByIdAndUpdate(_id, data, { new: true }).exec();
   }
 
   async deleteGame(_id: string): Promise<boolean> {
@@ -34,6 +34,6 @@ export class GamesService {
   }
 
   async replaceGame(_id: string, game: Game): Promise<Game> {
-    return await this.gameModel.findOneAndReplace({ _id }, game, { new: true }).exec();
+    return this.gameModel.findOneAndReplace({ _id }, game, { new: true }).exec();
   }
 }

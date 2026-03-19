@@ -1,9 +1,21 @@
+@if (popupService.show()) {
+    <app-popup [show]="true">
+        <p>{{ popupService.message() }}</p>
+        <button class="button" (click)="popupService.close()">Fermer</button>
+    </app-popup>
+}
 <div class="container">
     <div class="map-game-section">
         <app-map-game></app-map-game>
     </div>
     <div class="left-game-sidebar">
         <app-left-sidebar></app-left-sidebar>
+        <app-chat
+                [messages]="messages"
+                [playerName]="currentPlayerName"
+                [currentPlayerId]="currentPlayerId"
+                (messageSent)="sendMessage($event)">
+        </app-chat> 
     </div>
     <div class="right-game-sidebar">
         <app-right-sidebar></app-right-sidebar>

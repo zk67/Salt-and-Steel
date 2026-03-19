@@ -1,15 +1,21 @@
-import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { GameService } from '@app/services/game.service';
+import { APP_ROUTES } from '@app/const/routes-const';
+import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { TimeService } from '@app/services/time.service';
-import { TILE_ENERGY_COST, getObjectDescription, movableTiles } from '@app/utils/game-utils';
-import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
-import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, NewTurnPayload, TurnPhase } from '@common/types/game.interface';
-import { DIRECTION } from '@common/types/game.record';
-import { MapObjectType, TileType } from '@common/types/map.interface';
-import { Player } from '@common/types/player.interface';
+import { PopupService } from '@app/services/popup.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { getObjectDescription } from '@app/utils/game-utils';
+import {
+    BattleWonPayload, DebugMovePayload,
+    MovePlayerPayload,
+    ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
+import { DIRECTION_STRING } from '@common/types/game.record';
+import { GatewayEvents } from '@common/types/gateway.events';
+import { addPositions, equalPositions, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -19,6 +25,20 @@ const PLAYER_DIRECTION: Record<string, string> = {
 };
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
+
+export enum ContextMenuType {
+    PlayerToolTip = 'player',
+    Tile = 'tile',
+}
+
+interface ContextMenuContent {
+    type: ContextMenuType;
+    name?: string;
+    imageUrl?: string;
+    tileType?: string;
+    cost?: number;
+}
+
 
 @Component({
     selector: 'app-map-game',
@@ -30,26 +50,40 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     tileType = TileType;
     mapObjectType = MapObjectType;
-    isClientPlayerTurn = signal<boolean>(false);
+
+    contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
+    isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
+
+    private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
+    private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
+    private handleGameOverBound = this.handleGameOver.bind(this);
+    private handleToggleDebugModeBound = this.handleToggleDebugMode.bind(this);
 
     constructor(
         public mapService: MapService,
         public gameService: GameService,
         private readonly socketService: SocketClientService,
-        private readonly timeService: TimeService,
         private router: Router,
+        public popupService: PopupService,
     ) {}
 
     // TODO: check si M vient de clavardage, const M a bouger lorsque permanent
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+            return;
+        }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
-            this.gameService.toggleDebugMode();
-            alert('Debug mode: ' + (this.gameService.isDebugMode() ? 'ON' : 'OFF'));
+            this.socketService.send(GatewayEvents.ToggleDebugMode, {});
         }
     }
 
     private globalKeyUpListener = (event: KeyboardEvent) => {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+            return;
+        }
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -59,10 +93,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     };
 
     async ngOnInit(): Promise<void> {
-        this.socketService.on<NewTurnPayload>('newTurn', this.handleNewTurn.bind(this));
-        this.socketService.on<MovePlayerPayload>('playerMoved', this.handlePlayerMovePayload.bind(this));
-        this.socketService.on<DebugMovePayload>('handleClickDebug', this.handleClickDebugPayload.bind(this));
-        this.socketService.on<{ winnerId: string }>('gameOver', this.handleGameOver.bind(this));
+        this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
+        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
+        this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
+        this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -70,15 +104,19 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         window.removeEventListener('keyup', this.globalKeyUpListener);
+        this.socketService.off(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
+        this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
+        this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
+        this.socketService.off(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
     }
 
-    getPlayerAt(x: number, y: number): Player | null {
-        return this.gameService.players().find(p => p.x === x && p.y === y) || null;
+    getPlayerAt(position: Position): Player | null {
+        return this.gameService.players().find(p => equalPositions(p.position, position) && !p.hasAbandoned) || null;
     }
 
-    getMovableTilesAt(x: number, y: number): boolean {
+    getMovableTilesAt(position: Position): boolean {
         const movable = this.gameService.actionTile();
-        return movable[y] && movable[y][x] ? true : false;
+        return movable[position.y] && movable[position.y][position.x] ? true : false;
     }
 
     getObjectDescription(objectType: number): string {
@@ -86,17 +124,16 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
-        const [dx, dy] = DIRECTION[direction];
-        const newX = player.x + dx;
-        const newY = player.y + dy;
+        const directionVector = DIRECTION_STRING[direction];
+        const newPosition: Position = addPositions(player.position, directionVector);
 
-        if (this.getMovableTilesAt(newX, newY)) {
+        if (this.getMovableTilesAt(newPosition)) {
             const payload: MovePlayerPayload = {
                 playerId: player.id,
                 direction,
             };
 
-            this.socketService.send('movePlayer', payload);
+            this.socketService.send(GatewayEvents.MovePlayer, payload);
         }
     }
 
@@ -104,35 +141,55 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const player = this.gameService.players().find(p => p.id === payload.playerId);
         if (!player) return;
 
-        const [dx, dy] = DIRECTION[payload.direction];
-        const newX = player.x + dx;
-        const newY = player.y + dy;
+        const directionVector = DIRECTION_STRING[payload.direction];
+        const newPosition = addPositions(player.position, directionVector);
 
-        const tile = this.mapService.getTile(newX, newY);
+        const tile = this.mapService.getTile(newPosition);
         if (!tile) return;
 
         const updatedPlayer = {
-            ...player, x: newX, y: newY,
-            movementPoints: player.movementPoints - TILE_ENERGY_COST[tile.tileType],
+            ...player, position: newPosition,
+            movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tile.tileType],
         };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        if (this.isClientPlayerTurn()) {
-            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+        if (this.gameService.isClientPlayerTurn()) {
+            if (!this.gameService.canPlayerStillDoAction()) {
+                if (!this.gameService.canPlayerStillDoAction()) {
+                    this.socketService.send(GatewayEvents.EndTurnEarly);
+                } else {
+                    this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+                }
+            }
         }
     }
 
-    onTileClick(x: number, y: number): void {
-        if (this.gameService.isDebugMode()) {
-            this.debugClick(x, y);
-        } else if (this.gameService.getActionMode() && this.getMovableTilesAt(x, y)) {
-            this.doActionAt(x, y);
+    showContextMenu(event: MouseEvent, position: Position): void {
+        const player = this.getPlayerAt(position);
+        const tile = this.mapService.getTile(position);
+
+        if (player) {
+            this.contextMenu.set({
+                posX: event.clientX,
+                posY: event.clientY,
+                content: { type: ContextMenuType.PlayerToolTip, name: player.name, imageUrl: player.imageUrl },
+            });
+        } else if (tile) {
+            this.contextMenu.set({
+                posX: event.clientX,
+                posY: event.clientY,
+                content: {
+                    type: ContextMenuType.Tile,
+                    tileType: this.tileType[tile.tileType],
+                    cost: TILE_MOVEMENT_COST[tile.tileType],
+                },
+            });
         }
     }
 
-    doActionAt(x: number, y: number): void {
-        const player = this.getPlayerAt(x, y);
+    doActionAt(position: Position): void {
+        const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
         if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
@@ -140,9 +197,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (player) {
             this.killPlayer(player.id);
         } else {
-            const mapObject = this.mapService.getMapObject(x, y);
-            if (mapObject !== MapObjectType.None) {
-                alert(`Action on object ${getObjectDescription(mapObject)} at (${x}, ${y})`);
+            const mapObject = this.mapService.getMapObject(position);
+            if (mapObject !== MapObjectType.None && mapObject !== MapObjectType.SpawnPoint) {
+                this.popupService.open(`Action sur l'objet ${getObjectDescription(mapObject)} à la position (${position.x}, ${position.y})`);
             }
         }
 
@@ -154,71 +211,58 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const clientPlayer = this.gameService.clientPlayer();
         if (!player || !clientPlayer) return;
 
-        alert(`Player ${player.name} has been killed!`);
-        this.socketService.send('battleWon', { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
-        // Update player position + add victory send those info to server
+        this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
     }
 
-    debugClick(x: number, y: number): void {
+    onTileClick(event: MouseEvent, position: Position): void {
+        if (event.button === 2) { // clique droit
+            if (this.gameService.isDebugMode()) {
+                this.debugClick(position);
+            } else {
+                this.showContextMenu(event, position);
+            }
+        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) { // clique gauche
+            this.doActionAt(position);
+        }
+    }
+
+    debugClick(position: Position): void {
         if (!this.gameService.isDebugMode()) return;
+
+        if (this.gameService.getActionMode()) return;
+
+        if (this.gameService.isWaitTurn()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;
 
-        const tile = this.mapService.getTile(x, y);
+        const tile = this.mapService.getTile(position);
         if (!tile ||
             tile.tileType === TileType.Wall ||
-            this.getPlayerAt(x, y) ||
+            this.getPlayerAt(position) ||
             tile.mapObject !== MapObjectType.None)
             return;
 
         const debugPayload: DebugMovePayload = {
             playerId: player.id,
-            x,
-            y,
+            targetPos: position,
         };
 
-        this.socketService.send('debugMove', debugPayload);
+        this.socketService.send(GatewayEvents.DebugMove, debugPayload);
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
         const player = this.gameService.players().find(p => p.id === payload.playerId);
         if (!player) return;
 
-        const updatedPlayer: Player = { ...player, x: payload.x, y: payload.y };
+        const updatedPlayer: Player = { ...player, position: payload.targetPos };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        this.gameService.actionTile.set(
-            movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()),
-        );
-    }
-
-    private handleNewTurn(newTurn: NewTurnPayload) {
-        const player = this.gameService.clientPlayer();
-        if (!player) return;
-
-        if (newTurn.phase === TurnPhase.WaitTurn) {
-            this.timeService.stopTimer();
-            this.timeService.startTimer(TIMER_WAIT_TURN);
-            this.gameService.setActivePlayer(newTurn.playerId);
-
-            if (newTurn.playerId === player.id) {
-                this.isClientPlayerTurn.set(true);
-                player.movementPoints = player.speed ?? 0;
-                player.actionsLeft = 1;
+        if (this.gameService.clientPlayer()?.id === player.id) {
+            if (!this.gameService.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
             } else {
-                this.isClientPlayerTurn.set(false);
-                player.movementPoints = 0;
-                player.actionsLeft = 0;
-            }
-
-            this.gameService.updatePlayer(player.id, player);
-        } else {
-            this.timeService.stopTimer();
-            this.timeService.startTimer(TIMER_TURN);
-
-            if (player.id === newTurn.playerId) {
-                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
+                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
             }
         }
     }
@@ -227,9 +271,15 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
-        alert(`Game Over! The winner is ${winner.name}!`);
+        this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
         setTimeout(() => {
-            this.router.navigate(['/home']);
+            this.popupService.close();
+            this.router.navigate([APP_ROUTES.home]);
         }, DELAY_BEFORE_NAVIGATE_HOME);
+    }
+
+    private handleToggleDebugMode(payload: ToggleDebugPayload): void {
+        this.gameService.setDebugMode(payload.debugMode);
+        this.gameService.setHostId(payload.hostId);
     }
 }

@@ -1,7 +1,7 @@
 <div class="container">
     <h3 class="title">Joueurs</h3>
     <ul>
-        @for (player of sortedPlayers(); track player.id) {
+        @for (player of players(); track player.id) {
             <li class="player-item" [class.active]="isActive(player)" [class.abandoned]="player.hasAbandoned">
                 @if (player.imageUrl) {
                     <img [src]="player.imageUrl" class="player-avatar" alt="avatar" />

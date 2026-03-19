@@ -1,16 +1,8 @@
-import {TileType } from '@common/types/map.interface';
+import { Position } from '@common//utils/map.utils';
 
-export const TILE_ENERGY_COST: Record<TileType, number> = {
-    [TileType.Basic]: 1,
-    [TileType.Water]: 2,
-    [TileType.Ice]: 0,
-    [TileType.Wall]: Infinity, // Impassable
-    [TileType.Door]: 1,
-};
-
-export const DIRECTION: Record<string, [number, number]> = {
-    up: [0, -1],
-    left: [-1, 0],
-    down: [0, 1],
-    right: [1, 0],
+export const DIRECTION_STRING: Record<string, Position> = {
+    up: { x: 0, y: -1 },
+    left: { x: -1, y: 0 },
+    down: { x: 0, y: 1 },
+    right: { x: 1, y: 0 },
 };

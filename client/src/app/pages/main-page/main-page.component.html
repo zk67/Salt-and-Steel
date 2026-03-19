@@ -4,9 +4,9 @@
 
     <main class="content">
         <div class="buttons">
-            <button class="button" id="Join" routerLink="/game" disabled></button> <!-- enlever le bouton disabled quand on voudra cette fonctionnalité -->
-            <button class="button" id="Create" routerLink="/game-creation"></button>
-            <button class="button" id="admin" routerLink="/admin"></button>
+            <button class="button" id="Join" [routerLink]="appRoutes.joinGame" ></button>
+            <button class="button" id="Create" [routerLink]="appRoutes.gameCreation"></button>
+            <button class="button" id="admin" [routerLink]="appRoutes.admin"></button>
         </div>    
     </main>
 

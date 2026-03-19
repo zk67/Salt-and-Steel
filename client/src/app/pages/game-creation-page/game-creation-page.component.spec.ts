@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { SaveService } from '@app/services/save.service';
-import { SocketClientService } from '@app/services/socket-client.service';
-import { Game } from '@common/types/game.interface';
+import { SaveService } from '@app/services/save/save.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { Game } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { of } from 'rxjs';
 import { GameCreationPageComponent } from './game-creation-page.component';
 
@@ -60,13 +61,13 @@ describe('GameCreationPageComponent', () => {
     });
 
     it('devrait enregistrer l\'écouteur de mise à jour socket', () => {
-        expect(socketServiceSpy.on).toHaveBeenCalledWith('update', jasmine.any(Function));
+        expect(socketServiceSpy.on).toHaveBeenCalledWith(GatewayEvents.Update, jasmine.any(Function));
     });
 
     it('devrait désenregistrer l\'écouteur de mise à jour socket lors de la destruction du composant', () => {
         component.ngOnDestroy();
         expect(socketServiceSpy.off).toHaveBeenCalledWith(
-            'update',
+            GatewayEvents.Update,
             jasmine.any(Function),
         );
     });

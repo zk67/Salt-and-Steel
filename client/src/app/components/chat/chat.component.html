@@ -1,0 +1,35 @@
+<div class="chat">
+  <div class="chat-header">
+    <span class="player-name">{{ playerName }}</span>
+  </div>
+
+  <div #messagesContainer class="chat-messages">
+  @for (msg of messages; track $index) {
+    <div
+      [ngClass]="{ 'own-message': isOwnMessage(msg), 'other-message': !isOwnMessage(msg) }"
+      class="message"
+    >
+      <div class="message-header">
+        <span class="author">{{ msg.author }}</span>
+        <span class="timestamp">{{ msg.time }}</span>
+      </div>
+      <div class="message-content">
+        {{ msg.content }}
+      </div>
+    </div>
+  }
+  </div>
+
+  <div class="chat-input">
+    <textarea
+      [(ngModel)]="newMessage"
+      (keydown)="onKeyDown($event)"
+      [attr.maxlength]="maxLength"
+      placeholder="Tapez votre message..."
+    ></textarea>
+    <div class="chat-controls">
+        <span class="chars-left">{{ charsLeft() }} caractères restants</span>
+        <button (click)="sendMessage()" [disabled]="!newMessage.trim()">Envoyer</button>
+  </div>
+  </div>
+</div>

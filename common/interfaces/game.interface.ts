@@ -1,4 +1,5 @@
-import { GameMode, TileData } from '@common/types/map.interface';
+import { Position } from '@common/utils/map.utils';
+import { GameMode, TileData } from '@common/interfaces/map.interface';
 import { Player } from './player.interface';
 
 export interface Game {
@@ -33,7 +34,7 @@ export interface NewTurnPayload {
 export interface BattleWonPayload {
     loserId: string;
     winnerId: string;
-    // TODO: Ajouter la position de respawn dans le payload
+    loserPos: Position;
 }
 
 export enum TurnPhase {
@@ -43,6 +44,10 @@ export enum TurnPhase {
 
 export interface DebugMovePayload {
     playerId: string;
-    x: number;
-    y: number;
+    targetPos: Position;
+}
+
+export interface ToggleDebugPayload {
+    debugMode: boolean;
+    hostId: string;
 }

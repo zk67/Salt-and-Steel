@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
-import { Game } from '@common/types/game.interface';
+import { Game } from '@common/interfaces/game.interface';
 import { GameCardComponent } from './game-card.component';
 
 /*
@@ -16,7 +15,6 @@ Cas limite testé :
 describe('GameCardComponent', () => {
     let component: GameCardComponent;
     let fixture: ComponentFixture<GameCardComponent>;
-    let routerSpy: jasmine.SpyObj<Router>;
 
     const mockGameWithImage = {
         _id: '1',
@@ -39,24 +37,18 @@ describe('GameCardComponent', () => {
     } as Game;
 
     beforeEach(async () => {
-        routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-
         await TestBed.configureTestingModule({
             imports: [GameCardComponent],
-            providers: [{ provide: Router, useValue: routerSpy }],
         }).compileComponents();
 
         fixture = TestBed.createComponent(GameCardComponent);
         component = fixture.componentInstance;
     });
 
-    it('devrait naviguer vers le formulaire de personnage et émettre un événement de clic', () => {
+    it('devrait émettre un événement de clic', () => {
         spyOn(component.click, 'emit');
-        component.game = mockGameWithImage;
-
         component.handleClick();
-
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/character-form']);
+        expect(component.click.emit).toHaveBeenCalled();
     });
 
     it('devrait afficher l\'image lorsque imageUrl est présent', () => {
