@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -141,7 +142,7 @@ describe('JoinGameComponent', () => {
 
         expect(gameServiceSpy.clearGameService).toHaveBeenCalled();
         expect(gameServiceSpy.setSelectedJoinRoomId).toHaveBeenCalledWith('room-1');
-        expect(router.navigate).toHaveBeenCalledWith(['/character-form']);
+        expect(router.navigate).toHaveBeenCalledWith([APP_ROUTES.characterForm]);
     });
 
     it('devrait désenregistrer le listener socket à la destruction', () => {
