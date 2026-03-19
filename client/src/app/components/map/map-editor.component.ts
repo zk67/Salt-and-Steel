@@ -1,12 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { getObjectDescription } from '@app/utils/game-utils';
 import { GameMode, MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
-import { firstValueFrom } from 'rxjs';
 import { Position } from '@common/utils/map.utils';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-map-editor',
@@ -81,7 +82,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
             const game = await firstValueFrom(this.saveService.getGame(id));
             if (!game) {
                 alert('Map introuvable, retour a la page principal.');
-                this.router.navigate(['/admin']);
+                this.router.navigate([APP_ROUTES.admin]);
                 return;
             }
 

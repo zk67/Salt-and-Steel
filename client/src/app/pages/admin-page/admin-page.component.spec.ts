@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
 import { SaveService } from '@app/services/save/save.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
+import { of, throwError } from 'rxjs';
 
+import { APP_ROUTES } from '@app/const/routes-const';
 import { AdminPageComponent } from './admin-page.component';
 
 /**
@@ -69,12 +70,12 @@ describe('Page admin (AdminPageComponent)', () => {
 
     it('back() devrait naviguer vers /home', () => {
         component.back();
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/home']);
+        expect(routerSpy.navigate).toHaveBeenCalledWith([APP_ROUTES.home]);
     });
 
     it('createGame() devrait naviguer vers /form-edition', () => {
         component.createGame();
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/form-edition']);
+        expect(routerSpy.navigate).toHaveBeenCalledWith([APP_ROUTES.formEdition]);
     });
 
     it('editGame() devrait afficher une erreur si l id est indéfini', () => {
@@ -145,7 +146,7 @@ describe('Page admin (AdminPageComponent)', () => {
 
     it('editGame() devrait naviguer vers /edition avec l id en queryParams', () => {
         component.editGame('abc');
-        expect(routerSpy.navigate).toHaveBeenCalledWith(['/edition'], { queryParams: { id: 'abc' } });
+        expect(routerSpy.navigate).toHaveBeenCalledWith([APP_ROUTES.edition], { queryParams: { id: 'abc' } });
     });
 
     it('ngOnInit() devrait recharger les jeux quand le socket émet update', () => {

@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
@@ -29,7 +30,7 @@ export class JoinGameComponent implements OnInit, OnDestroy {
     selectGame(roomId: string): void {
         this.gameService.clearGameService();
         this.gameService.setSelectedJoinRoomId(roomId);
-        this.router.navigate(['/character-form']);
+        this.router.navigate([APP_ROUTES.characterForm]);
     }
 
     ngOnInit(): void {
