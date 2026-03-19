@@ -29,7 +29,7 @@
                     <img src="assets/objects/spawn.png" alt="Depart">
                     <p>{{ toolService.getNumberObject(mapObjectType.SpawnPoint) }}</p>
                 </button>
-                <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="Drapeau - Objectif à capturer">
+                <button class="option-btn disabled" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="Drapeau - Objectif à capturer">
                     <img src="assets/objects/flag.png" alt="Drapeau">
                     <p>{{ toolService.getNumberObject(mapObjectType.Flag) }}</p>
                 </button>
