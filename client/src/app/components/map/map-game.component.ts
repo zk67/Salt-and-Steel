@@ -109,7 +109,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     getPlayerAt(position: Position): Player | null {
-        return this.gameService.players().find(p => equalPositions(p.position, position)) || null;
+        return this.gameService.players().find(p => equalPositions(p.position, position) && !p.hasAbandoned) || null;
     }
 
     getMovableTilesAt(position: Position): boolean {

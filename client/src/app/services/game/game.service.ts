@@ -8,6 +8,9 @@ import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { TimeService } from './time.service';
+import { Router } from '@angular/router';
+
+const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
 @Injectable({
     providedIn: 'root',
@@ -41,15 +44,10 @@ export class GameService {
 
     private chatMessages: ChatMessage[] = [];
 
-    constructor(private mapService: MapService, private socketService: SocketClientService, private timeService: TimeService) {
-        this.socketService.on(GatewayEvents.RemovePlayer, ({ playerId }: { playerId: string }) => {
-            if (!this.isGameStarted) {
-                this.removePlayer(playerId);
-            } else {
-                this.players.update(players => players.map(p => p.id === playerId ? { ...p, hasAbandoned: true } : p));
-            }
-        });
+    constructor(private mapService: MapService, private socketService: SocketClientService, 
+        private timeService: TimeService, private router: Router) {
 
+        this.socketService.on<{ playerId: string }>(GatewayEvents.RemovePlayer, this.handlePlayerLeaving.bind(this));
         this.socketService.on<GameInfoPayload>(GatewayEvents.GameStartInfo, this.handleStartGame.bind(this));
         this.socketService.on<BattleWonPayload>(GatewayEvents.HandleBattleWon, this.handleBattleWon.bind(this));
         this.socketService.on<NewTurnPayload>(GatewayEvents.NewTurn, this.handleNewTurn.bind(this));
@@ -207,6 +205,21 @@ export class GameService {
         this.mapService.clearMapService();
     }
 
+    private handlePlayerLeaving(payload: { playerId: string }): void {
+        if (!this.isGameStarted) {
+            this.removePlayer(payload.playerId);
+        } else {
+
+            this.updatePlayer(payload.playerId, { hasAbandoned: true });
+
+            if(this.players().filter(p => !p.hasAbandoned).length <= 1) {
+                setTimeout(() => {
+                    this.router.navigate(['/home']);
+                }, DELAY_BEFORE_NAVIGATE_HOME);
+            }
+        }
+    }
+
     private handleNewTurn(newTurn: NewTurnPayload) {
         const player = this.clientPlayer();
         if (!player) return;
@@ -217,6 +230,7 @@ export class GameService {
             this.timeService.startTimer(TIMER_WAIT_TURN);
             this.setActivePlayer(newTurn.playerId);
             this.actionTile.set([]);
+            this.actionMode = false;
 
             if (newTurn.playerId === player.id) {
                 this.isClientPlayerTurn.set(true);
