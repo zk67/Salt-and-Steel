@@ -2,17 +2,20 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { GameCreatedComponent } from '@app/components/game-created/game-created.component';
+import { PopupComponent } from '@app/components/popup';
 import { APP_ROUTES } from '@app/const/routes-const';
+import { PopupService } from '@app/services/popup.service';
 import { SaveService } from '@app/services/save/save.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { Game } from '@common/interfaces/game.interface';
+import { FORBIDDEN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({
     selector: 'app-admin-page',
     templateUrl: './admin-page.component.html',
     styleUrls: ['./admin-page.component.scss'],
-    imports: [CommonModule, GameCreatedComponent],
+    imports: [CommonModule, GameCreatedComponent, PopupComponent],
 })
 export class AdminPageComponent implements OnInit {
     private refreshListener: () => void;
@@ -21,11 +24,11 @@ export class AdminPageComponent implements OnInit {
         private readonly router: Router,
         private readonly saveService: SaveService,
         private readonly socketService: SocketClientService,
+        public popupService: PopupService,
     ) {}
 
     games: Game[] = [];
     loading = false;
-    errorMsg = '';
 
     back(): void {
         this.router.navigate([APP_ROUTES.home]);
@@ -39,25 +42,31 @@ export class AdminPageComponent implements OnInit {
         if (game._id)
             this.saveService.updateGameVisibility(game._id, !game.visible).subscribe({
                 error: () => {
-                    this.errorMsg = 'Impossible de changer la visibilité.';
+                    this.popupService.open('Impossible de changer la visibilité.');
                 },
             });
     }
 
     deleteGame(gameId: string | undefined): void {
         if (!gameId) {
-            this.errorMsg = 'Id invalide.';
+            this.popupService.open('Id invalide.');
             return;
         }
 
         this.saveService.deleteGame(gameId).subscribe({
-            error: () => (this.errorMsg = 'Impossible de supprimer le jeu.'),
+            error: (err) => {
+                if (err.status === FORBIDDEN) {
+                    this.popupService.open('Le jeu a déjà été supprimé.');
+                } else {
+                    this.popupService.open('Impossible de supprimer le jeu.');
+                }
+            },
         });
     }
 
     editGame(gameId: string | undefined): void {
         if (!gameId) {
-            this.errorMsg = 'Id invalide.';
+            this.popupService.open('Id invalide.');
             return;
         }
 
@@ -66,7 +75,6 @@ export class AdminPageComponent implements OnInit {
 
     refresh(): void {
         this.loading = true;
-        this.errorMsg = '';
 
         this.saveService.getAllGames().subscribe({
             next: (games) => {
@@ -74,7 +82,7 @@ export class AdminPageComponent implements OnInit {
                 this.loading = false;
             },
             error: () => {
-                this.errorMsg = 'Impossible de charger les jeux.';
+                this.popupService.open('Impossible de charger les jeux.');
                 this.loading = false;
             },
         });

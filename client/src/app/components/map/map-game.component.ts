@@ -75,7 +75,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             return;
         }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
-            this.gameService.setDebugMode(!this.gameService.isDebugMode());
+            this.socketService.send(GatewayEvents.ToggleDebugMode, {});
         }
     }
 
@@ -156,22 +156,12 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
         if (this.gameService.isClientPlayerTurn()) {
             if (!this.gameService.canPlayerStillDoAction()) {
-                this.socketService.send(GatewayEvents.EndTurnEarly);
-            } else {
-                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+                if (!this.gameService.canPlayerStillDoAction()) {
+                    this.socketService.send(GatewayEvents.EndTurnEarly);
+                } else {
+                    this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+                }
             }
-        }
-    }
-
-    onTileClick(event: MouseEvent, position: Position): void {
-        if (event.button === 2) { // clique droit
-            if (this.gameService.isDebugMode()) {
-                this.debugClick(position);
-            } else {
-                this.showContextMenu(event, position);
-            }
-        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) { // clique gauche
-            this.doActionAt(position);
         }
     }
 
@@ -224,8 +214,24 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
     }
 
+    onTileClick(event: MouseEvent, position: Position): void {
+        if (event.button === 2) { // clique droit
+            if (this.gameService.isDebugMode()) {
+                this.debugClick(position);
+            } else {
+                this.showContextMenu(event, position);
+            }
+        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) { // clique gauche
+            this.doActionAt(position);
+        }
+    }
+
     debugClick(position: Position): void {
         if (!this.gameService.isDebugMode()) return;
+
+        if (this.gameService.getActionMode()) return;
+
+        if (this.gameService.isWaitTurn()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;
@@ -252,10 +258,12 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const updatedPlayer: Player = { ...player, position: payload.targetPos };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-        if (!this.gameService.canPlayerStillDoAction()) {
-            this.socketService.send(GatewayEvents.EndTurnEarly);
-        } else {
-            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+        if (this.gameService.clientPlayer()?.id === player.id) {
+            if (!this.gameService.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
+            } else {
+                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
+            }
         }
     }
 

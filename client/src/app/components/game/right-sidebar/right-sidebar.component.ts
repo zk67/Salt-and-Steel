@@ -18,6 +18,8 @@ export class RightSidebarComponent {
     currentTime = computed(() => this.timerService.time());
     isYourTurn = computed(() => this.gameService.activePlayer()?.id === this.gameService.clientPlayer()?.id && !this.gameService.isWaitTurn());
     actionPointsLeft = computed(() => (this.gameService.clientPlayer()?.actionsLeft ?? 0) > 0);
+    isHost = computed(() => this.gameService.hostId() === this.gameService.clientPlayer()?.id);
+    isDebugMode = computed(() => this.gameService.isDebugMode());
 
     constructor(private timerService: TimeService, private gameService: GameService,
         private socketService: SocketClientService, private router: Router) {}
@@ -34,7 +36,7 @@ export class RightSidebarComponent {
     };
 
     onEndTurn = () => {
-        if (this.isYourTurn()) {
+        if (this.isYourTurn() || (this.isDebugMode() && this.isHost())) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
     };
