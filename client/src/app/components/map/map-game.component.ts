@@ -209,7 +209,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         } else {
             const mapObject = this.mapService.getMapObject(position);
             if (mapObject !== MapObjectType.None && mapObject !== MapObjectType.SpawnPoint) {
-                this.popupService.open(`Action on object ${getObjectDescription(mapObject)} at (${position.x}, ${position.y})`);
+                this.popupService.open(`Action sur l'objet ${getObjectDescription(mapObject)} à la position (${position.x}, ${position.y})`);
             }
         }
 
@@ -263,7 +263,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
-        this.popupService.open(`Game Over! The winner is ${winner.name}!`);
+        this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
         setTimeout(() => {
             this.popupService.close();
             this.router.navigate([APP_ROUTES.home]);

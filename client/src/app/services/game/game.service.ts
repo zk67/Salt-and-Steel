@@ -10,6 +10,7 @@ import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
 import { TimeService } from './time.service';
+import { APP_ROUTES } from '@app/const/routes-const';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
@@ -162,7 +163,7 @@ export class GameService {
         const winner = this.players().find(p => p.id === payload.winnerId);
         if (!loser || !winner) return;
 
-        this.popupService.open(`Player ${winner.name} has won the battle against ${loser.name}!`);
+        this.popupService.open(`Le joueur ${winner.name} a gagné le combat contre ${loser.name} !`);
         this.addVictoryPoint(winner.id);
         this.updatePlayer(loser.id, { position: payload.loserPos });
 
@@ -214,8 +215,13 @@ export class GameService {
             this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
             if (this.players().filter(p => !p.hasAbandoned).length <= 1) {
+                this.popupService.open(`Le joueur ${this.clientPlayer()?.name} a quitté la partie. `
+                    + `Vous êtes le dernier joueur restant. Vous serez bientôt redirigé vers le menu principal.`);
+
                 setTimeout(() => {
-                    this.router.navigate(['/home']);
+                    this.clearGameService();
+                    this.popupService.close();
+                    this.router.navigate([APP_ROUTES.home]);
                 }, DELAY_BEFORE_NAVIGATE_HOME);
             }
         }

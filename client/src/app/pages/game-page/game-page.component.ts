@@ -5,6 +5,7 @@ import { LeftSidebarComponent } from '@app/components/game/left-sidebar/left-sid
 import { RightSidebarComponent } from '@app/components/game/right-sidebar/right-sidebar.component';
 import { MapGameComponent } from '@app/components/map/map-game.component';
 import { PopupComponent } from '@app/components/popup/popup.component';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -34,7 +35,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const currentPlayer = this.gameService.clientPlayer();
         if (!currentPlayer) {
-            this.router.navigate(['/home']);
+            this.router.navigate([APP_ROUTES.home]);
             return;
         }
         this.messages = this.gameService.getChatMessages();
