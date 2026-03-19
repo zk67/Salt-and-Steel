@@ -1,5 +1,6 @@
 import { Component, computed, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -153,7 +154,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
         if (this.gameService.isClientPlayerTurn()) {
-            if(!this.gameService.canPlayerStillDoAction()) {
+            if (!this.gameService.canPlayerStillDoAction()) {
                 this.socketService.send(GatewayEvents.EndTurnEarly);
             } else {
                 this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
@@ -251,7 +252,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const updatedPlayer: Player = { ...player, position: payload.targetPos };
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
-         if(!this.gameService.canPlayerStillDoAction()) {
+        if (!this.gameService.canPlayerStillDoAction()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         } else {
             this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
@@ -264,7 +265,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
         alert(`Game Over! The winner is ${winner.name}!`);
         setTimeout(() => {
-            this.router.navigate(['/home']);
+            this.router.navigate([APP_ROUTES.home]);
         }, DELAY_BEFORE_NAVIGATE_HOME);
     }
 

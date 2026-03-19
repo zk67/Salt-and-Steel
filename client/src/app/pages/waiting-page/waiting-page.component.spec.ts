@@ -96,7 +96,7 @@ describe('WaitingPageComponent', () => {
         expect(socketServiceSpy.send).toHaveBeenCalledWith(GatewayEvents.Surrender);
         expect(socketServiceSpy.leaveRoom).toHaveBeenCalledWith('room-1');
         expect(gameServiceSpy.clearSelectedJoinRoomId).toHaveBeenCalled();
-        expect(router.navigate).toHaveBeenCalledWith(['/home']);
+        expect(router.navigate).toHaveBeenCalledWith([APP_ROUTES.home]);
     });
 
     it('devrait rediriger vers la partie quand elle commence', () => {
