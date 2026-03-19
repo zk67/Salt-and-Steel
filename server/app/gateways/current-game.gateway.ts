@@ -185,7 +185,7 @@ export class CurrentGameGateway implements OnGatewayInit {
         const player = game.players.find((p) => p.id === client.id);
         const isHost = !!player?.isOrganizer;
 
-        if (isHost) {
+        if (isHost && game.currentPhase === undefined) {
             this.logger.log(`Host ${client.id} is leaving: closing room ${room}`);
             this.currentGamesService.removeGame(room);
             this.server.to(room).emit(GatewayEvents.GameClosed);
