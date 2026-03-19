@@ -1,6 +1,7 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
+import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -9,13 +10,14 @@ import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 const TIME_BEFORE_NAVIGATE_HOME = 5000;
+const TIME_BEFORE_NAVIGATING_HOME = 10;
 const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
 
 @Component({
     selector: 'app-waiting-page',
     templateUrl: './waiting-page.component.html',
     styleUrls: ['./waiting-page.component.scss'],
-    imports: [ChatComponent],
+    imports: [ChatComponent, PopupComponent],
 })
 export class WaitingPageComponent implements OnInit, OnDestroy {
 
@@ -26,6 +28,13 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     currentPlayerName: string = '';
     currentPlayerId: string = '';
+
+    private onPopState = () => {
+        this.goHome();
+        setTimeout(() => {
+            this.router.navigate(['/home']);
+        }, TIME_BEFORE_NAVIGATING_HOME);
+    };
 
     private onPlayersToGame = (p: Player[]) => {
         this.ngZone.run(() => {
@@ -93,19 +102,17 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     private onBeforeUnload = (): void => {
         sessionStorage.setItem(WAITING_PAGE_REFRESH_FLAG, '1');
-        this.goHome(true);
+        this.goHome();
     };
 
-    goHome(skipNavigate = false): void {
+    goHome(): void {
         const roomId = this.gameService.getSelectedJoinRoomId();
         this.socketService.send(GatewayEvents.Surrender);
         if (roomId) {
             this.socketService.leaveRoom(roomId);
         }
         this.gameService.clearSelectedJoinRoomId();
-        if (!skipNavigate) {
-            this.router.navigate([APP_ROUTES.home]);
-        }
+        this.router.navigate([APP_ROUTES.home]);
     }
 
     ngOnInit(): void {
@@ -119,6 +126,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.addEventListener('beforeunload', this.onBeforeUnload);
         window.addEventListener('unload', this.onBeforeUnload);
         window.addEventListener('pagehide', this.onBeforeUnload);
+        window.addEventListener('popstate', this.onPopState);
 
         this.socketService.on(GatewayEvents.PlayersToGame, this.onPlayersToGame);
         this.socketService.on(GatewayEvents.Message, this.addMessage);
@@ -140,6 +148,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.removeEventListener('beforeunload', this.onBeforeUnload);
         window.removeEventListener('unload', this.onBeforeUnload);
         window.removeEventListener('pagehide', this.onBeforeUnload);
+        window.removeEventListener('popstate', this.onPopState);
 
         this.socketService.off(GatewayEvents.PlayersToGame, this.onPlayersToGame);
         this.socketService.off(GatewayEvents.Message, this.addMessage);

@@ -1,3 +1,9 @@
+@if (popupService.show()) {
+    <app-popup [show]="true">
+        <p>{{ popupService.message() }}</p>
+        <button class="button" (click)="popupService.close()">Fermer</button>
+    </app-popup>
+}
 <div class="container">
     <div class="map-game-section">
         <app-map-game></app-map-game>

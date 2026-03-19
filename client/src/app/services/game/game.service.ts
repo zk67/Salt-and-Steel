@@ -1,14 +1,15 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { MapService } from '@app/services/map/map.service';
+import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { BattleWonPayload, Game, GameInfoPayload, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
+import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
 import { TimeService } from './time.service';
-import { Router } from '@angular/router';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
@@ -44,8 +45,8 @@ export class GameService {
 
     private chatMessages: ChatMessage[] = [];
 
-    constructor(private mapService: MapService, private socketService: SocketClientService, 
-        private timeService: TimeService, private router: Router) {
+    constructor(private mapService: MapService, private socketService: SocketClientService,
+        private timeService: TimeService, private router: Router, private popupService: PopupService) {
 
         this.socketService.on<{ playerId: string }>(GatewayEvents.RemovePlayer, this.handlePlayerLeaving.bind(this));
         this.socketService.on<GameInfoPayload>(GatewayEvents.GameStartInfo, this.handleStartGame.bind(this));
@@ -111,7 +112,7 @@ export class GameService {
         if (player && tiles.length > 0) {
             this.actionMode = !this.actionMode;
 
-            if(!this.canPlayerStillDoAction()) {
+            if (!this.canPlayerStillDoAction()) {
                 this.socketService.send(GatewayEvents.EndTurnEarly);
             } else {
                 if (this.actionMode) {
@@ -161,12 +162,12 @@ export class GameService {
         const winner = this.players().find(p => p.id === payload.winnerId);
         if (!loser || !winner) return;
 
-        alert(`Player ${winner.name} has won the battle against ${loser.name}!`);
+        this.popupService.open(`Player ${winner.name} has won the battle against ${loser.name}!`);
         this.addVictoryPoint(winner.id);
         this.updatePlayer(loser.id, { position: payload.loserPos });
 
-        if(this.clientPlayerId === winner.id && this.isClientPlayerTurn()) {
-            if(!this.canPlayerStillDoAction()) {
+        if (this.clientPlayerId === winner.id && this.isClientPlayerTurn()) {
+            if (!this.canPlayerStillDoAction()) {
                 this.socketService.send(GatewayEvents.EndTurnEarly);
             } else {
                 this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
@@ -212,7 +213,7 @@ export class GameService {
 
             this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
-            if(this.players().filter(p => !p.hasAbandoned).length <= 1) {
+            if (this.players().filter(p => !p.hasAbandoned).length <= 1) {
                 setTimeout(() => {
                     this.router.navigate(['/home']);
                 }, DELAY_BEFORE_NAVIGATE_HOME);
@@ -249,7 +250,7 @@ export class GameService {
             this.timeService.startTimer(TIMER_TURN);
 
             if (player.id === newTurn.playerId) {
-                if(!this.canPlayerStillDoAction()) {
+                if (!this.canPlayerStillDoAction()) {
                     this.socketService.send(GatewayEvents.EndTurnEarly);
                 } else {
                     this.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.getPlayers()));
@@ -266,7 +267,7 @@ export class GameService {
         const tiles = this.mapService.getTileMap();
 
         for (const possiblePosition of getNeighborPositions(player.position)) {
-            if (!isValidTile(tiles, possiblePosition)){
+            if (!isValidTile(tiles, possiblePosition)) {
                 continue;
             }
 
@@ -274,7 +275,7 @@ export class GameService {
                 return true;
             }
 
-            if(canMoveToTile(tiles, this.getPlayers(), { ...player.position, movementPoints: player.movementPoints }, possiblePosition) !== null) {
+            if (canMoveToTile(tiles, this.getPlayers(), { ...player.position, movementPoints: player.movementPoints }, possiblePosition) !== null) {
                 return true;
             }
         }
