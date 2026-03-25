@@ -17,7 +17,8 @@ export class MapPreviewService {
         [TileType.Water, 'assets/tiles/water.png'],
         [TileType.Ice, 'assets/tiles/ice.png'],
         [TileType.Wall, 'assets/tiles/wall.png'],
-        [TileType.Door, 'assets/tiles/door.png'],
+        [TileType.CloseDoor, 'assets/tiles/CloseDoor.png'],
+        [TileType.OpenDoor, 'assets/tiles/OpenDoor.png'],
     ]);
 
     private readonly objPaths = new Map<MapObjectType, string>([

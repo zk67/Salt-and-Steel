@@ -19,8 +19,8 @@
                 <button class="option-btn" [class.selected]="isSelectedTile(tileType.Ice)" (click)="selectTile(tileType.Ice)" data-tooltip="Glace - Coûte 0 point de mouvement">
                     <img src="assets/tiles/ice.png" alt="Glace">
                 </button>
-                <button class="option-btn disabled" [class.selected]="isSelectedTile(tileType.Door)" (click)="selectTile(tileType.Door)" data-tooltip="Porte - Coûte 1 point de mouvement (ouverte)">                        
-                    <img src="assets/tiles/door.png" alt="Porte">
+                <button class="option-btn" [class.selected]="isSelectedTile(tileType.CloseDoor)" (click)="selectTile(tileType.CloseDoor)" data-tooltip="Porte fermée - Coûte 1 point de mouvement">
+                    <img src="assets/tiles/CloseDoor.png" alt="Porte">
                 </button>
             </div>
             <h4>Objets</h4>
@@ -29,15 +29,15 @@
                     <img src="assets/objects/spawn.png" alt="Depart">
                     <p>{{ toolService.getNumberObject(mapObjectType.SpawnPoint) }}</p>
                 </button>
-                <button class="option-btn disabled" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="Drapeau - Objectif à capturer">
+                <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.Flag)" (click)="selectObject(mapObjectType.Flag)" data-tooltip="Drapeau - Objectif à capturer">
                     <img src="assets/objects/flag.png" alt="Drapeau">
                     <p>{{ toolService.getNumberObject(mapObjectType.Flag) }}</p>
                 </button>
-                <button class="option-btn disabled" [class.selected]="isSelectedObject(mapObjectType.HealingShrine)" (click)="selectObject(mapObjectType.HealingShrine)">
+                <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.HealingShrine)" (click)="selectObject(mapObjectType.HealingShrine)">
                     <img src="assets/objects/heal.png" alt="Sanctuaire de soin">
                     <p>{{ toolService.getNumberObject(mapObjectType.HealingShrine) }}</p>
                 </button>
-                <button class="option-btn disabled" [class.selected]="isSelectedObject(mapObjectType.CombatShrine)" (click)="selectObject(mapObjectType.CombatShrine)">
+                <button class="option-btn" [class.selected]="isSelectedObject(mapObjectType.CombatShrine)" (click)="selectObject(mapObjectType.CombatShrine)">
                     <img src="assets/objects/combat.png" alt="Sanctuaire de combat">
                     <p>{{ toolService.getNumberObject(mapObjectType.CombatShrine) }}</p>
                 </button>

@@ -3,7 +3,8 @@ export enum TileType {
     Water = 1,
     Ice = 2,
     Wall = 3,
-    Door = 4,
+    CloseDoor = 4,
+    OpenDoor = 5,
 }
 
 export enum MapObjectType {
