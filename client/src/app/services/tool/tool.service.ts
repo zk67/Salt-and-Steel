@@ -62,6 +62,20 @@ export class ToolService {
                 this.setNumberObject(tile.mapObject, false);
                 this.mapService.setMapObject(position, MapObjectType.None);
             }
+
+            if(this.tileType === TileType.CloseDoor){
+                if(!this.isDoorPlacementValid(position))
+                    return;
+
+                if(tile.tileType === TileType.CloseDoor) {
+                    this.mapService.setTile(position, TileType.OpenDoor);
+                    return;
+                } else if(tile.tileType === TileType.OpenDoor) {
+                    this.mapService.setTile(position, TileType.CloseDoor);
+                    return;
+                }
+            }
+
             this.mapService.setTile(position, this.tileType);
         } else if (this.mapObjectType !== MapObjectType.None) {
             if (tile.mapObject !== this.mapObjectType && tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
@@ -129,6 +143,12 @@ export class ToolService {
             case MapObjectType.HealingShrine: this.numberHealingShrine += place ? -1 : 1; break;
             case MapObjectType.CombatShrine: this.numberCombatShrine += place ? -1 : 1; break;
         }
+    }
+
+    private isDoorPlacementValid(position: Position): boolean {
+        const isOnBorder = position.x === 0 || position.y === 0 ||
+         position.x === this.mapService.getSize() - 1 || position.y === this.mapService.getSize() - 1;
+        return !isOnBorder;
     }
 }
 

@@ -30,7 +30,8 @@ export const TILE_MOVEMENT_COST: Record<TileType, number> = {
     [TileType.Water]: 2,
     [TileType.Ice]: 0,
     [TileType.Wall]: Infinity,
-    [TileType.Door]: 1,
+    [TileType.CloseDoor]: 1,
+    [TileType.OpenDoor]: 1,
 };
 
 export function getPlayerAt(players: Player[] | undefined, position: Position): Player | null {

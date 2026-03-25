@@ -43,6 +43,10 @@ export class SaveService {
             errors.push('Un jeu avec ce nom existe déjà.');
         }
 
+        if(!this.areDoorBetweenWalls(game.tiles)) {
+            errors.push('Les portes doivent avoir des murs entre eux.');
+        }
+
         return errors;
     }
 
@@ -143,5 +147,42 @@ export class SaveService {
         return (error: Error) => {
             throw new Error(`Erreur lors de la requête ${request}: ${error.message}`);
         };
+    }
+
+    private areDoorBetweenWalls(tiles: TileData[][]): boolean {
+        for (let y = 0; y < tiles.length; y++) {
+            for (let x = 0; x < tiles[y].length; x++) {
+                const tile = tiles[y][x];
+                const isDoor = tile.tileType === TileType.CloseDoor || tile.tileType === TileType.OpenDoor;
+
+                if (!isDoor) continue;
+
+                const up = { x, y: y - 1 };
+                const down = { x, y: y + 1 };
+                const left = { x: x - 1, y };
+                const right = { x: x + 1, y };
+
+                const isWall = (position: Position): boolean => {
+                    if (!isValidTile(tiles, position)) return false;
+                    return tiles[position.y][position.x].tileType === TileType.Wall;
+                };
+
+                const isTerrain = (position: Position): boolean => {
+                    if (!isValidTile(tiles, position)) return false;
+
+                    const type = tiles[position.y][position.x].tileType;
+                    return type !== TileType.Wall && type !== TileType.CloseDoor && type !== TileType.OpenDoor;
+                };
+
+                const validVerticalDoor = isWall(up) && isWall(down) && isTerrain(left) && isTerrain(right);
+                const validHorizontalDoor = isWall(left) && isWall(right) && isTerrain(up) && isTerrain(down);
+
+                if (!validVerticalDoor && !validHorizontalDoor) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

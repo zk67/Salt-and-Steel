@@ -34,8 +34,13 @@
         background-size: cover;
         background-position: center;
     }
-    &[data-tile-type="Door"] {
-        background-image: url("/assets/tiles/door.png");
+    &[data-tile-type="CloseDoor"] {
+        background-image: url("/assets/tiles/CloseDoor.png");
+        background-size: cover;
+        background-position: center;
+    }
+    &[data-tile-type="OpenDoor"] {
+        background-image: url("/assets/tiles/OpenDoor.png");
         background-size: cover;
         background-position: center;
     }
