@@ -49,7 +49,7 @@ export class CurrentGamesService {
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
-        return this.games.find(g => g.roomId === roomId);
+        return this.games.find((g) => g.roomId === roomId);
     }
 
     removeGame(roomId: string): boolean {
@@ -67,7 +67,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         const directionVector = DIRECTION_STRING[direction];
@@ -131,7 +131,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurnById(game, player.id)) return false;
@@ -144,8 +144,8 @@ export class CurrentGamesService {
     battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
         const game = this.getGameByRoomId(roomId);
         if (!game) return [battlePayload, false, false];
-        const winner = game.players.find(p => p.id === battlePayload.winnerId);
-        const loser = game.players.find(p => p.id === battlePayload.loserId);
+        const winner = game.players.find((p) => p.id === battlePayload.winnerId);
+        const loser = game.players.find((p) => p.id === battlePayload.loserId);
         if (!winner || !loser) return [battlePayload, false, false];
         if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
             // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
@@ -176,7 +176,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -191,7 +191,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        const playerIndex = game.players.findIndex((p) => p.id === playerId);
         if (playerIndex === -1) return false;
 
         if (game.turnOrder) {
@@ -200,7 +200,7 @@ export class CurrentGamesService {
             }
 
             game.players.splice(playerIndex, 1);
-            game.turnOrder = game.turnOrder.filter(id => id !== playerId);
+            game.turnOrder = game.turnOrder.filter((id) => id !== playerId);
         } else {
             game.players.splice(playerIndex, 1);
         }
@@ -249,12 +249,11 @@ export class CurrentGamesService {
         return this.roomPlayerStateService.clearSelectedAvatarByClientId(clientId);
     }
 
-
     doActionAtTile(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -268,7 +267,7 @@ export class CurrentGamesService {
             return false;
         }
 
-        if(player.actionsLeft <= 0) {
+        if (player.actionsLeft <= 0) {
             Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante pour interagir avec la tile.
                  Actions restantes: ${player.actionsLeft}`);
             return false;

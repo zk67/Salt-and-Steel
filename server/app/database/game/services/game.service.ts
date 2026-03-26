@@ -5,35 +5,35 @@ import { Model } from 'mongoose';
 
 @Injectable()
 export class GamesService {
-  constructor(@InjectModel(Game.name) private readonly gameModel: Model<GameDocument>) {}
+    constructor(@InjectModel(Game.name) private readonly gameModel: Model<GameDocument>) {}
 
-  async addGame(game: Game): Promise<boolean> {
-    const added = await this.gameModel.create(game);
-    return added ? true : false;
-  }
+    async addGame(game: Game): Promise<boolean> {
+        const added = await this.gameModel.create(game);
+        return added ? true : false;
+    }
 
-  async getAllGames(): Promise<Game[]> {
-    return this.gameModel.find().select('-tiles -minPlayers -maxPlayers').exec();
-  }
+    async getAllGames(): Promise<Game[]> {
+        return this.gameModel.find().select('-tiles -minPlayers -maxPlayers').exec();
+    }
 
-  async getVisibleGames(): Promise<Game[]> {
-    return this.gameModel.find({ visible: true }).select('-tiles -visible -gameMode -size').exec();
-  }
+    async getVisibleGames(): Promise<Game[]> {
+        return this.gameModel.find({ visible: true }).select('-tiles -visible -gameMode -size').exec();
+    }
 
-  async getOneGame(_id: string): Promise<Game> {
-    return this.gameModel.findById(_id).exec();
-  }
+    async getOneGame(_id: string): Promise<Game> {
+        return this.gameModel.findById(_id).exec();
+    }
 
-  async updateGame(_id: string, data: Partial<Game>): Promise<Game> {
-    return this.gameModel.findByIdAndUpdate(_id, data, { new: true }).exec();
-  }
+    async updateGame(_id: string, data: Partial<Game>): Promise<Game> {
+        return this.gameModel.findByIdAndUpdate(_id, data, { new: true }).exec();
+    }
 
-  async deleteGame(_id: string): Promise<boolean> {
-    const deleted = await this.gameModel.findByIdAndDelete(_id).exec();
-    return deleted ? true : false;
-  }
+    async deleteGame(_id: string): Promise<boolean> {
+        const deleted = await this.gameModel.findByIdAndDelete(_id).exec();
+        return deleted ? true : false;
+    }
 
-  async replaceGame(_id: string, game: Game): Promise<Game> {
-    return this.gameModel.findOneAndReplace({ _id }, game, { new: true }).exec();
-  }
+    async replaceGame(_id: string, game: Game): Promise<Game> {
+        return this.gameModel.findOneAndReplace({ _id }, game, { new: true }).exec();
+    }
 }

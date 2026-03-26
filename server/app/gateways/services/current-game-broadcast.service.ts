@@ -1,4 +1,11 @@
-import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    BattleWonPayload,
+    CombatRoundDetails,
+    DebugMovePayload,
+    GameInfoPayload,
+    MovePlayerPayload,
+    ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Position } from '@common/utils/map.utils';
 import { Injectable } from '@nestjs/common';
@@ -38,6 +45,14 @@ export class CurrentGameBroadcastService {
 
     emitBattleWon(roomId: string, payload: BattleWonPayload): void {
         this.server?.to(roomId).emit(GatewayEvents.HandleBattleWon, payload);
+    }
+
+    emitCombatRoundDetails(playerIds: string[], payload: CombatRoundDetails): void {
+        const uniquePlayerIds = [...new Set(playerIds)];
+
+        for (const playerId of uniquePlayerIds) {
+            this.server?.to(playerId).emit(GatewayEvents.HandleCombatRound, payload);
+        }
     }
 
     emitGameOver(roomId: string, winnerId: string): void {

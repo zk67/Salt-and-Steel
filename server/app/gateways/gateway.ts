@@ -10,7 +10,10 @@ import { CurrentGamesService } from '@app/service/current-games.service';
 export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer() private server: Server;
 
-    constructor(private readonly logger: Logger ,private readonly currentGamesService: CurrentGamesService) {}
+    constructor(
+        private readonly logger: Logger,
+        private readonly currentGamesService: CurrentGamesService,
+    ) {}
 
     broadcastUpdate(): void {
         this.server.emit(GatewayEvents.Update);

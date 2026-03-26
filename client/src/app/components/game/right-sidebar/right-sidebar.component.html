@@ -1,6 +1,61 @@
 <div class="container">
     <div class="player-info">
         <app-player-info></app-player-info>
+        @if (combatRound(); as round) {
+            <section class="combat-panel">
+                <h3>Dernier résultat de combat</h3>
+                <div class="combatant-card">
+                    <div class="combatant-header">
+                        <span>{{ round.attacker.playerName }}</span>
+                        <span>Dégâts infligés : {{ round.attacker.damageDealt }}</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Attaque</span>
+                        <span class="breakdown-chip">Base {{ round.attacker.attack.baseValue }}</span>
+                        <span class="breakdown-chip">Posture {{ formatModifier(round.attacker.attack.postureBonus) }}</span>
+                        <span class="breakdown-chip">Dé {{ round.attacker.attack.diceResult }}</span>
+                        <span class="breakdown-chip">Pénalité {{ formatModifier(round.attacker.attack.penalty) }}</span>
+                        <span class="breakdown-chip total">Total {{ round.attacker.attack.total }}</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Défense</span>
+                        <span class="breakdown-chip">Base {{ round.attacker.defense.baseValue }}</span>
+                        <span class="breakdown-chip">Posture {{ formatModifier(round.attacker.defense.postureBonus) }}</span>
+                        <span class="breakdown-chip">Dé {{ round.attacker.defense.diceResult }}</span>
+                        <span class="breakdown-chip">Pénalité {{ formatModifier(round.attacker.defense.penalty) }}</span>
+                        <span class="breakdown-chip total">Total {{ round.attacker.defense.total }}</span>
+                    </div>
+                    <div class="combat-delta">
+                        Différence attaque / défense contre {{ round.defender.playerName }} : {{ round.attacker.damageDealt }}
+                    </div>
+                </div>
+                <div class="combatant-card">
+                    <div class="combatant-header">
+                        <span>{{ round.defender.playerName }}</span>
+                        <span>Dégâts infligés : {{ round.defender.damageDealt }}</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Attaque</span>
+                        <span class="breakdown-chip">Base {{ round.defender.attack.baseValue }}</span>
+                        <span class="breakdown-chip">Posture {{ formatModifier(round.defender.attack.postureBonus) }}</span>
+                        <span class="breakdown-chip">Dé {{ round.defender.attack.diceResult }}</span>
+                        <span class="breakdown-chip">Pénalité {{ formatModifier(round.defender.attack.penalty) }}</span>
+                        <span class="breakdown-chip total">Total {{ round.defender.attack.total }}</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Défense</span>
+                        <span class="breakdown-chip">Base {{ round.defender.defense.baseValue }}</span>
+                        <span class="breakdown-chip">Posture {{ formatModifier(round.defender.defense.postureBonus) }}</span>
+                        <span class="breakdown-chip">Dé {{ round.defender.defense.diceResult }}</span>
+                        <span class="breakdown-chip">Pénalité {{ formatModifier(round.defender.defense.penalty) }}</span>
+                        <span class="breakdown-chip total">Total {{ round.defender.defense.total }}</span>
+                    </div>
+                    <div class="combat-delta">
+                        Différence attaque / défense contre {{ round.attacker.playerName }} : {{ round.defender.damageDealt }}
+                    </div>
+                </div>
+            </section>
+}
     </div>
     <div class="buttons-grid">
         <div class="time-display"> {{ currentTime() }}s</div>

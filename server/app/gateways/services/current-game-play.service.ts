@@ -1,12 +1,6 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import {
-    BattleWonPayload,
-    DebugMovePayload,
-    GameInfoPayload,
-    MovePlayerPayload,
-    ToggleDebugPayload,
-} from '@common/interfaces/game.interface';
+import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Position } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
@@ -107,8 +101,11 @@ export class CurrentGamePlayService {
         if (!battleValid) {
             return;
         }
-
-        this.broadcastService.emitBattleWon(room, updatedPayload);
+        const { combatRound, ...publicPayload } = updatedPayload;
+        this.broadcastService.emitBattleWon(room, publicPayload);
+        if (combatRound) {
+            this.broadcastService.emitCombatRoundDetails([updatedPayload.winnerId, updatedPayload.loserId], combatRound);
+        }
         this.logger.log(`Player ${payload.winnerId} has won the battle against ${payload.loserId}`);
 
         if (isGameOver) {

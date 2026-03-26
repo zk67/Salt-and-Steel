@@ -63,11 +63,7 @@ describe('Gateway', () => {
         (mockServer.to as jest.Mock).mockReturnValue(roomEmitter);
 
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                Gateway,
-                { provide: Logger, useValue: mockLogger },
-                { provide: CurrentGamesService, useValue: mockCurrentGamesService },
-            ],
+            providers: [Gateway, { provide: Logger, useValue: mockLogger }, { provide: CurrentGamesService, useValue: mockCurrentGamesService }],
         }).compile();
 
         gateway = module.get<Gateway>(Gateway);
@@ -91,9 +87,7 @@ describe('Gateway', () => {
 
     it('handleDisconnect devrait libérer les avatars réservés et diffuser les mises à jour', () => {
         mockCurrentGamesService.clearSelectedAvatarByClientId.mockReturnValue(['room-1', 'room-2']);
-        mockCurrentGamesService.getUnavailableAvatars.mockImplementation((roomId: string) =>
-            roomId === 'room-1' ? ['avatar-1'] : ['avatar-2'],
-        );
+        mockCurrentGamesService.getUnavailableAvatars.mockImplementation((roomId: string) => (roomId === 'room-1' ? ['avatar-1'] : ['avatar-2']));
 
         gateway.handleDisconnect(mockSocket);
 
