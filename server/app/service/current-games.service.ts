@@ -1,20 +1,15 @@
 import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload, TurnPhase } from '@common/interfaces/game.interface';
-import { MapObjectType } from '@common/interfaces/map.interface';
+import { BattleWonPayload, Game, NewTurnPayload, CombatParticipantRoundDetails, CombatRoundDetails, CombatStatBreakdown, ToggleDebugPayload, TurnPhase } from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { Injectable, Logger } from '@nestjs/common';
-import {
-    addPositions,
-    arePositionAdjacent,
-    findNearestFreeSpawn,
-    isValidTile,
-    Position,
-    TILE_MOVEMENT_COST,
-} from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { DiceTarget } from '@common/enums/player.enums';
 
-const RANDOM_RANGE = 0.5;
+const RANDOM_RANGE = 0.5; const COMBAT_POSTURE_BONUS = 0; const ICE_COMBAT_PENALTY = -2; const DICE_6 = 6;
+const DICE_4 = 4;
 
 @Injectable()
 export class CurrentGamesService {
@@ -230,38 +225,31 @@ export class CurrentGamesService {
     battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
         const game = this.getGameByRoomId(roomId);
         if (!game) return [battlePayload, false, false];
-
         const winner = game.players.find(p => p.id === battlePayload.winnerId);
         const loser = game.players.find(p => p.id === battlePayload.loserId);
         if (!winner || !loser) return [battlePayload, false, false];
-
         if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
             // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
             //  donc on check que c'est bien son tour
             Logger.warn(`Ce n'est pas le tour du gagnant (${winner.name}) dans la room ${roomId}.`);
             return [battlePayload, false, false];
         }
-
         if (!arePositionAdjacent(winner.position, loser.position)) {
             Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.position.x},${winner.position.y}),
                  loser (${loser.position.x},${loser.position.y})`);
             return [battlePayload, false, false];
         }
-
+        battlePayload.combatRound = this.buildCombatRoundDetails(game, winner, loser);
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
         const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
-
         const loserSpawn = game.spawnPoints?.get(loser.id);
         if (!loserSpawn) {
             Logger.warn(`Le point de départ du joueur perdant est introuvable`);
             return [battlePayload, false, false];
         }
-
         const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
-
         loser.position = respawnPos;
         battlePayload.loserPos = respawnPos;
-
         return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
     }
 
@@ -372,6 +360,53 @@ export class CurrentGamesService {
         }
         return updatedRooms;
     }
+
+    private rollDice(sides: number): number {
+        return Math.floor(Math.random() * sides) + 1;
+    }
+
+    private getCombatDiceResult(player: Player, target: DiceTarget): number {
+        if (player.d6target === target) {
+            return this.rollDice(DICE_6);
+        }
+        if (player.d4target === target) {
+            return this.rollDice(DICE_4);
+        }
+        return 0;
+    }
+
+    private getPlayerCombatPenalty(game: PlayableGame, player: Player): number {
+        const tile = game._game.tiles[player.position.y]?.[player.position.x];
+        return tile?.tileType === TileType.Ice ? ICE_COMBAT_PENALTY : 0;
+    }
+
+    private createCombatBreakdown(baseValue: number, diceResult: number, penalty: number): CombatStatBreakdown {
+        return { baseValue, postureBonus: COMBAT_POSTURE_BONUS, diceResult, penalty, total: baseValue + COMBAT_POSTURE_BONUS + diceResult + penalty };
+    }
+
+    private createCombatParticipantRound(game: PlayableGame, player: Player): CombatParticipantRoundDetails {
+        const penalty = this.getPlayerCombatPenalty(game, player);
+        const attackDiceResult = this.getCombatDiceResult(player, DiceTarget.Attack);
+        const defenseDiceResult = this.getCombatDiceResult(player, DiceTarget.Defense);
+        return {
+            playerId: player.id,
+            playerName: player.name,
+            attack: this.createCombatBreakdown(player.attack ?? 0, attackDiceResult, penalty),
+            defense: this.createCombatBreakdown(player.defense ?? 0, defenseDiceResult, penalty),
+            damageDealt: 0,
+            damageTaken: 0,
+        };
+    }
+
+    private buildCombatRoundDetails(game: PlayableGame, attacker: Player, defender: Player): CombatRoundDetails {
+        const attackerRound = this.createCombatParticipantRound(game, attacker);
+        const defenderRound = this.createCombatParticipantRound(game, defender);
+        attackerRound.damageDealt = Math.max(0, attackerRound.attack.total - defenderRound.defense.total);
+        attackerRound.damageTaken = Math.max(0, defenderRound.attack.total - attackerRound.defense.total);
+        defenderRound.damageDealt = attackerRound.damageTaken;
+        defenderRound.damageTaken = attackerRound.damageDealt;
+        return { attacker: attackerRound, defender: defenderRound };
+    }
 }
 export interface PlayableGame {
     _game: Game;
@@ -384,7 +419,6 @@ export interface PlayableGame {
     idHost?: string;
     debugMode?: boolean;
 }
-
 export interface JoinableGameSummary {
     roomId: string;
     game: Game;
