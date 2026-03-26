@@ -1,9 +1,11 @@
 import { GamesService } from '@app/database/game/services/game.service';
-import { CurrentGamesService, JoinableGameSummary } from '@app/service/current-games.service';
+import { JoinableGameSummary } from '@app/interface/game.interface';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
+import { Position } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -316,5 +318,17 @@ export class CurrentGameGateway implements OnGatewayInit {
         }
 
         this.logger.log(`Toggled debug mode to ${payload.debugMode} for room: ${room}`);
+    }
+
+    @SubscribeMessage(GatewayEvents.ActionOnTile)
+    handleActionOnTile(client: Socket, position: Position): void {
+        const room = getRoomIdFromSocket(client);
+
+        if(this.currentGamesService.doActionAtTile(room, client.id, position)) {
+            this.server.to(room).emit(GatewayEvents.ActionOnTile, { position, playerId: client.id });
+            this.logger.log(`Player ${client.id} performed an action on tile at (${position.x}, ${position.y}) in room ${room}`);
+        } else {
+            this.logger.warn(`Failed to perform action on tile for player ${client.id} at (${position.x}, ${position.y}) in room ${room}`);
+        }
     }
 }

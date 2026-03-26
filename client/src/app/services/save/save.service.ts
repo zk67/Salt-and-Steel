@@ -7,7 +7,7 @@ import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interf
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { createBooleanGrid, isValidTile, getNeighborPositions,Position } from '@common/utils/map.utils';
+import { createBooleanGrid, isValidTile, getNeighborPositions,Position, isTileDoor } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -153,9 +153,8 @@ export class SaveService {
         for (let y = 0; y < tiles.length; y++) {
             for (let x = 0; x < tiles[y].length; x++) {
                 const tile = tiles[y][x];
-                const isDoor = tile.tileType === TileType.CloseDoor || tile.tileType === TileType.OpenDoor;
 
-                if (!isDoor) continue;
+                if (!isTileDoor(tile)) continue;
 
                 const up = { x, y: y - 1 };
                 const down = { x, y: y + 1 };
@@ -171,7 +170,7 @@ export class SaveService {
                     if (!isValidTile(tiles, position)) return false;
 
                     const type = tiles[position.y][position.x].tileType;
-                    return type !== TileType.Wall && type !== TileType.CloseDoor && type !== TileType.OpenDoor;
+                    return type !== TileType.Wall && !isTileDoor(tiles[position.y][position.x]);
                 };
 
                 const validVerticalDoor = isWall(up) && isWall(down) && isTerrain(left) && isTerrain(right);
