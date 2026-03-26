@@ -6,7 +6,7 @@
                     [attr.data-tile-type]="tileType[tile.tileType]"
                     [attr.data-object]="mapObjectType[tile.mapObject]"
                     [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
-                    [style.--tile-image]="'url(/assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'"
+                    [style.--tile-image]="'url(../../../assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'"
                     (mousedown)="onMouseDown($event, {x: colIndex, y: rowIndex}); $event.preventDefault()"
                     (mouseenter)="onMouseEnter($event, {x: colIndex, y: rowIndex})">
                 </div>

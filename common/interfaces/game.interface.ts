@@ -35,6 +35,7 @@ export interface BattleWonPayload {
     loserId: string;
     winnerId: string;
     loserPos: Position;
+    combatRound?: CombatRoundDetails;
 }
 
 export enum TurnPhase {
@@ -50,4 +51,23 @@ export interface DebugMovePayload {
 export interface ToggleDebugPayload {
     debugMode: boolean;
     hostId: string;
+}
+export interface CombatParticipantRoundDetails {
+    playerId: string;
+    playerName: string;
+    attack: CombatStatBreakdown;
+    defense: CombatStatBreakdown;
+    damageDealt: number;
+    damageTaken: number;
+}
+export interface CombatRoundDetails {
+    attacker: CombatParticipantRoundDetails;
+    defender: CombatParticipantRoundDetails;
+}
+export interface CombatStatBreakdown {
+    baseValue: number;
+    postureBonus: number;
+    diceResult: number;
+    penalty: number;
+    total: number;
 }
