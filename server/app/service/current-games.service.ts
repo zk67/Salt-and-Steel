@@ -1,24 +1,27 @@
 import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, Game, NewTurnPayload, CombatParticipantRoundDetails, CombatRoundDetails, CombatStatBreakdown, ToggleDebugPayload, TurnPhase } from '@common/interfaces/game.interface';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { MAX_VICTORIES } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { Injectable, Logger } from '@nestjs/common';
-import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST, isTileDoor } from '@common/utils/map.utils';
-import { DiceTarget } from '@common/enums/player.enums';
+import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { PlayableGame, JoinableGameSummary } from '@app/interface/game.interface';
-
-const RANDOM_RANGE = 0.5; const COMBAT_POSTURE_BONUS = 0; const ICE_COMBAT_PENALTY = -2; const DICE_6 = 6;
-const DICE_4 = 4;
+import { CombatRoundService } from '@app/service/combat-round.service';
+import { GameLifecycleService } from '@app/service/game-lifecycle.service';
+import { RoomPlayerStateService } from '@app/service/room-player-state.service';
+import { TileActionService } from '@app/service/tile-action.service';
+import { TurnFlowService } from '@app/service/turn-flow.service';
 
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
-    private selectedAvatarsByRoom = new Map<string, Map<string, string>>();//cle1:roomId ,(2:clientId ,3:avatar)
-    private usedNameSuffixesByRoom = new Map<string, Map<string, number>>();
+    private roomPlayerStateService = new RoomPlayerStateService();
+    private combatRoundService = new CombatRoundService();
+    private tileActionService = new TileActionService();
+    private gameLifecycleService = new GameLifecycleService();
+    private turnFlowService = new TurnFlowService();
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
@@ -29,36 +32,10 @@ export class CurrentGamesService {
         this.games.push({ _game: game, roomId, players: [] });
     }
 
-    private getOrCreateRoomNameRegistry(roomId: string): Map<string, number> {
-        let roomRegistry = this.usedNameSuffixesByRoom.get(roomId);
-        if (!roomRegistry) {
-            roomRegistry = new Map<string, number>();
-            this.usedNameSuffixesByRoom.set(roomId, roomRegistry);
-        }
-        return roomRegistry;
-    }
-
-    private buildUniquePlayerName(roomId: string, requestedName: string, currentPlayers: Player[]): string {
-        const baseName = requestedName.trim();
-        const roomRegistry = this.getOrCreateRoomNameRegistry(roomId);
-
-        const baseNameAlreadyUsed = currentPlayers.some((p) => p.name === baseName);
-        const trackedSuffix = roomRegistry.get(baseName) ?? 1;
-
-        if (!baseNameAlreadyUsed && trackedSuffix === 1) {
-            roomRegistry.set(baseName, 1);
-            return baseName;
-        }
-
-        const nextSuffix = trackedSuffix + 1;
-        roomRegistry.set(baseName, nextSuffix);
-        return `${baseName}-${nextSuffix}`;
-    }
-
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
         if (game) {
-            player.name = this.buildUniquePlayerName(roomId, player.name, game.players);
+            player.name = this.roomPlayerStateService.buildUniquePlayerName(roomId, player.name, game.players);
             game.players.push(player);
             Logger.log(`Player ${player.name} added to game in room ${roomId}. Total players: ${game.players.length}`);
         } else {
@@ -82,7 +59,7 @@ export class CurrentGamesService {
         }
 
         this.games.splice(index, 1);
-        this.usedNameSuffixesByRoom.delete(roomId);
+        this.roomPlayerStateService.removeRoomState(roomId);
         return true;
     }
 
@@ -118,20 +95,9 @@ export class CurrentGamesService {
             return;
         }
 
-        const shuffled = [...game.players].sort(() => Math.random() - RANDOM_RANGE);
-        const sorted = shuffled.sort((a, b) => b.speed - a.speed);
-
-        game.turnOrder = sorted.map(p => p.id);
-        sorted.forEach((player, idx) => {
-            player.turnOrder = idx;
-        });
+        game.turnOrder = this.gameLifecycleService.initializeTurnOrder(game.players);
         this.allocateSpawnPoints(roomId);
-        this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
-
-        game.currentPhase = TurnPhase.WaitTurn;
-        game.currentTurnIndex = 0;
-
-        this.sendTurnUpdate(game);
+        this.turnFlowService.startGameTurn(game, this.timer, this.emitTurnUpdate.bind(this));
 
         return game;
     }
@@ -140,73 +106,25 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
 
-        const nbPlayers = game.players.length;
-
-        const spawnPoints: Position[] = [];
-        for (let y = 0; y < game._game.tiles.length; y++) {
-            for (let x = 0; x < game._game.tiles[y].length; x++) {
-                if (game._game.tiles[y][x].mapObject === MapObjectType.SpawnPoint) {
-                    spawnPoints.push({ x, y });
-                }
-            }
-        }
-
-        const shuffled = spawnPoints.sort(() => Math.random() - RANDOM_RANGE);
-
-        game.spawnPoints = new Map();
-        game.players.forEach((player, index) => {
-            player.position = shuffled[index];
-            game.spawnPoints.set(player.id, shuffled[index]);
-        });
-
-        shuffled.slice(nbPlayers).forEach(({ x, y }) => {
-            game._game.tiles[y][x].mapObject = MapObjectType.None;
-        });
+        this.gameLifecycleService.allocateSpawnPoints(game);
     }
 
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
-        if (!game || !game.turnOrder) return;
+        if (!game) return;
 
-        if (game.currentPhase === TurnPhase.Turn) {
-            this.nextPlayerTurn(roomId);
-        } else {
-            game.currentPhase = TurnPhase.Turn;
-            const currentPlayerId = game.turnOrder[game.currentTurnIndex];
-            const currentPlayer = game.players.find(p => p.id === currentPlayerId);
-            if (!currentPlayer) return;
-
-            currentPlayer.movementPoints = currentPlayer.speed;
-
-            this.sendTurnUpdate(game);
-            this.timer.startTurnTimer(game.roomId, TIMER_TURN);
-        }
+        this.turnFlowService.changeTurn(game, this.timer, this.emitTurnUpdate.bind(this));
     }
 
     nextPlayerTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
 
-        this.timer.stopTimer(game.roomId); // Quand on fini en avance
-        game.currentPhase = TurnPhase.WaitTurn;
-
-        const lastPlayerId = game.turnOrder[game.currentTurnIndex];
-        const lastPlayer = game.players.find(p => p.id === lastPlayerId);
-        if (!lastPlayer) return;
-
-        lastPlayer.movementPoints = 0;
-        game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
-        this.timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
-        this.sendTurnUpdate(game);
+        this.turnFlowService.nextPlayerTurn(game, this.timer, this.emitTurnUpdate.bind(this));
     }
 
-    private sendTurnUpdate(game: PlayableGame): void {
-        const turnPayload: NewTurnPayload = {
-            phase: game.currentPhase,
-            playerId: game.turnOrder[game.currentTurnIndex],
-        };
-
-        this.emitCallback?.(game.roomId, turnPayload);
+    private emitTurnUpdate(roomId: string, payload: NewTurnPayload): void {
+        this.emitCallback?.(roomId, payload);
     }
 
     debugMove(roomId: string, playerId: string, position: Position): boolean {
@@ -216,7 +134,7 @@ export class CurrentGamesService {
         const player = game.players.find(p => p.id === playerId);
         if (!player) return false;
 
-        if (player.id !== game.turnOrder[game.currentTurnIndex]) return false;
+        if (!this.turnFlowService.isCurrentPlayerTurnById(game, player.id)) return false;
 
         player.position = position;
 
@@ -240,7 +158,7 @@ export class CurrentGamesService {
                  loser (${loser.position.x},${loser.position.y})`);
             return [battlePayload, false, false];
         }
-        battlePayload.combatRound = this.buildCombatRoundDetails(game, winner, loser);
+        battlePayload.combatRound = this.combatRoundService.buildCombatRoundDetails(game, winner, loser);
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
         const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
         const loserSpawn = game.spawnPoints?.get(loser.id);
@@ -261,7 +179,7 @@ export class CurrentGamesService {
         const player = game.players.find(p => p.id === playerId);
         if (!player) return false;
 
-        if (game.turnOrder[game.currentTurnIndex] !== player.id) {
+        if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
             Logger.warn(`Ce n'est pas le tour du joueur (${player.name}) dans la room ${roomId}.`);
             return false;
         }
@@ -302,111 +220,33 @@ export class CurrentGamesService {
     }
 
     getJoinableGames(): JoinableGameSummary[] {
-        return this.games
-            .filter(game => game.players.length < game._game.maxPlayers && game.currentPhase === undefined)
-            .map(game => {
-                return { roomId: game.roomId, game: game._game, playerCount: game.players.length };
-            });
+        return this.gameLifecycleService.getJoinableGames(this.games);
     }
 
     canJoinGame(roomId: string): boolean {
         const game = this.getGameByRoomId(roomId);
-        if (!game) {
-            return false;
-        }
-        return game.players.length < game._game.maxPlayers && game.currentPhase === undefined;
+        return this.gameLifecycleService.canJoinGame(game);
     }
 
     getUnavailableAvatars(roomId: string): string[] {
         const game = this.getGameByRoomId(roomId);
         if (game) {
-            const waitingRoomAvatars = game.players.map(p => p.imageUrl).filter(Boolean);
-            const roomMap = this.selectedAvatarsByRoom.get(roomId);
-            const selectedAvatars = roomMap ? Array.from(roomMap.values()) : [];
-            const allAvatars = waitingRoomAvatars.concat(selectedAvatars);
-            return [...new Set(allAvatars)];
+            return this.roomPlayerStateService.getUnavailableAvatars(roomId, game.players);
         } else {
             return [];
         }
     }
 
     setSelectedAvatar(roomId: string, clientId: string, avatar: string): void {
-        if (!this.selectedAvatarsByRoom.has(roomId)) {
-            this.selectedAvatarsByRoom.set(roomId, new Map<string, string>());
-        }
-        this.selectedAvatarsByRoom.get(roomId)?.set(clientId, avatar);
+        this.roomPlayerStateService.setSelectedAvatar(roomId, clientId, avatar);
     }
 
     clearSelectedAvatar(roomId: string, clientId: string): void {
-        const roomSelections = this.selectedAvatarsByRoom.get(roomId);
-        if (roomSelections) {
-            roomSelections.delete(clientId);
-            if (roomSelections.size === 0) {
-                this.selectedAvatarsByRoom.delete(roomId);
-            }
-        }
+        this.roomPlayerStateService.clearSelectedAvatar(roomId, clientId);
     }
 
     clearSelectedAvatarByClientId(clientId: string): string[] {
-        const updatedRooms: string[] = [];
-        for (const [roomId, selections] of this.selectedAvatarsByRoom.entries()) {
-            if (!selections.has(clientId)) {
-                continue;
-            }
-            selections.delete(clientId);
-            updatedRooms.push(roomId);
-            if (selections.size === 0) {
-                this.selectedAvatarsByRoom.delete(roomId);
-            }
-        }
-        return updatedRooms;
-    }
-
-    private rollDice(sides: number): number {
-        return Math.floor(Math.random() * sides) + 1;
-    }
-
-    private getCombatDiceResult(player: Player, target: DiceTarget): number {
-        if (player.d6target === target) {
-            return this.rollDice(DICE_6);
-        }
-        if (player.d4target === target) {
-            return this.rollDice(DICE_4);
-        }
-        return 0;
-    }
-
-    private getPlayerCombatPenalty(game: PlayableGame, player: Player): number {
-        const tile = game._game.tiles[player.position.y]?.[player.position.x];
-        return tile?.tileType === TileType.Ice ? ICE_COMBAT_PENALTY : 0;
-    }
-
-    private createCombatBreakdown(baseValue: number, diceResult: number, penalty: number): CombatStatBreakdown {
-        return { baseValue, postureBonus: COMBAT_POSTURE_BONUS, diceResult, penalty, total: baseValue + COMBAT_POSTURE_BONUS + diceResult + penalty };
-    }
-
-    private createCombatParticipantRound(game: PlayableGame, player: Player): CombatParticipantRoundDetails {
-        const penalty = this.getPlayerCombatPenalty(game, player);
-        const attackDiceResult = this.getCombatDiceResult(player, DiceTarget.Attack);
-        const defenseDiceResult = this.getCombatDiceResult(player, DiceTarget.Defense);
-        return {
-            playerId: player.id,
-            playerName: player.name,
-            attack: this.createCombatBreakdown(player.attack ?? 0, attackDiceResult, penalty),
-            defense: this.createCombatBreakdown(player.defense ?? 0, defenseDiceResult, penalty),
-            damageDealt: 0,
-            damageTaken: 0,
-        };
-    }
-
-    private buildCombatRoundDetails(game: PlayableGame, attacker: Player, defender: Player): CombatRoundDetails {
-        const attackerRound = this.createCombatParticipantRound(game, attacker);
-        const defenderRound = this.createCombatParticipantRound(game, defender);
-        attackerRound.damageDealt = Math.max(0, attackerRound.attack.total - defenderRound.defense.total);
-        attackerRound.damageTaken = Math.max(0, defenderRound.attack.total - attackerRound.defense.total);
-        defenderRound.damageDealt = attackerRound.damageTaken;
-        defenderRound.damageTaken = attackerRound.damageDealt;
-        return { attacker: attackerRound, defender: defenderRound };
+        return this.roomPlayerStateService.clearSelectedAvatarByClientId(clientId);
     }
 
 
@@ -417,7 +257,7 @@ export class CurrentGamesService {
         const player = game.players.find(p => p.id === playerId);
         if (!player) return false;
 
-        if (game.turnOrder[game.currentTurnIndex] !== player.id) {
+        if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
             Logger.warn(`Ce n'est pas le tour du joueur (${player.name}) dans la room ${roomId}.`);
             return false;
         }
@@ -435,25 +275,10 @@ export class CurrentGamesService {
         }
 
         const tile = game._game.tiles[position.y][position.x];
-        switch (tile.mapObject) {
-            case MapObjectType.HealingShrine:
-                player.hp = Math.min(player.maxHp, (player.hp || 0) + 2);
-                player.actionsLeft = player.actionsLeft - 1;
-                break;
-            case MapObjectType.CombatShrine:
-                player.attack = (player.attack || 0) + 1;
-                player.actionsLeft = player.actionsLeft - 1;
-                break;
-            default:
-                if(isTileDoor(tile)) {
-                    tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
-                    player.actionsLeft = player.actionsLeft - 1;
-                } else {
-                    Logger.warn(`La tile ciblée n'est pas une mapObject interactive pour le joueur (${player.name}).
+        if (!this.tileActionService.applyAction(player, tile)) {
+            Logger.warn(`La tile ciblée n'est pas une mapObject interactive pour le joueur (${player.name}).
                     Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${position.x},${position.y})`);
-                    return false;
-                }
-                break;
+            return false;
         }
 
         return true;
