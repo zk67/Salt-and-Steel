@@ -138,15 +138,11 @@ export class GameService {
     }
 
     private handleBattleWon(payload: BattleWonPayload): void {
-        console.log('HANDLE_BATTLE_WON reçu', payload);
         const loser = this.players().find(p => p.id === payload.loserId);
         const winner = this.players().find(p => p.id === payload.winnerId);
         if (!loser || !winner) return;
-
-        this.popupService.open(`Le joueur ${winner.name} a gagné le combat contre ${loser.name} !`);
         this.addVictoryPoint(winner.id);
         this.updatePlayer(loser.id, { position: payload.loserPos });
-
         if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
             if (!this.canPlayerStillDoAction()) {
                 this.socketService.send(GatewayEvents.EndTurnEarly);

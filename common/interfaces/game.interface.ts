@@ -1,5 +1,5 @@
-import { Position } from '@common/utils/map.utils';
 import { GameMode, TileData } from '@common/interfaces/map.interface';
+import { Position } from '@common/utils/map.utils';
 import { Player } from './player.interface';
 
 export interface Game {
@@ -36,6 +36,8 @@ export interface BattleWonPayload {
     winnerId: string;
     loserPos: Position;
     combatRound?: CombatRoundDetails;
+    winnerHp: number;
+    loserHp: number;
 }
 
 export enum TurnPhase {
