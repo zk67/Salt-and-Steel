@@ -30,7 +30,7 @@ export const TILE_MOVEMENT_COST: Record<TileType, number> = {
     [TileType.Water]: 2,
     [TileType.Ice]: 0,
     [TileType.Wall]: Infinity,
-    [TileType.CloseDoor]: 1,
+    [TileType.CloseDoor]: Infinity,
     [TileType.OpenDoor]: 1,
 };
 
@@ -110,7 +110,8 @@ export function getActionableTiles(tiles: TileData[][], player: Player, players:
             return;
         }
 
-        if (getPlayerAt(players, newPosition) || (tile.mapObject !== MapObjectType.None) && (tile.mapObject !== MapObjectType.SpawnPoint)) {
+        if (getPlayerAt(players, newPosition) || isTileDoor(tile)
+         || (tile.mapObject !== MapObjectType.None) && (tile.mapObject !== MapObjectType.SpawnPoint)) {
             result[newPosition.y][newPosition.x] = true;
         }
     });
@@ -160,4 +161,8 @@ export function findNearestFreeSpawn(
     }
 
     return spawn;
+}
+
+export function isTileDoor(tile: TileData): boolean {
+    return tile.tileType === TileType.CloseDoor || tile.tileType === TileType.OpenDoor;
 }

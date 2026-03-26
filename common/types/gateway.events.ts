@@ -37,4 +37,5 @@ export enum GatewayEvents {
     UnavailableAvatars = 'unavailableAvatars',
     SelectAvatarInJoinForm = 'selectAvatarInJoinForm',
     ClearSelectedAvatarInJoinForm = 'clearSelectedAvatarInJoinForm',
+    ActionOnTile = 'actionOnTile',
 }

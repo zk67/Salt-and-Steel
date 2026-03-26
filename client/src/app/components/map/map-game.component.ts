@@ -15,7 +15,7 @@ import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { addPositions, equalPositions, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, equalPositions, isTileDoor, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up',
@@ -58,6 +58,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
     private handleGameOverBound = this.handleGameOver.bind(this);
     private handleToggleDebugModeBound = this.handleToggleDebugMode.bind(this);
+    private handleActionOnTileBound = this.handleActionOnTile.bind(this);
 
     constructor(
         public mapService: MapService,
@@ -97,6 +98,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
+        this.socketService.on<{ position: Position; playerId: string }>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -156,11 +158,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
         if (this.gameService.isClientPlayerTurn()) {
             if (!this.gameService.canPlayerStillDoAction()) {
-                if (!this.gameService.canPlayerStillDoAction()) {
-                    this.socketService.send(GatewayEvents.EndTurnEarly);
-                } else {
-                    this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
-                }
+                this.socketService.send(GatewayEvents.EndTurnEarly);
+            } else {
+                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
             }
         }
     }
@@ -197,9 +197,23 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (player) {
             this.killPlayer(player.id);
         } else {
-            const mapObject = this.mapService.getMapObject(position);
-            if (mapObject !== MapObjectType.None && mapObject !== MapObjectType.SpawnPoint) {
-                this.popupService.open(`Action sur l'objet ${getObjectDescription(mapObject)} à la position (${position.x}, ${position.y})`);
+            const tile = this.mapService.getTile(position);
+            if (!tile) return;
+            switch (tile.mapObject) {
+                case MapObjectType.Flag:
+                    this.popupService.open(`Action sur le drapeau à la position (${position.x}, ${position.y})`);
+                    break;
+                case MapObjectType.HealingShrine:
+                    this.popupService.open(`Action sur le sanctuaire de soin à la position (${position.x}, ${position.y})`);
+                    break;
+                case MapObjectType.CombatShrine:
+                    this.popupService.open(`Action sur le sanctuaire de combat à la position (${position.x}, ${position.y})`);
+                    break;
+                case MapObjectType.None:
+                    if (isTileDoor(tile)) {
+                        this.socketService.send(GatewayEvents.ActionOnTile, position);
+                    }
+                    break;
             }
         }
 
@@ -276,6 +290,30 @@ export class MapGameComponent implements OnInit, OnDestroy {
             this.popupService.close();
             this.router.navigate([APP_ROUTES.home]);
         }, DELAY_BEFORE_NAVIGATE_HOME);
+    }
+
+    private handleActionOnTile(payload: { position: Position; playerId: string }): void {
+        const player = this.gameService.players().find(p => p.id === payload.playerId);
+        if (!player) return;
+
+        const tile = this.mapService.getTile(payload.position);
+        if (!tile) return;
+
+        switch (tile.mapObject) {
+            case MapObjectType.HealingShrine:
+                this.popupService.open(`Action sur le sanctuaire de soin à la position (${payload.position.x}, ${payload.position.y})`);
+                break;
+            case MapObjectType.CombatShrine:
+                this.popupService.open(`Action sur le sanctuaire de combat à la position (${payload.position.x}, ${payload.position.y})`);
+                break;
+            case MapObjectType.None:
+                if (isTileDoor(tile)) {
+                    tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
+                    this.mapService.setTile(payload.position, tile.tileType);
+                    this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
+                }
+                break;
+        }
     }
 
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {

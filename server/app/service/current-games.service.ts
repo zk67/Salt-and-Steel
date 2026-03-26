@@ -5,8 +5,9 @@ import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES, TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { Injectable, Logger } from '@nestjs/common';
-import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST, isTileDoor } from '@common/utils/map.utils';
 import { DiceTarget } from '@common/enums/player.enums';
+import { PlayableGame, JoinableGameSummary } from '@app/interface/game.interface';
 
 const RANDOM_RANGE = 0.5; const COMBAT_POSTURE_BONUS = 0; const ICE_COMBAT_PENALTY = -2; const DICE_6 = 6;
 const DICE_4 = 4;
@@ -407,21 +408,54 @@ export class CurrentGamesService {
         defenderRound.damageTaken = attackerRound.damageDealt;
         return { attacker: attackerRound, defender: defenderRound };
     }
-}
-export interface PlayableGame {
-    _game: Game;
-    roomId: string;
-    players: Player[];
-    turnOrder?: string[];
-    currentTurnIndex?: number;
-    currentPhase?: TurnPhase;
-    spawnPoints?: Map<string, Position>;
-    idHost?: string;
-    debugMode?: boolean;
-}
-export interface JoinableGameSummary {
-    roomId: string;
-    game: Game;
-    playerCount: number;
-}
 
+
+    doActionAtTile(roomId: string, playerId: string, position: Position): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const player = game.players.find(p => p.id === playerId);
+        if (!player) return false;
+
+        if (game.turnOrder[game.currentTurnIndex] !== player.id) {
+            Logger.warn(`Ce n'est pas le tour du joueur (${player.name}) dans la room ${roomId}.`);
+            return false;
+        }
+
+        if (!arePositionAdjacent(player.position, position)) {
+            Logger.warn(`Le joueur (${player.name}) ne peut pas interagir avec une tile non adjacente.
+                 Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${position.x},${position.y})`);
+            return false;
+        }
+
+        if(player.actionsLeft <= 0) {
+            Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante pour interagir avec la tile.
+                 Actions restantes: ${player.actionsLeft}`);
+            return false;
+        }
+
+        const tile = game._game.tiles[position.y][position.x];
+        switch (tile.mapObject) {
+            case MapObjectType.HealingShrine:
+                player.hp = Math.min(player.maxHp, (player.hp || 0) + 2);
+                player.actionsLeft = player.actionsLeft - 1;
+                break;
+            case MapObjectType.CombatShrine:
+                player.attack = (player.attack || 0) + 1;
+                player.actionsLeft = player.actionsLeft - 1;
+                break;
+            default:
+                if(isTileDoor(tile)) {
+                    tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
+                    player.actionsLeft = player.actionsLeft - 1;
+                } else {
+                    Logger.warn(`La tile ciblée n'est pas une mapObject interactive pour le joueur (${player.name}).
+                    Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${position.x},${position.y})`);
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+    }
+}
