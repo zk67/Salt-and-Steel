@@ -1,5 +1,8 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
+import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
+import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
+import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server, Socket } from 'socket.io';
@@ -86,11 +89,15 @@ describe('CurrentGameGateway', () => {
                 { provide: Logger, useValue: mockLogger },
                 { provide: CurrentGamesService, useValue: mockCurrentGamesService },
                 { provide: GamesService, useValue: mockGamesService },
+                CurrentGameBroadcastService,
+                CurrentGameLobbyService,
+                CurrentGamePlayService,
             ],
         }).compile();
 
         gateway = module.get<CurrentGameGateway>(CurrentGameGateway);
         Reflect.set(gateway, 'server', mockServer);
+        gateway.afterInit();
     });
 
     afterEach(() => {
