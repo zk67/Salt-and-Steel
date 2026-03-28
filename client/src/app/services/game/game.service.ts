@@ -132,24 +132,30 @@ export class GameService {
     private handleBattleWon(payload: BattleWonPayload): void {
         const clientId = this.clientPlayer()?.id;
         const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
+
         if (!isParticipant) {
             this.combatRoundState.set(null);
         }
+
         const loser = this.players().find(p => p.id === payload.loserId);
         const winner = this.players().find(p => p.id === payload.winnerId);
+
         if (!loser || !winner) return;
         this.addVictoryPoint(winner.id);
         this.updatePlayer(winner.id, {
             hp: payload.winnerHp ?? winner.hp,
         });
+
         this.updatePlayer(loser.id, {
             position: payload.loserPos,
             hp: payload.loserHp ?? loser.hp,
         });
+
         if (this.playerState.isClientPlayer(loser.id) && this.isClientPlayerTurn()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
             return;
         }
+
         if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
             if (!this.canPlayerStillDoAction()) {
                 this.socketService.send(GatewayEvents.EndTurnEarly);

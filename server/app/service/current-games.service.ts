@@ -1,18 +1,17 @@
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
-import { CombatRoundService } from '@app/service/combat-round.service';
+import { CombatRoundService, CombatResolutionResult } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TileActionService } from '@app/service/tile-action.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, CombatRoundDetails, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
-const MAX_SIMULATED_COMBAT_ROUNDS = 100;
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -159,7 +158,7 @@ export class CurrentGamesService {
                 defender (${defender.position.x},${defender.position.y})`);
             return [battlePayload, false, false];
         }
-        const resolution = this.resolveCombatUntilWinner(game, attacker, defender);
+        const resolution: CombatResolutionResult | null = this.combatRoundService.resolveCombatUntilWinner(game, attacker, defender);
         if (!resolution) {
             Logger.warn(`Combat non résolu proprement entre ${attacker.name} et ${defender.name} dans la room ${roomId}.`);
             return [battlePayload, false, false];
@@ -183,33 +182,6 @@ export class CurrentGamesService {
         loser.position = respawnPos;
         battlePayload.loserPos = respawnPos;
         return [battlePayload, true, isGameOver];
-    }
-
-    private resolveCombatUntilWinner(game: PlayableGame, attacker: Player, defender: Player)
-        : { winner: Player; loser: Player; winnerHp: number; lastRound: CombatRoundDetails } | null {
-        let attackerHp = attacker.hp ?? 0;
-        let defenderHp = defender.hp ?? 0;
-        let lastRound: CombatRoundDetails | null = null;
-        for (let round = 0; round < MAX_SIMULATED_COMBAT_ROUNDS && attackerHp > 0 && defenderHp > 0; round++) {
-            lastRound = this.combatRoundService.buildCombatRoundDetails(game, attacker, defender);
-            attackerHp = Math.max(0, attackerHp - lastRound.attacker.damageTaken);
-            defenderHp = Math.max(0, defenderHp - lastRound.defender.damageTaken);
-        }
-        if (!lastRound) {
-            return null;
-        }
-        if (attackerHp <= 0 && defenderHp <= 0) {
-            Logger.warn('Double KO non géré par le payload actuel de BattleWon.');
-            return null;
-        }
-        if (attackerHp <= 0) {
-            return { winner: defender, loser: attacker, winnerHp: defenderHp, lastRound };
-        }
-        if (defenderHp <= 0) {
-            return { winner: attacker, loser: defender, winnerHp: attackerHp, lastRound };
-        }
-        Logger.warn(`Combat dépassant ${MAX_SIMULATED_COMBAT_ROUNDS} rounds, résolution annulée.`);
-        return null;
     }
 
     validateEndTurnEarly(roomId: string, playerId: string): boolean {
