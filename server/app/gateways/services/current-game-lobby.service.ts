@@ -2,7 +2,6 @@ import { GamesService } from '@app/database/game/services/game.service';
 import { JoinableGameSummary } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { Game as SharedGame } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
@@ -26,18 +25,14 @@ export class CurrentGameLobbyService {
         }
 
         const game = await this.gamesService.getOneGame(data.gameDbId);
+
         if (!game) {
             this.logger.warn(`Game not found in DB for id: ${data.gameDbId}`);
             return false;
         }
 
-        const gameFromDb = game as unknown as Partial<SharedGame>;
-        const normalizedGame: SharedGame = {
-            ...gameFromDb,
-            shrine: gameFromDb.shrine ?? [],
-        } as SharedGame;
+        this.currentGamesService.createGame(game, room, data.gameId);
 
-        this.currentGamesService.createGame(normalizedGame, room, data.gameId);
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
         this.emitJoinableGames();
         return true;
