@@ -1,17 +1,18 @@
-import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
-import { Player } from '@common/interfaces/player.interface';
-import { MAX_VICTORIES } from '@common/types/game.constant';
-import { DIRECTION_STRING } from '@common/types/game.record';
-import { Injectable, Logger } from '@nestjs/common';
-import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
-import { PlayableGame, JoinableGameSummary } from '@app/interface/game.interface';
+import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TileActionService } from '@app/service/tile-action.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
+import { Timer } from '@app/utils/game-timer';
+import { BattleWonPayload, CombatRoundDetails, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { Player } from '@common/interfaces/player.interface';
+import { MAX_VICTORIES } from '@common/types/game.constant';
+import { DIRECTION_STRING } from '@common/types/game.record';
+import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { Injectable, Logger } from '@nestjs/common';
 
+const MAX_SIMULATED_COMBAT_ROUNDS = 100;
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -141,24 +142,36 @@ export class CurrentGamesService {
         return true;
     }
 
-    battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
+    battleWon(roomId: string, battlePayload: BattleWonPayload, attackerId: string): [BattleWonPayload, boolean, boolean] {
         const game = this.getGameByRoomId(roomId);
         if (!game) return [battlePayload, false, false];
-        const winner = game.players.find((p) => p.id === battlePayload.winnerId);
-        const loser = game.players.find((p) => p.id === battlePayload.loserId);
-        if (!winner || !loser) return [battlePayload, false, false];
-        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
-            // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
-            //  donc on check que c'est bien son tour
-            Logger.warn(`Ce n'est pas le tour du gagnant (${winner.name}) dans la room ${roomId}.`);
+        const attacker = game.players.find(p => p.id === attackerId);
+        const defender = game.players.find(p => p.id === battlePayload.loserId);
+        if (!attacker || !defender) {
             return [battlePayload, false, false];
         }
-        if (!arePositionAdjacent(winner.position, loser.position)) {
-            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.position.x},${winner.position.y}),
-                 loser (${loser.position.x},${loser.position.y})`);
+        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== attacker.id) {
+            Logger.warn(`Ce n'est pas le tour de l'attaquant (${attacker.name}) dans la room ${roomId}.`);
             return [battlePayload, false, false];
         }
-        battlePayload.combatRound = this.combatRoundService.buildCombatRoundDetails(game, winner, loser);
+        if (!arePositionAdjacent(attacker.position, defender.position)) {
+            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: attacker (${attacker.position.x},${attacker.position.y}),
+                defender (${defender.position.x},${defender.position.y})`);
+            return [battlePayload, false, false];
+        }
+        const resolution = this.resolveCombatUntilWinner(game, attacker, defender);
+        if (!resolution) {
+            Logger.warn(`Combat non résolu proprement entre ${attacker.name} et ${defender.name} dans la room ${roomId}.`);
+            return [battlePayload, false, false];
+        }
+        const { winner, loser, winnerHp, lastRound } = resolution;
+        battlePayload.winnerId = winner.id;
+        battlePayload.loserId = loser.id;
+        battlePayload.combatRound = lastRound;
+        battlePayload.winnerHp = winnerHp;
+        battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
+        winner.hp = winnerHp;
+        loser.hp = loser.maxHp ?? loser.hp;
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
         const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
         const loserSpawn = game.spawnPoints?.get(loser.id);
@@ -169,7 +182,34 @@ export class CurrentGamesService {
         const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
         loser.position = respawnPos;
         battlePayload.loserPos = respawnPos;
-        return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
+        return [battlePayload, true, isGameOver];
+    }
+
+    private resolveCombatUntilWinner(game: PlayableGame, attacker: Player, defender: Player)
+        : { winner: Player; loser: Player; winnerHp: number; lastRound: CombatRoundDetails } | null {
+        let attackerHp = attacker.hp ?? 0;
+        let defenderHp = defender.hp ?? 0;
+        let lastRound: CombatRoundDetails | null = null;
+        for (let round = 0; round < MAX_SIMULATED_COMBAT_ROUNDS && attackerHp > 0 && defenderHp > 0; round++) {
+            lastRound = this.combatRoundService.buildCombatRoundDetails(game, attacker, defender);
+            attackerHp = Math.max(0, attackerHp - lastRound.attacker.damageTaken);
+            defenderHp = Math.max(0, defenderHp - lastRound.defender.damageTaken);
+        }
+        if (!lastRound) {
+            return null;
+        }
+        if (attackerHp <= 0 && defenderHp <= 0) {
+            Logger.warn('Double KO non géré par le payload actuel de BattleWon.');
+            return null;
+        }
+        if (attackerHp <= 0) {
+            return { winner: defender, loser: attacker, winnerHp: defenderHp, lastRound };
+        }
+        if (defenderHp <= 0) {
+            return { winner: attacker, loser: defender, winnerHp: attackerHp, lastRound };
+        }
+        Logger.warn(`Combat dépassant ${MAX_SIMULATED_COMBAT_ROUNDS} rounds, résolution annulée.`);
+        return null;
     }
 
     validateEndTurnEarly(roomId: string, playerId: string): boolean {

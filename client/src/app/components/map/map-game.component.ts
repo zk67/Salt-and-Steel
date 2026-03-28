@@ -224,7 +224,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const player = this.gameService.players().find(p => p.id === playerId);
         const clientPlayer = this.gameService.clientPlayer();
         if (!player || !clientPlayer) return;
-
+        this.gameService.clearCombatRound();
         this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
     }
 
