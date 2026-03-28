@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
-import { MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
-import { Position } from '@common/utils/map.utils';
+import { getShrineImageUrl } from '@app/utils/tile';
+import { MapObjectType, MapSize, Shrine, TileType } from '@common/interfaces/map.interface';
+import { isShrine, Position } from '@common/utils/map.utils';
 
 const OBJECT_QUANTITY_SMALL = 2;
 const OBJECT_QUANTITY_MEDIUM = 4;
@@ -79,6 +80,11 @@ export class ToolService {
             this.mapService.setTile(position, this.tileType);
         } else if (this.mapObjectType !== MapObjectType.None) {
             if (tile.mapObject !== this.mapObjectType && tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
+                if(isShrine(this.mapObjectType)){
+                    this.placeShrine(position);
+                    return;
+                }
+
                 if (tile.mapObject !== MapObjectType.None)
                     this.setNumberObject(tile.mapObject, false);
                 this.mapService.setMapObject(position, this.mapObjectType);
@@ -89,7 +95,13 @@ export class ToolService {
 
     delete(position: Position, shiftKeyPressed: boolean = false): void {
         if (shiftKeyPressed) {
-            this.setNumberObject(this.mapService.getMapObject(position), false);
+            const mapObject = this.mapService.getMapObject(position);
+            if(isShrine(mapObject)){
+                this.deleteShrine(position);
+                return;
+            }
+
+            this.setNumberObject(mapObject, false);
             this.mapService.setMapObject(position, MapObjectType.None);
         } else {
             this.mapService.setTile(position, TileType.Basic);
@@ -149,6 +161,61 @@ export class ToolService {
         const isOnBorder = position.x === 0 || position.y === 0 ||
          position.x === this.mapService.getSize() - 1 || position.y === this.mapService.getSize() - 1;
         return !isOnBorder;
+    }
+
+    private placeShrine(position: Position): void {
+        const positions = this.getShrinePositions(position);
+        if (!this.isShrinePlacementValid(positions)) {
+            return;
+        }
+
+        const shrine: Shrine = {
+            objectType: this.mapObjectType,
+            position: positions,
+            imageUrl: [] as string[],
+            isShrineActivated: false,
+        };
+
+        for (let i = 0; i < positions.length; i++) {
+            const pos = positions[i];
+            this.delete(pos, true);
+            this.mapService.setMapObject(pos, this.mapObjectType);
+            shrine.imageUrl.push(getShrineImageUrl(this.mapObjectType, i));
+        }
+
+        this.mapService.addShrine(shrine);
+        this.setNumberObject(this.mapObjectType);
+    }
+
+    private deleteShrine(position: Position): void {
+        const shrine = this.mapService.removeShrineByPosition(position);
+        if (!shrine) return;
+
+        shrine.position.forEach(pos => {
+            this.mapService.setMapObject(pos, MapObjectType.None);
+        });
+
+        this.setNumberObject(shrine.objectType, false);
+    }
+
+    private getShrinePositions(position: Position): Position[] {
+        const right = { x: position.x + 1, y: position.y };
+        const down = { x: position.x, y: position.y + 1 };
+        const downRight = { x: position.x + 1, y: position.y + 1 };
+
+        return [position, right, down, downRight];
+    }
+
+    private isShrinePlacementValid(positions: Position[]): boolean {
+        const size = this.mapService.getSize();
+        return positions.every((pos) => {
+            const isInBounds = pos.x >= 0 && pos.y >= 0 && pos.x < size && pos.y < size;
+            if (!isInBounds) {
+                return false;
+            }
+
+            return this.mapService.getTile(pos)?.tileType !== TileType.Wall;
+        });
     }
 }
 

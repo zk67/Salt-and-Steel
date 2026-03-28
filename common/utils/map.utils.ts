@@ -166,3 +166,7 @@ export function findNearestFreeSpawn(
 export function isTileDoor(tile: TileData): boolean {
     return tile.tileType === TileType.CloseDoor || tile.tileType === TileType.OpenDoor;
 }
+
+export function isShrine(objectType: MapObjectType): boolean {
+    return objectType === MapObjectType.HealingShrine || objectType === MapObjectType.CombatShrine;
+}

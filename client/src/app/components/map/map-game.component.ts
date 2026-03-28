@@ -210,7 +210,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                     this.popupService.open(`Action sur le sanctuaire de combat à la position (${position.x}, ${position.y})`);
                     break;
                 case MapObjectType.None:
-                    if (isTileDoor(tile)) {
+                    if (isTileDoor(tile) && !player) {
                         this.socketService.send(GatewayEvents.ActionOnTile, position);
                     }
                     break;

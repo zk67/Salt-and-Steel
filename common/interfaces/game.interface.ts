@@ -1,5 +1,5 @@
 import { Position } from '@common/utils/map.utils';
-import { GameMode, TileData } from '@common/interfaces/map.interface';
+import { GameMode, TileData, Shrine } from '@common/interfaces/map.interface';
 import { Player } from './player.interface';
 
 export interface Game {
@@ -14,6 +14,7 @@ export interface Game {
     size: number;
     gameMode: GameMode;
     tiles: TileData[][];
+    shrine: Shrine[];
 }
 
 export interface MovePlayerPayload {
