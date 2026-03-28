@@ -1,4 +1,4 @@
-import { GameMode, TileData } from '@common/interfaces/map.interface';
+import { GameMode, Shrine, TileData } from '@common/interfaces/map.interface';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -33,6 +33,9 @@ export class Game {
 
     @Prop({ required: true })
     date: Date;
+
+    @Prop({ required: true })
+    shrine: Shrine[];
 }
 export type GameDocument = Game & Document;
 export const gameSchema = SchemaFactory.createForClass(Game);

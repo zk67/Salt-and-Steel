@@ -1,3 +1,5 @@
+import { Position } from "@common/utils/map.utils";
+
 export enum TileType {
     Basic = 0,
     Water = 1,
@@ -13,6 +15,13 @@ export enum MapObjectType {
     Flag = 2,
     HealingShrine = 3,
     CombatShrine = 4,
+}
+
+export interface Shrine {
+    objectType: MapObjectType;
+    position: Position[];
+    imageUrl: string[];
+    isShrineActivated: boolean;
 }
 
 export enum GameMode {

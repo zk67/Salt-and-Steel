@@ -25,12 +25,14 @@ export class CurrentGameLobbyService {
         }
 
         const game = await this.gamesService.getOneGame(data.gameDbId);
+
         if (!game) {
             this.logger.warn(`Game not found in DB for id: ${data.gameDbId}`);
             return false;
         }
 
         this.currentGamesService.createGame(game, room, data.gameId);
+
         this.logger.log(`Created game for room: ${room} with game name: ${game.name}`);
         this.emitJoinableGames();
         return true;
