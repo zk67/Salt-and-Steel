@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile } from '@app/utils/tile';
 import { Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
 import { Position } from '@common/utils/map.utils';
 @Injectable({
     providedIn: 'root',
@@ -32,6 +32,7 @@ export class MapService {
             visible: false,
             date: new Date(),
             imageUrl: '',
+            shrine: [],
         });
     }
 
@@ -120,5 +121,36 @@ export class MapService {
     clearMapService(): void {
         this.gameSignal.set(null);
         this.originalGame = null;
+    }
+
+    addShrine(shrine: Shrine): void {
+        this.gameSignal.update(game => {
+            if (!game) return null;
+            return {
+                ...game,
+                shrine: [...(game.shrine ?? []), shrine],
+            };
+        });
+    }
+
+    removeShrineByPosition(position: Position): Shrine | null {
+        let removedShrine: Shrine | null = null;
+
+        this.gameSignal.update(game => {
+            if (!game) return null;
+
+            const shrine = game.shrine.find((s) => s.position.some((p) => p.x === position.x && p.y === position.y));
+            if (!shrine) {
+                return game;
+            }
+
+            removedShrine = shrine;
+            return {
+                ...game,
+                shrine: game.shrine.filter((s) => s !== shrine),
+            };
+        });
+
+        return removedShrine;
     }
 }
