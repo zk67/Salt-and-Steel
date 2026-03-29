@@ -11,11 +11,11 @@ import { GamesModule } from './game/game.module';
  * Description:
  * Ce fichier test vérifie que le GamesModule compile correctement et que sa configuration
  *  (imports, controllers et providers) est valide
- * 
+ *
  * Fonctionnement:
  * 1) On initialise le module a tester
- * 
- * 2) On vérifie dans chaque test si les dépendances importées et les objets exposés par le module 
+ *
+ * 2) On vérifie dans chaque test si les dépendances importées et les objets exposés par le module
  * (controllers et providers du module) sont correctement enregistrés en tant que dépendances
  */
 

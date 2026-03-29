@@ -8,6 +8,7 @@ const COMBAT_POSTURE_BONUS = 0;
 const ICE_COMBAT_PENALTY = -2;
 const DICE_6 = 6;
 const DICE_4 = 4;
+const MAX_SIMULATED_COMBAT_ROUNDS = 100;
 
 export class CombatRoundService {
     buildCombatRoundDetails(game: PlayableGame, attacker: Player, defender: Player): CombatRoundDetails {
@@ -65,4 +66,51 @@ export class CombatRoundService {
     private rollDice(sides: number): number {
         return Math.floor(Math.random() * sides) + 1;
     }
+
+    resolveCombatUntilWinner(game: PlayableGame, attacker: Player, defender: Player): CombatResolutionResult | null {
+        let attackerHp = attacker.hp ?? 0;
+        let defenderHp = defender.hp ?? 0;
+        let lastRound: CombatRoundDetails | null = null;
+
+        for (let round = 0; round < MAX_SIMULATED_COMBAT_ROUNDS && attackerHp > 0 && defenderHp > 0; round++) {
+            lastRound = this.buildCombatRoundDetails(game, attacker, defender);
+            attackerHp = Math.max(0, attackerHp - lastRound.attacker.damageTaken);
+            defenderHp = Math.max(0, defenderHp - lastRound.defender.damageTaken);
+        }
+
+        if (!lastRound) {
+            return null;
+        }
+
+        if (attackerHp <= 0 && defenderHp <= 0) {
+            return null;
+        }
+
+        if (attackerHp <= 0) {
+            return {
+                winner: defender,
+                loser: attacker,
+                winnerHp: defenderHp,
+                lastRound,
+            };
+        }
+
+        if (defenderHp <= 0) {
+            return {
+                winner: attacker,
+                loser: defender,
+                winnerHp: attackerHp,
+                lastRound,
+            };
+        }
+
+        return null;
+    }
+
+}
+export interface CombatResolutionResult {
+    winner: Player;
+    loser: Player;
+    winnerHp: number;
+    lastRound: CombatRoundDetails;
 }

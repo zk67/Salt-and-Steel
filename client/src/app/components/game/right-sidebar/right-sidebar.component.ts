@@ -20,6 +20,7 @@ export class RightSidebarComponent {
     actionPointsLeft = computed(() => (this.gameService.clientPlayer()?.actionsLeft ?? 0) > 0);
     isHost = computed(() => this.gameService.hostId() === this.gameService.clientPlayer()?.id);
     isDebugMode = computed(() => this.gameService.isDebugMode());
+    combatRound = this.gameService.currentCombatRound;
 
     constructor(private timerService: TimeService, private gameService: GameService,
         private socketService: SocketClientService, private router: Router) {}
@@ -46,4 +47,8 @@ export class RightSidebarComponent {
         this.gameService.clearGameService();
         this.router.navigate([APP_ROUTES.home]);
     };
+
+    formatModifier(value: number): string {
+        return value > 0 ? `+${value}` : `${value}`;
+    }
 }

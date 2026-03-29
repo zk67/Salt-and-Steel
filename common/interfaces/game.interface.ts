@@ -37,6 +37,8 @@ export interface BattleWonPayload {
     winnerId: string;
     loserPos: Position;
     combatRound?: CombatRoundDetails;
+    winnerHp: number;
+    loserHp: number;
 }
 
 export enum TurnPhase {

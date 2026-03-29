@@ -1,16 +1,16 @@
+import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
+import { CombatRoundService, CombatResolutionResult } from '@app/service/combat-round.service';
+import { GameLifecycleService } from '@app/service/game-lifecycle.service';
+import { RoomPlayerStateService } from '@app/service/room-player-state.service';
+import { TileActionService } from '@app/service/tile-action.service';
+import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { Injectable, Logger } from '@nestjs/common';
 import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
-import { PlayableGame, JoinableGameSummary } from '@app/interface/game.interface';
-import { CombatRoundService } from '@app/service/combat-round.service';
-import { GameLifecycleService } from '@app/service/game-lifecycle.service';
-import { RoomPlayerStateService } from '@app/service/room-player-state.service';
-import { TileActionService } from '@app/service/tile-action.service';
-import { TurnFlowService } from '@app/service/turn-flow.service';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class CurrentGamesService {
@@ -49,7 +49,7 @@ export class CurrentGamesService {
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
-        return this.games.find(g => g.roomId === roomId);
+        return this.games.find((g) => g.roomId === roomId);
     }
 
     removeGame(roomId: string): boolean {
@@ -67,7 +67,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         const directionVector = DIRECTION_STRING[direction];
@@ -131,7 +131,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurnById(game, player.id)) return false;
@@ -141,24 +141,36 @@ export class CurrentGamesService {
         return true;
     }
 
-    battleWon(roomId: string, battlePayload: BattleWonPayload): [BattleWonPayload, boolean, boolean] {
+    battleWon(roomId: string, battlePayload: BattleWonPayload, attackerId: string): [BattleWonPayload, boolean, boolean] {
         const game = this.getGameByRoomId(roomId);
         if (!game) return [battlePayload, false, false];
-        const winner = game.players.find(p => p.id === battlePayload.winnerId);
-        const loser = game.players.find(p => p.id === battlePayload.loserId);
-        if (!winner || !loser) return [battlePayload, false, false];
-        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== winner.id) {
-            // Pour le sprint 2 seulement celui qui initialise le combat peut gagner les points de victoire,
-            //  donc on check que c'est bien son tour
-            Logger.warn(`Ce n'est pas le tour du gagnant (${winner.name}) dans la room ${roomId}.`);
+        const attacker = game.players.find(p => p.id === attackerId);
+        const defender = game.players.find(p => p.id === battlePayload.loserId);
+        if (!attacker || !defender) {
             return [battlePayload, false, false];
         }
-        if (!arePositionAdjacent(winner.position, loser.position)) {
-            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: winner (${winner.position.x},${winner.position.y}),
-                 loser (${loser.position.x},${loser.position.y})`);
+        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== attacker.id) {
+            Logger.warn(`Ce n'est pas le tour de l'attaquant (${attacker.name}) dans la room ${roomId}.`);
             return [battlePayload, false, false];
         }
-        battlePayload.combatRound = this.combatRoundService.buildCombatRoundDetails(game, winner, loser);
+        if (!arePositionAdjacent(attacker.position, defender.position)) {
+            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: attacker (${attacker.position.x},${attacker.position.y}),
+                defender (${defender.position.x},${defender.position.y})`);
+            return [battlePayload, false, false];
+        }
+        const resolution: CombatResolutionResult | null = this.combatRoundService.resolveCombatUntilWinner(game, attacker, defender);
+        if (!resolution) {
+            Logger.warn(`Combat non résolu proprement entre ${attacker.name} et ${defender.name} dans la room ${roomId}.`);
+            return [battlePayload, false, false];
+        }
+        const { winner, loser, winnerHp, lastRound } = resolution;
+        battlePayload.winnerId = winner.id;
+        battlePayload.loserId = loser.id;
+        battlePayload.combatRound = lastRound;
+        battlePayload.winnerHp = winnerHp;
+        battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
+        winner.hp = winnerHp;
+        loser.hp = loser.maxHp ?? loser.hp;
         winner.victoryPoints = (winner.victoryPoints || 0) + 1;
         const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
         const loserSpawn = game.spawnPoints?.get(loser.id);
@@ -169,14 +181,14 @@ export class CurrentGamesService {
         const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
         loser.position = respawnPos;
         battlePayload.loserPos = respawnPos;
-        return [battlePayload, true, isGameOver]; // Retourner le payload et si la partie est terminée
+        return [battlePayload, true, isGameOver];
     }
 
     validateEndTurnEarly(roomId: string, playerId: string): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -191,7 +203,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        const playerIndex = game.players.findIndex((p) => p.id === playerId);
         if (playerIndex === -1) return false;
 
         if (game.turnOrder) {
@@ -200,7 +212,7 @@ export class CurrentGamesService {
             }
 
             game.players.splice(playerIndex, 1);
-            game.turnOrder = game.turnOrder.filter(id => id !== playerId);
+            game.turnOrder = game.turnOrder.filter((id) => id !== playerId);
         } else {
             game.players.splice(playerIndex, 1);
         }
@@ -249,12 +261,11 @@ export class CurrentGamesService {
         return this.roomPlayerStateService.clearSelectedAvatarByClientId(clientId);
     }
 
-
     doActionAtTile(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find(p => p.id === playerId);
+        const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -268,7 +279,7 @@ export class CurrentGamesService {
             return false;
         }
 
-        if(player.actionsLeft <= 0) {
+        if (player.actionsLeft <= 0) {
             Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante pour interagir avec la tile.
                  Actions restantes: ${player.actionsLeft}`);
             return false;

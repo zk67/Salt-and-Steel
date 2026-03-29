@@ -40,3 +40,60 @@
 .action-button { grid-area: action; }
 .surrender-button { grid-area: surrender; }
 .end-turn-button { grid-area: end-turn; }
+
+.combat-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: #7c7c7c;
+}
+
+.combat-panel h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.combatant-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.combatant-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.breakdown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.breakdown-label {
+  min-width: 64px;
+  font-weight: 600;
+}
+
+.breakdown-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+}
+
+.breakdown-chip.total {
+  font-weight: 700;
+}
+
+.combat-delta {
+  font-weight: 600;
+}
