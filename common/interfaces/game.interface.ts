@@ -74,3 +74,20 @@ export interface CombatStatBreakdown {
     penalty: number;
     total: number;
 }
+export interface ActiveCombatPayload {
+    attackerId: string;
+    defenderId: string;
+    roundTimeSeconds: number;
+}
+
+export enum CombatPosture {
+    None = 'none',
+    Offensive = 'offensive',
+    Defensive = 'defensive',
+}
+export interface SubmitCombatPosturePayload {
+    posture: CombatPosture;
+}
+export interface SubmitCombatPosturePayload {
+    posture: CombatPosture;
+}

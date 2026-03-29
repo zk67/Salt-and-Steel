@@ -39,4 +39,7 @@ export enum GatewayEvents {
     ClearSelectedAvatarInJoinForm = 'clearSelectedAvatarInJoinForm',
     ActionOnTile = 'actionOnTile',
     HandleCombatRound = 'handleCombatRound',
+    StartCombat = 'startCombat',
+    CombatStarted = 'combatStarted',
+    SubmitCombatPosture = 'submitCombatPosture',
 }

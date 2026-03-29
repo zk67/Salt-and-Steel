@@ -7,6 +7,7 @@ import { GameService } from '@app/services/game/game.service';
 import { TimeService } from '@app/services/game/time.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { GatewayEvents } from '@common/types/gateway.events';
+import { CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
 
 @Component({
     selector: 'app-right-sidebar',
@@ -21,6 +22,8 @@ export class RightSidebarComponent {
     isHost = computed(() => this.gameService.hostId() === this.gameService.clientPlayer()?.id);
     isDebugMode = computed(() => this.gameService.isDebugMode());
     combatRound = this.gameService.currentCombatRound;
+    activeCombat = this.gameService.activeCombat;
+    isClientInActiveCombat = this.gameService.isClientInActiveCombat;
 
     constructor(private timerService: TimeService, private gameService: GameService,
         private socketService: SocketClientService, private router: Router) {}
@@ -50,5 +53,17 @@ export class RightSidebarComponent {
 
     formatModifier(value: number): string {
         return value > 0 ? `+${value}` : `${value}`;
+    }
+
+    onChooseOffensivePosture(): void {
+        this.socketService.send(GatewayEvents.SubmitCombatPosture, {
+            posture: CombatPosture.Offensive,
+        } as SubmitCombatPosturePayload);
+    }
+
+    onChooseDefensivePosture(): void {
+        this.socketService.send(GatewayEvents.SubmitCombatPosture, {
+            posture: CombatPosture.Defensive,
+        } as SubmitCombatPosturePayload);
     }
 }

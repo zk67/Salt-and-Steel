@@ -1,17 +1,16 @@
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
-import { CombatRoundService, CombatResolutionResult } from '@app/service/combat-round.service';
+import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TileActionService } from '@app/service/tile-action.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { BattleWonPayload, CombatPosture, CombatRoundDetails, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
-
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -158,30 +157,6 @@ export class CurrentGamesService {
                 defender (${defender.position.x},${defender.position.y})`);
             return [battlePayload, false, false];
         }
-        const resolution: CombatResolutionResult | null = this.combatRoundService.resolveCombatUntilWinner(game, attacker, defender);
-        if (!resolution) {
-            Logger.warn(`Combat non résolu proprement entre ${attacker.name} et ${defender.name} dans la room ${roomId}.`);
-            return [battlePayload, false, false];
-        }
-        const { winner, loser, winnerHp, lastRound } = resolution;
-        battlePayload.winnerId = winner.id;
-        battlePayload.loserId = loser.id;
-        battlePayload.combatRound = lastRound;
-        battlePayload.winnerHp = winnerHp;
-        battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
-        winner.hp = winnerHp;
-        loser.hp = loser.maxHp ?? loser.hp;
-        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
-        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
-        const loserSpawn = game.spawnPoints?.get(loser.id);
-        if (!loserSpawn) {
-            Logger.warn(`Le point de départ du joueur perdant est introuvable`);
-            return [battlePayload, false, false];
-        }
-        const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
-        loser.position = respawnPos;
-        battlePayload.loserPos = respawnPos;
-        return [battlePayload, true, isGameOver];
     }
 
     validateEndTurnEarly(roomId: string, playerId: string): boolean {
@@ -294,4 +269,126 @@ export class CurrentGamesService {
 
         return true;
     }
+
+    startCombat(roomId: string, attackerId: string, defenderId: string): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const attacker = game.players.find((p) => p.id === attackerId);
+        const defender = game.players.find((p) => p.id === defenderId);
+
+        if (!attacker || !defender) {
+            return false;
+        }
+
+        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== attacker.id) {
+            Logger.warn(`Ce n'est pas le tour de l'attaquant (${attacker.name}) dans la room ${roomId}.`);
+            return false;
+        }
+
+        if (!arePositionAdjacent(attacker.position, defender.position)) {
+            Logger.warn(`Les joueurs ne sont pas adjacents dans la room ${roomId}.`);
+            return false;
+        }
+
+        game.activeCombat = {
+            attackerId,
+            defenderId,
+            roundTimeSeconds: 10,
+            postures: {
+                [attackerId]: CombatPosture.None,
+                [defenderId]: CombatPosture.None,
+            },
+        };
+
+        return true;
+    }
+
+    submitCombatPosture(roomId: string, playerId: string, posture: CombatPosture)
+        : { roundResolved: boolean; combatRound?: CombatRoundDetails; battlePayload?: BattleWonPayload; isGameOver: boolean } | null {
+        const game = this.getGameByRoomId(roomId);
+        if (!game || !game.activeCombat) {
+            return null;
+        }
+
+        const { attackerId, defenderId, postures } = game.activeCombat;
+        const isParticipant = playerId === attackerId || playerId === defenderId;
+
+        if (!isParticipant) {
+            return null;
+        }
+
+        postures[playerId] = posture;
+
+        const attackerPosture = postures[attackerId];
+        const defenderPosture = postures[defenderId];
+        const bothChosen = attackerPosture !== CombatPosture.None && defenderPosture !== CombatPosture.None;
+
+        if (!bothChosen) {
+            return { roundResolved: false, isGameOver: false };
+        }
+
+        const attacker = game.players.find((p) => p.id === attackerId);
+        const defender = game.players.find((p) => p.id === defenderId);
+
+        if (!attacker || !defender) {
+            return null;
+        }
+
+        const combatRound = this.combatRoundService.buildCombatRoundDetails(
+            game, attacker, defender, attackerPosture, defenderPosture);
+
+        attacker.hp = Math.max(0, (attacker.hp ?? 0) - combatRound.attacker.damageTaken);
+        defender.hp = Math.max(0, (defender.hp ?? 0) - combatRound.defender.damageTaken);
+
+        game.activeCombat.postures[attackerId] = CombatPosture.None;
+        game.activeCombat.postures[defenderId] = CombatPosture.None;
+
+        const attackerDead = (attacker.hp ?? 0) <= 0;
+        const defenderDead = (defender.hp ?? 0) <= 0;
+
+        if (!attackerDead && !defenderDead) {
+            return {
+                roundResolved: true,
+                combatRound,
+                isGameOver: false,
+            };
+        }
+
+        const battlePayload: BattleWonPayload = {
+            winnerId: '', loserId: '', loserPos: { x: 0, y: 0 }, combatRound, winnerHp: 0, loserHp: 0,
+        };
+
+        const result = this.finalizeCombatAfterRound(game, battlePayload, attacker, defender);
+        game.activeCombat = null;
+
+        return { roundResolved: true, combatRound, battlePayload: result.payload, isGameOver: result.isGameOver };
+    }
+
+    private finalizeCombatAfterRound(game: PlayableGame, battlePayload: BattleWonPayload, attacker: Player, defender: Player)
+        : { payload: BattleWonPayload; isGameOver: boolean } {
+        const attackerDead = (attacker.hp ?? 0) <= 0;
+        const defenderDead = (defender.hp ?? 0) <= 0;
+        if (attackerDead && defenderDead) {
+            // Double KO : à ajuster plus tard selon votre stratégie de payload
+            return { payload: battlePayload, isGameOver: false };
+        }
+        const winner = attackerDead ? defender : attacker;
+        const loser = attackerDead ? attacker : defender;
+        battlePayload.winnerId = winner.id;
+        battlePayload.loserId = loser.id;
+        battlePayload.winnerHp = winner.hp ?? 0;
+        battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
+        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
+        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
+        loser.hp = loser.maxHp ?? loser.hp;
+        const loserSpawn = game.spawnPoints?.get(loser.id);
+        if (loserSpawn) {
+            const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
+            loser.position = respawnPos;
+            battlePayload.loserPos = respawnPos;
+        }
+        return { payload: battlePayload, isGameOver };
+    }
+
 }

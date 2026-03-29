@@ -1,11 +1,17 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { BattleWonPayload, DebugMovePayload, GameInfoPayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    ActiveCombatPayload,
+    BattleWonPayload,
+    DebugMovePayload, SubmitCombatPosturePayload,
+    GameInfoPayload, MovePlayerPayload, ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
 import { Position } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
 
+const TIME_ROUND = 10;
 @Injectable()
 export class CurrentGamePlayService {
     constructor(
@@ -172,5 +178,58 @@ export class CurrentGamePlayService {
         }
 
         return true;
+    }
+
+    handleStartCombat(client: Socket, payload: ActiveCombatPayload): void {
+        if (!this.validatePlayer(client, client.id)) {
+            return;
+        }
+
+        const room = getRoomIdFromSocket(client);
+        const combatStarted = this.currentGamesService.startCombat(room, client.id, payload.defenderId);
+
+        if (!combatStarted) {
+            return;
+        }
+
+        this.broadcastService.emitCombatStarted(
+            [client.id, payload.defenderId],
+            {
+                attackerId: client.id,
+                defenderId: payload.defenderId,
+                roundTimeSeconds: TIME_ROUND,
+            },
+        );
+    }
+
+    handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
+        if (!this.validatePlayer(client, client.id)) {
+            return;
+        }
+
+        const room = getRoomIdFromSocket(client);
+        const result = this.currentGamesService.submitCombatPosture(room, client.id, payload.posture);
+
+        if (!result) {
+            return;
+        }
+
+        const { roundResolved, combatRound, battlePayload, isGameOver } = result;
+
+        if (roundResolved && combatRound) {
+            this.broadcastService.emitCombatRoundDetails(
+                [combatRound.attacker.playerId, combatRound.defender.playerId],
+                combatRound,
+            );
+        }
+
+        if (battlePayload) {
+            const { combatRound: _combatRound, ...publicPayload } = battlePayload;
+            this.broadcastService.emitBattleWon(room, publicPayload);
+
+            if (isGameOver) {
+                this.broadcastService.emitGameOver(room, battlePayload.winnerId);
+            }
+        }
     }
 }

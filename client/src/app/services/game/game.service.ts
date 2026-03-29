@@ -5,7 +5,7 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { BattleWonPayload, CombatRoundDetails, Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
+import { BattleWonPayload, CombatRoundDetails, Game, GameInfoPayload, NewTurnPayload, ActiveCombatPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { movableTiles } from '@common/utils/map.utils';
@@ -28,6 +28,7 @@ export class GameService {
     private readonly playerState = inject(GamePlayerStateService);
     private readonly sessionService = inject(GameSessionService);
     private readonly turnService = inject(GameTurnService);
+    private readonly activeCombatState = signal<ActiveCombatPayload | null>(null);
 
     readonly players = this.playerState.players;
     readonly activePlayer = this.playerState.activePlayer;
@@ -39,6 +40,17 @@ export class GameService {
     readonly isDebugMode = this.sessionService.isDebugMode;
     readonly hostId = this.sessionService.hostId;
     readonly currentCombatRound = computed(() => this.combatRoundState());
+    readonly activeCombat = computed(() => this.activeCombatState());
+    readonly isClientInActiveCombat = computed(() => {
+        const combat = this.activeCombatState();
+        const clientId = this.clientPlayer()?.id;
+
+        if (!combat || !clientId) {
+            return false;
+        }
+
+        return combat.attackerId === clientId || combat.defenderId === clientId;
+    });
 
     constructor() {
         this.socketService.on<{ playerId: string }>(GatewayEvents.RemovePlayer, this.handlePlayerLeaving.bind(this));
@@ -46,6 +58,7 @@ export class GameService {
         this.socketService.on<BattleWonPayload>(GatewayEvents.HandleBattleWon, this.handleBattleWon.bind(this));
         this.socketService.on<NewTurnPayload>(GatewayEvents.NewTurn, this.handleNewTurn.bind(this));
         this.socketService.on<CombatRoundDetails>(GatewayEvents.HandleCombatRound, this.handleCombatRound.bind(this));
+        this.socketService.on<ActiveCombatPayload>(GatewayEvents.CombatStarted, this.handleCombatStarted.bind(this));
     }
 
     setChatMessages(messages: ChatMessage[]): void {
@@ -163,6 +176,7 @@ export class GameService {
                 this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
             }
         }
+        this.activeCombatState.set(null);
     }
 
     setSelectedHostGame(game: Game): void {
@@ -189,6 +203,7 @@ export class GameService {
         this.turnService.clear();
         this.mapService.clearMapService();
         this.combatRoundState.set(null);
+        this.activeCombatState.set(null);
     }
 
     private handlePlayerLeaving(payload: { playerId: string }): void {
@@ -225,5 +240,9 @@ export class GameService {
 
     clearCombatRound(): void {
         this.combatRoundState.set(null);
+    }
+
+    private handleCombatStarted(payload: ActiveCombatPayload): void {
+        this.activeCombatState.set(payload);
     }
 }
