@@ -160,12 +160,11 @@ export class CurrentGamePlayService {
 
         const room = getRoomIdFromSocket(client);
         const combatStarted = this.currentGamesService.startCombat(room, client.id, payload.defenderId);
-        this.scheduleCombatRoundTimeout(room);
 
         if (!combatStarted) {
             return;
         }
-
+        this.scheduleCombatRoundTimeout(room);
         this.broadcastService.emitCombatStarted(
             [client.id, payload.defenderId],
             {
