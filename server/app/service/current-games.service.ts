@@ -330,12 +330,12 @@ export class CurrentGamesService {
             combatContext.defender,
         );
 
+        combatContext.game.activeCombat = null;
         if (result.payload.winnerId === combatContext.attacker.id && pausedTurnRemainingSeconds > 0) {
             result.payload.remainingTurnSeconds = pausedTurnRemainingSeconds;
             this.timer.startTurnTimer(roomId, pausedTurnRemainingSeconds);
         }
 
-        combatContext.game.activeCombat = null;
         return {
             roundResolved: true,
             combatRound,
