@@ -89,6 +89,3 @@ export enum CombatPosture {
 export interface SubmitCombatPosturePayload {
     posture: CombatPosture;
 }
-export interface SubmitCombatPosturePayload {
-    posture: CombatPosture;
-}

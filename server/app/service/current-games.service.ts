@@ -12,7 +12,7 @@ import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, arePositionAdjacent, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
-type SubmitCombatPostureResult = {
+export type SubmitCombatPostureResult = {
     roundResolved: boolean;
     combatRound?: CombatRoundDetails;
     battlePayload?: BattleWonPayload;
@@ -342,5 +342,39 @@ export class CurrentGamesService {
             battlePayload: result.payload,
             isGameOver: result.isGameOver,
         };
+    }
+
+    resolveCombatRoundOnTimeout(roomId: string): SubmitCombatPostureResult | null {
+        const game = this.getGameByRoomId(roomId);
+        if (!game?.activeCombat) {
+            return null;
+        }
+
+        const attackerId = game.activeCombat.attackerId;
+        const defenderId = game.activeCombat.defenderId;
+
+        const combatContext = this.combatResolutionService.getCombatContext(game, attackerId);
+        if (!combatContext) {
+            return null;
+        }
+
+        const attackerPosture = game.activeCombat.postures[attackerId] ?? CombatPosture.None;
+        const defenderPosture = game.activeCombat.postures[defenderId] ?? CombatPosture.None;
+
+        const combatRound = this.combatResolutionService.resolveCombatRound(
+            combatContext,
+            attackerPosture,
+            defenderPosture,
+        );
+
+        if (!this.combatResolutionService.isCombatFinished(combatContext.attacker, combatContext.defender)) {
+            return {
+                roundResolved: true,
+                combatRound,
+                isGameOver: false,
+            };
+        }
+
+        return this.finishCombat(roomId, combatContext, combatRound);
     }
 }

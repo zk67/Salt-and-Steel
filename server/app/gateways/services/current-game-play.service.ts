@@ -1,4 +1,4 @@
-import { CurrentGamesService } from '@app/service/current-games.service';
+import { CurrentGamesService, SubmitCombatPostureResult } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import {
     ActiveCombatPayload,
@@ -20,6 +20,8 @@ export class CurrentGamePlayService {
         private readonly currentGamesService: CurrentGamesService,
         private readonly broadcastService: CurrentGameBroadcastService,
     ) {}
+
+    private combatRoundTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     bindTurnEmitter(): void {
         this.currentGamesService.setEmitCallback((roomId, payload) => {
@@ -158,6 +160,7 @@ export class CurrentGamePlayService {
 
         const room = getRoomIdFromSocket(client);
         const combatStarted = this.currentGamesService.startCombat(room, client.id, payload.defenderId);
+        this.scheduleCombatRoundTimeout(room);
 
         if (!combatStarted) {
             return;
@@ -185,23 +188,78 @@ export class CurrentGamePlayService {
             return;
         }
 
-        const { roundResolved, combatRound, battlePayload, isGameOver } = result;
+        if (result.roundResolved) {
+            this.clearCombatRoundTimer(room);
+        }
 
-        if (roundResolved && combatRound) {
+        this.processCombatResult(room, result);
+    }
+
+    private clearCombatRoundTimer(roomId: string): void {
+        const timer = this.combatRoundTimers.get(roomId);
+        if (timer) {
+            clearTimeout(timer);
+            this.combatRoundTimers.delete(roomId);
+        }
+    }
+
+    private scheduleCombatRoundTimeout(roomId: string): void {
+        this.clearCombatRoundTimer(roomId);
+
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+        const activeCombat = game?.activeCombat;
+        if (!activeCombat) {
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            const result = this.currentGamesService.resolveCombatRoundOnTimeout(roomId);
+            if (!result) {
+                return;
+            }
+
+            this.processCombatResult(roomId, result);
+        }, activeCombat.roundTimeSeconds * 1000);
+
+        this.combatRoundTimers.set(roomId, timeout);
+    }
+
+    private processCombatResult(roomId: string, result: SubmitCombatPostureResult): void {
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+
+        if (result.roundResolved && result.combatRound) {
             this.broadcastService.emitCombatRoundDetails(
-                [combatRound.attacker.playerId, combatRound.defender.playerId],
-                combatRound,
+                [result.combatRound.attacker.playerId, result.combatRound.defender.playerId],
+                result.combatRound,
             );
         }
 
-        if (battlePayload) {
-            const payloadWithoutRound = { ...battlePayload };
-            delete payloadWithoutRound.combatRound;
-            this.broadcastService.emitBattleWon(room, payloadWithoutRound);
+        if (result.battlePayload) {
+            this.clearCombatRoundTimer(roomId);
 
-            if (isGameOver) {
-                this.broadcastService.emitGameOver(room, battlePayload.winnerId);
+            const payloadWithoutRound = { ...result.battlePayload };
+            delete payloadWithoutRound.combatRound;
+
+            this.broadcastService.emitBattleWon(roomId, payloadWithoutRound);
+
+            if (result.isGameOver) {
+                this.broadcastService.emitGameOver(roomId, result.battlePayload.winnerId);
             }
+
+            return;
+        }
+
+        if (result.roundResolved && game?.activeCombat) {
+            this.broadcastService.emitCombatStarted(
+                [game.activeCombat.attackerId, game.activeCombat.defenderId],
+                {
+                    attackerId: game.activeCombat.attackerId,
+                    defenderId: game.activeCombat.defenderId,
+                    roundTimeSeconds: game.activeCombat.roundTimeSeconds,
+                },
+            );
+
+            this.scheduleCombatRoundTimeout(roomId);
         }
     }
 }

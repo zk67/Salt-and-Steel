@@ -21,7 +21,6 @@ export enum GatewayEvents {
     PlayerMoved = 'playerMoved',
     DebugMove = 'debugMove',
     HandleClickDebug = 'handleClickDebug',
-    BattleWon = 'battleWon',
     HandleBattleWon = 'handleBattleWon',
     EndTurnEarly = 'endTurnEarly',
     NewTurn = 'newTurn',
