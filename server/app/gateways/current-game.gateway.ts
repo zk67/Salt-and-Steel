@@ -3,7 +3,7 @@ import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lob
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import {
     ActiveCombatPayload,
-    BattleWonPayload, DebugMovePayload, MovePlayerPayload,
+    DebugMovePayload, MovePlayerPayload,
     SubmitCombatPosturePayload,
     ToggleDebugPayload,
 } from '@common/interfaces/game.interface';

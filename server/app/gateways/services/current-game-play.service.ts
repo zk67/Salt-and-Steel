@@ -13,6 +13,7 @@ import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
 
 const TIME_ROUND = 10;
+const TIME_POSTURE = 1000;
 @Injectable()
 export class CurrentGamePlayService {
     constructor(
@@ -218,7 +219,7 @@ export class CurrentGamePlayService {
             }
 
             this.processCombatResult(roomId, result);
-        }, activeCombat.roundTimeSeconds * 1000);
+        }, activeCombat.roundTimeSeconds * TIME_POSTURE);
 
         this.combatRoundTimers.set(roomId, timeout);
     }

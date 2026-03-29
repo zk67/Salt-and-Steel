@@ -151,44 +151,15 @@ export class GameService {
             this.combatRoundState.set(null);
         }
 
-        const loser = this.players().find(p => p.id === payload.loserId);
-        const winner = this.players().find(p => p.id === payload.winnerId);
+        const loser = this.players().find((p) => p.id === payload.loserId);
+        const winner = this.players().find((p) => p.id === payload.winnerId);
 
-        if (!loser || !winner) return;
-
-        this.addVictoryPoint(winner.id);
-        this.updatePlayer(winner.id, {
-            hp: payload.winnerHp ?? winner.hp,
-        });
-
-        this.updatePlayer(loser.id, {
-            position: payload.loserPos,
-            hp: payload.loserHp ?? loser.hp,
-        });
-
-        if (wasClientInCombat) {
-            if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
-                this.turnService.resumeAfterCombat(payload.remainingTurnSeconds);
-            } else {
-                this.turnService.resumeAfterCombat(0);
-            }
-        }
-
-        if (this.playerState.isClientPlayer(loser.id) && this.isClientPlayerTurn()) {
-            this.socketService.send(GatewayEvents.EndTurnEarly);
-            this.activeCombatState.set(null);
+        if (!loser || !winner) {
             return;
         }
 
-        if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
-            if (!this.canPlayerStillDoAction()) {
-                this.socketService.send(GatewayEvents.EndTurnEarly);
-            } else {
-                this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
-            }
-        }
-
-        this.activeCombatState.set(null);
+        this.applyBattleOutcomeUpdates(payload, winner, loser);
+        this.resumeClientAfterCombatIfNeeded(payload, winner, loser, wasClientInCombat);
     }
 
     setSelectedHostGame(game: Game): void {
@@ -257,5 +228,46 @@ export class GameService {
     private handleCombatStarted(payload: ActiveCombatPayload): void {
         this.activeCombatState.set(payload);
         this.turnService.pauseForCombat(payload.roundTimeSeconds, this.isClientInActiveCombat());
+    }
+
+    private applyBattleOutcomeUpdates(payload: BattleWonPayload, winner: Player, loser: Player): void {
+        this.addVictoryPoint(winner.id);
+
+        this.updatePlayer(winner.id, {
+            hp: payload.winnerHp ?? winner.hp,
+        });
+
+        this.updatePlayer(loser.id, {
+            position: payload.loserPos,
+            hp: payload.loserHp ?? loser.hp,
+        });
+    }
+
+    private resumeClientAfterCombatIfNeeded(
+        payload: BattleWonPayload,
+        winner: Player,
+        loser: Player,
+        wasClientInCombat: boolean,
+    ): void {
+        if (wasClientInCombat) {
+            const shouldResumeWinnerTurn = this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn();
+            this.turnService.resumeAfterCombat(shouldResumeWinnerTurn ? payload.remainingTurnSeconds : 0);
+        }
+
+        if (this.playerState.isClientPlayer(loser.id) && this.isClientPlayerTurn()) {
+            this.socketService.send(GatewayEvents.EndTurnEarly);
+            this.activeCombatState.set(null);
+            return;
+        }
+
+        if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
+            if (!this.canPlayerStillDoAction()) {
+                this.socketService.send(GatewayEvents.EndTurnEarly);
+            } else {
+                this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
+            }
+        }
+
+        this.activeCombatState.set(null);
     }
 }
