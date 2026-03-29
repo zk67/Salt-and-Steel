@@ -1,6 +1,7 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { GamesService } from '@app/database/game/services/game.service';
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
+import { CurrentGameCombatService } from '@app/gateways/services/current-game-combat.service';
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import { Logger } from '@nestjs/common';
@@ -90,6 +91,7 @@ describe('CurrentGameGateway', () => {
                 { provide: CurrentGamesService, useValue: mockCurrentGamesService },
                 { provide: GamesService, useValue: mockGamesService },
                 CurrentGameBroadcastService,
+                CurrentGameCombatService,
                 CurrentGameLobbyService,
                 CurrentGamePlayService,
             ],
