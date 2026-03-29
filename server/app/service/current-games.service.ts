@@ -1,4 +1,5 @@
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
+import { CombatContext, CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
@@ -7,10 +8,17 @@ import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { BattleWonPayload, CombatPosture, CombatRoundDetails, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { MAX_VICTORIES } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, findNearestFreeSpawn, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
+
+type SubmitCombatPostureResult = {
+    roundResolved: boolean;
+    combatRound?: CombatRoundDetails;
+    battlePayload?: BattleWonPayload;
+    isGameOver: boolean;
+};
+
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -18,6 +26,7 @@ export class CurrentGamesService {
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
     private roomPlayerStateService = new RoomPlayerStateService();
     private combatRoundService = new CombatRoundService();
+    private combatResolutionService = new CombatResolutionService(this.combatRoundService);
     private tileActionService = new TileActionService();
     private gameLifecycleService = new GameLifecycleService();
     private turnFlowService = new TurnFlowService();
@@ -64,7 +73,7 @@ export class CurrentGamesService {
 
     movePlayer(roomId: string, playerId: string, direction: string): boolean {
         const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
+        if (!game || game.activeCombat) return false;
 
         const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
@@ -76,14 +85,12 @@ export class CurrentGamesService {
         if (!isValidTile(game._game.tiles, newPosition)) return false;
 
         const movementCost = TILE_MOVEMENT_COST[game._game.tiles[newPosition.y][newPosition.x].tileType];
-
         if (player.movementPoints < movementCost) {
             return false;
         }
 
         player.movementPoints -= movementCost;
         player.position = newPosition;
-
         return true;
     }
 
@@ -97,7 +104,6 @@ export class CurrentGamesService {
         game.turnOrder = this.gameLifecycleService.initializeTurnOrder(game.players);
         this.allocateSpawnPoints(roomId);
         this.turnFlowService.startGameTurn(game, this.timer, this.emitTurnUpdate.bind(this));
-
         return game;
     }
 
@@ -122,10 +128,6 @@ export class CurrentGamesService {
         this.turnFlowService.nextPlayerTurn(game, this.timer, this.emitTurnUpdate.bind(this));
     }
 
-    private emitTurnUpdate(roomId: string, payload: NewTurnPayload): void {
-        this.emitCallback?.(roomId, payload);
-    }
-
     debugMove(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
@@ -136,27 +138,7 @@ export class CurrentGamesService {
         if (!this.turnFlowService.isCurrentPlayerTurnById(game, player.id)) return false;
 
         player.position = position;
-
         return true;
-    }
-
-    battleWon(roomId: string, battlePayload: BattleWonPayload, attackerId: string): [BattleWonPayload, boolean, boolean] {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return [battlePayload, false, false];
-        const attacker = game.players.find(p => p.id === attackerId);
-        const defender = game.players.find(p => p.id === battlePayload.loserId);
-        if (!attacker || !defender) {
-            return [battlePayload, false, false];
-        }
-        if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== attacker.id) {
-            Logger.warn(`Ce n'est pas le tour de l'attaquant (${attacker.name}) dans la room ${roomId}.`);
-            return [battlePayload, false, false];
-        }
-        if (!arePositionAdjacent(attacker.position, defender.position)) {
-            Logger.warn(`Les joueurs ne sont pas sur des tiles adjacentes: attacker (${attacker.position.x},${attacker.position.y}),
-                defender (${defender.position.x},${defender.position.y})`);
-            return [battlePayload, false, false];
-        }
     }
 
     validateEndTurnEarly(roomId: string, playerId: string): boolean {
@@ -219,9 +201,9 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (game) {
             return this.roomPlayerStateService.getUnavailableAvatars(roomId, game.players);
-        } else {
-            return [];
         }
+
+        return [];
     }
 
     setSelectedAvatar(roomId: string, clientId: string, avatar: string): void {
@@ -238,7 +220,7 @@ export class CurrentGamesService {
 
     doActionAtTile(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
+        if (!game || game.activeCombat) return false;
 
         const player = game.players.find((p) => p.id === playerId);
         if (!player) return false;
@@ -250,20 +232,20 @@ export class CurrentGamesService {
 
         if (!arePositionAdjacent(player.position, position)) {
             Logger.warn(`Le joueur (${player.name}) ne peut pas interagir avec une tile non adjacente.
-                 Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${position.x},${position.y})`);
+                Position du joueur: (${player.position.x},${player.position.y}), position ciblÃ©e: (${position.x},${position.y})`);
             return false;
         }
 
         if (player.actionsLeft <= 0) {
             Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante pour interagir avec la tile.
-                 Actions restantes: ${player.actionsLeft}`);
+                Actions restantes: ${player.actionsLeft}`);
             return false;
         }
 
         const tile = game._game.tiles[position.y][position.x];
         if (!this.tileActionService.applyAction(player, tile)) {
-            Logger.warn(`La tile ciblée n'est pas une mapObject interactive pour le joueur (${player.name}).
-                    Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${position.x},${position.y})`);
+            Logger.warn(`La tile ciblÃ©e n'est pas une mapObject interactive pour le joueur (${player.name}).
+                    Position du joueur: (${player.position.x},${player.position.y}), position ciblÃ©e: (${position.x},${position.y})`);
             return false;
         }
 
@@ -272,11 +254,10 @@ export class CurrentGamesService {
 
     startCombat(roomId: string, attackerId: string, defenderId: string): boolean {
         const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
+        if (!game || game.activeCombat) return false;
 
         const attacker = game.players.find((p) => p.id === attackerId);
         const defender = game.players.find((p) => p.id === defenderId);
-
         if (!attacker || !defender) {
             return false;
         }
@@ -291,10 +272,13 @@ export class CurrentGamesService {
             return false;
         }
 
+        const pausedTurnRemainingSeconds = this.timer.getCurrentTime(roomId);
+        this.timer.stopTimer(roomId);
         game.activeCombat = {
             attackerId,
             defenderId,
             roundTimeSeconds: 10,
+            pausedTurnRemainingSeconds,
             postures: {
                 [attackerId]: CombatPosture.None,
                 [defenderId]: CombatPosture.None,
@@ -304,50 +288,24 @@ export class CurrentGamesService {
         return true;
     }
 
-    submitCombatPosture(roomId: string, playerId: string, posture: CombatPosture)
-        : { roundResolved: boolean; combatRound?: CombatRoundDetails; battlePayload?: BattleWonPayload; isGameOver: boolean } | null {
+    submitCombatPosture(roomId: string, playerId: string, posture: CombatPosture): SubmitCombatPostureResult | null {
         const game = this.getGameByRoomId(roomId);
-        if (!game || !game.activeCombat) {
+        const combatContext = this.combatResolutionService.getCombatContext(game, playerId);
+        if (!combatContext) {
             return null;
         }
 
-        const { attackerId, defenderId, postures } = game.activeCombat;
-        const isParticipant = playerId === attackerId || playerId === defenderId;
-
-        if (!isParticipant) {
-            return null;
-        }
-
-        postures[playerId] = posture;
-
-        const attackerPosture = postures[attackerId];
-        const defenderPosture = postures[defenderId];
-        const bothChosen = attackerPosture !== CombatPosture.None && defenderPosture !== CombatPosture.None;
-
-        if (!bothChosen) {
+        const roundPostures = this.combatResolutionService.submitPlayerPosture(combatContext.game, playerId, posture);
+        if (!roundPostures) {
             return { roundResolved: false, isGameOver: false };
         }
 
-        const attacker = game.players.find((p) => p.id === attackerId);
-        const defender = game.players.find((p) => p.id === defenderId);
-
-        if (!attacker || !defender) {
-            return null;
-        }
-
-        const combatRound = this.combatRoundService.buildCombatRoundDetails(
-            game, attacker, defender, attackerPosture, defenderPosture);
-
-        attacker.hp = Math.max(0, (attacker.hp ?? 0) - combatRound.attacker.damageTaken);
-        defender.hp = Math.max(0, (defender.hp ?? 0) - combatRound.defender.damageTaken);
-
-        game.activeCombat.postures[attackerId] = CombatPosture.None;
-        game.activeCombat.postures[defenderId] = CombatPosture.None;
-
-        const attackerDead = (attacker.hp ?? 0) <= 0;
-        const defenderDead = (defender.hp ?? 0) <= 0;
-
-        if (!attackerDead && !defenderDead) {
+        const combatRound = this.combatResolutionService.resolveCombatRound(
+            combatContext,
+            roundPostures.attackerPosture,
+            roundPostures.defenderPosture,
+        );
+        if (!this.combatResolutionService.isCombatFinished(combatContext.attacker, combatContext.defender)) {
             return {
                 roundResolved: true,
                 combatRound,
@@ -355,40 +313,34 @@ export class CurrentGamesService {
             };
         }
 
-        const battlePayload: BattleWonPayload = {
-            winnerId: '', loserId: '', loserPos: { x: 0, y: 0 }, combatRound, winnerHp: 0, loserHp: 0,
+        return this.finishCombat(roomId, combatContext, combatRound);
+    }
+
+    private emitTurnUpdate(roomId: string, payload: NewTurnPayload): void {
+        this.emitCallback?.(roomId, payload);
+    }
+
+    private finishCombat(roomId: string, combatContext: CombatContext, combatRound: CombatRoundDetails): SubmitCombatPostureResult {
+        const pausedTurnRemainingSeconds = combatContext.game.activeCombat?.pausedTurnRemainingSeconds ?? 0;
+        const battlePayload = this.combatResolutionService.createBattlePayload(combatRound);
+        const result = this.combatResolutionService.finalizeCombatAfterRound(
+            combatContext.game,
+            battlePayload,
+            combatContext.attacker,
+            combatContext.defender,
+        );
+
+        if (result.payload.winnerId === combatContext.attacker.id && pausedTurnRemainingSeconds > 0) {
+            result.payload.remainingTurnSeconds = pausedTurnRemainingSeconds;
+            this.timer.startTurnTimer(roomId, pausedTurnRemainingSeconds);
+        }
+
+        combatContext.game.activeCombat = null;
+        return {
+            roundResolved: true,
+            combatRound,
+            battlePayload: result.payload,
+            isGameOver: result.isGameOver,
         };
-
-        const result = this.finalizeCombatAfterRound(game, battlePayload, attacker, defender);
-        game.activeCombat = null;
-
-        return { roundResolved: true, combatRound, battlePayload: result.payload, isGameOver: result.isGameOver };
     }
-
-    private finalizeCombatAfterRound(game: PlayableGame, battlePayload: BattleWonPayload, attacker: Player, defender: Player)
-        : { payload: BattleWonPayload; isGameOver: boolean } {
-        const attackerDead = (attacker.hp ?? 0) <= 0;
-        const defenderDead = (defender.hp ?? 0) <= 0;
-        if (attackerDead && defenderDead) {
-            // Double KO : à ajuster plus tard selon votre stratégie de payload
-            return { payload: battlePayload, isGameOver: false };
-        }
-        const winner = attackerDead ? defender : attacker;
-        const loser = attackerDead ? attacker : defender;
-        battlePayload.winnerId = winner.id;
-        battlePayload.loserId = loser.id;
-        battlePayload.winnerHp = winner.hp ?? 0;
-        battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
-        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
-        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
-        loser.hp = loser.maxHp ?? loser.hp;
-        const loserSpawn = game.spawnPoints?.get(loser.id);
-        if (loserSpawn) {
-            const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
-            loser.position = respawnPos;
-            battlePayload.loserPos = respawnPos;
-        }
-        return { payload: battlePayload, isGameOver };
-    }
-
 }

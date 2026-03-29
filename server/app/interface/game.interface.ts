@@ -16,6 +16,7 @@ export interface PlayableGame {
         attackerId: string;
         defenderId: string;
         roundTimeSeconds: number;
+        pausedTurnRemainingSeconds: number;
         postures: Record<string, CombatPosture>;
     } | null;
 }

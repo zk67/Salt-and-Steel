@@ -1,5 +1,5 @@
+import { GameMode, Shrine, TileData } from '@common/interfaces/map.interface';
 import { Position } from '@common/utils/map.utils';
-import { GameMode, TileData, Shrine } from '@common/interfaces/map.interface';
 import { Player } from './player.interface';
 
 export interface Game {
@@ -39,6 +39,7 @@ export interface BattleWonPayload {
     combatRound?: CombatRoundDetails;
     winnerHp: number;
     loserHp: number;
+    remainingTurnSeconds?: number;
 }
 
 export enum TurnPhase {

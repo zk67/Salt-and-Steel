@@ -17,6 +17,7 @@ export class GameTurnService {
     readonly isWaitTurn = signal<boolean>(false);
 
     private actionMode = false;
+    private pausedTurnTime = 0;
 
     constructor(
         private readonly mapService: MapService,
@@ -135,5 +136,33 @@ export class GameTurnService {
         this.isClientPlayerTurn.set(false);
         this.isWaitTurn.set(false);
         this.actionMode = false;
+        this.pausedTurnTime = 0;
+    }
+
+    cancelActionMode(): void {
+        this.actionMode = false;
+        this.actionTile.set([]);
+    }
+
+    pauseForCombat(roundTimeSeconds: number, shouldShowCombatTimer: boolean): void {
+        this.pausedTurnTime = this.timeService.time();
+        this.timeService.stopTimer();
+        this.cancelActionMode();
+
+        if (shouldShowCombatTimer) {
+            this.timeService.startTimer(roundTimeSeconds);
+        }
+    }
+
+    resumeAfterCombat(remainingTurnSeconds?: number): void {
+        const seconds = remainingTurnSeconds ?? this.pausedTurnTime;
+
+        this.timeService.stopTimer();
+
+        if (seconds > 0) {
+            this.timeService.startTimer(seconds);
+        }
+
+        this.pausedTurnTime = 0;
     }
 }

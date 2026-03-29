@@ -2,9 +2,10 @@ import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import {
     ActiveCombatPayload,
-    BattleWonPayload,
-    DebugMovePayload, SubmitCombatPosturePayload,
-    GameInfoPayload, MovePlayerPayload, ToggleDebugPayload,
+    DebugMovePayload,
+    GameInfoPayload, MovePlayerPayload,
+    SubmitCombatPosturePayload,
+    ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
 import { Position } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
@@ -66,7 +67,7 @@ export class CurrentGamePlayService {
         const room = getRoomIdFromSocket(client);
         this.currentGamesService.validateEndTurnEarly(room, client.id);
         const game = this.currentGamesService.getGameByRoomId(room);
-        if (!game) {
+        if (!game || game.activeCombat) {
             return;
         }
 
@@ -94,36 +95,6 @@ export class CurrentGamePlayService {
         }
 
         this.logger.warn(`Failed to move player ${payload.playerId} to (${payload.targetPos.x}, ${payload.targetPos.y})`);
-    }
-
-    handleBattleWon(client: Socket, payload: BattleWonPayload): void {
-        if (!this.validatePlayer(client, client.id)) {
-            return;
-        }
-
-        const room = getRoomIdFromSocket(client);
-        const [updatedPayload, battleValid, isGameOver] = this.currentGamesService.battleWon(room, payload, client.id);
-
-        if (!battleValid) {
-            return;
-        }
-
-        const { combatRound, ...publicPayload } = updatedPayload;
-
-        this.broadcastService.emitBattleWon(room, publicPayload as BattleWonPayload);
-
-        if (combatRound) {
-            this.broadcastService.emitCombatRoundDetails(
-                [updatedPayload.winnerId, updatedPayload.loserId],
-                combatRound,
-            );
-        }
-
-        this.logger.log(`Player ${updatedPayload.winnerId} has won the battle against ${updatedPayload.loserId}`);
-
-        if (isGameOver) {
-            this.broadcastService.emitGameOver(room, updatedPayload.winnerId);
-        }
     }
 
     handleToggleDebugMode(client: Socket, payload: ToggleDebugPayload): void {
@@ -224,8 +195,9 @@ export class CurrentGamePlayService {
         }
 
         if (battlePayload) {
-            const { combatRound: _combatRound, ...publicPayload } = battlePayload;
-            this.broadcastService.emitBattleWon(room, publicPayload);
+            const payloadWithoutRound = { ...battlePayload };
+            delete payloadWithoutRound.combatRound;
+            this.broadcastService.emitBattleWon(room, payloadWithoutRound);
 
             if (isGameOver) {
                 this.broadcastService.emitGameOver(room, battlePayload.winnerId);

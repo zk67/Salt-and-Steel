@@ -5,7 +5,7 @@ import {
     ActiveCombatPayload,
     BattleWonPayload, DebugMovePayload, MovePlayerPayload,
     SubmitCombatPosturePayload,
-    ToggleDebugPayload
+    ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -68,11 +68,6 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.DebugMove)
     handleDebugMove(client: Socket, payload: DebugMovePayload): void {
         this.playService.handleDebugMove(client, payload);
-    }
-
-    @SubscribeMessage(GatewayEvents.BattleWon)
-    handleBattleWon(client: Socket, payload: BattleWonPayload): void {
-        this.playService.handleBattleWon(client, payload);
     }
 
     @SubscribeMessage(GatewayEvents.Surrender)

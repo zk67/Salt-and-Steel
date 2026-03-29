@@ -5,7 +5,7 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { BattleWonPayload, CombatRoundDetails, Game, GameInfoPayload, NewTurnPayload, ActiveCombatPayload } from '@common/interfaces/game.interface';
+import { ActiveCombatPayload, BattleWonPayload, CombatRoundDetails, Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { movableTiles } from '@common/utils/map.utils';
@@ -145,6 +145,7 @@ export class GameService {
     private handleBattleWon(payload: BattleWonPayload): void {
         const clientId = this.clientPlayer()?.id;
         const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
+        const wasClientInCombat = this.isClientInActiveCombat();
 
         if (!isParticipant) {
             this.combatRoundState.set(null);
@@ -154,6 +155,7 @@ export class GameService {
         const winner = this.players().find(p => p.id === payload.winnerId);
 
         if (!loser || !winner) return;
+
         this.addVictoryPoint(winner.id);
         this.updatePlayer(winner.id, {
             hp: payload.winnerHp ?? winner.hp,
@@ -164,8 +166,17 @@ export class GameService {
             hp: payload.loserHp ?? loser.hp,
         });
 
+        if (wasClientInCombat) {
+            if (this.playerState.isClientPlayer(winner.id) && this.isClientPlayerTurn()) {
+                this.turnService.resumeAfterCombat(payload.remainingTurnSeconds);
+            } else {
+                this.turnService.resumeAfterCombat(0);
+            }
+        }
+
         if (this.playerState.isClientPlayer(loser.id) && this.isClientPlayerTurn()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
+            this.activeCombatState.set(null);
             return;
         }
 
@@ -176,6 +187,7 @@ export class GameService {
                 this.actionTile.set(movableTiles(this.mapService.getTileMap(), winner, this.getPlayers()));
             }
         }
+
         this.activeCombatState.set(null);
     }
 
@@ -244,5 +256,6 @@ export class GameService {
 
     private handleCombatStarted(payload: ActiveCombatPayload): void {
         this.activeCombatState.set(payload);
+        this.turnService.pauseForCombat(payload.roundTimeSeconds, this.isClientInActiveCombat());
     }
 }

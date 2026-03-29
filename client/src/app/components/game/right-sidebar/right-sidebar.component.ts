@@ -6,8 +6,8 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { TimeService } from '@app/services/game/time.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { GatewayEvents } from '@common/types/gateway.events';
 import { CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({
     selector: 'app-right-sidebar',
@@ -34,12 +34,18 @@ export class RightSidebarComponent {
     }
 
     onAction = () => {
+        if (this.isCombatActive()) {
+            return;
+        }
         if (this.isYourTurn() && this.actionPointsLeft()) {
             this.gameService.changeActionMode();
         }
     };
 
     onEndTurn = () => {
+        if (this.isCombatActive()) {
+            return;
+        }
         if (this.isYourTurn() || (this.isDebugMode() && this.isHost())) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
@@ -66,4 +72,13 @@ export class RightSidebarComponent {
             posture: CombatPosture.Defensive,
         } as SubmitCombatPosturePayload);
     }
+
+    isCombatActive = computed(() => !!this.gameService.activeCombat());
+    displayedTime = computed(() => {
+        if (this.isCombatActive() && !this.isClientInActiveCombat()) {
+            return '--';
+        }
+
+        return `${this.currentTime()}s`;
+    });
 }

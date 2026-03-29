@@ -86,6 +86,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
             return;
         }
+
+        if (this.gameService.activeCombat()) {
+            return;
+        }
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -127,6 +131,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
+        if (this.gameService.activeCombat()) {
+            return;
+        }
+
         const directionVector = DIRECTION_STRING[direction];
         const newPosition: Position = addPositions(player.position, directionVector);
 
@@ -190,6 +198,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     doActionAt(position: Position): void {
+        if (this.gameService.activeCombat()) {
+            return;
+        }
         const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
@@ -252,6 +263,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (this.gameService.getActionMode()) return;
 
         if (this.gameService.isWaitTurn()) return;
+
+        if (this.gameService.activeCombat()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;
