@@ -7,7 +7,7 @@ import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { getObjectDescription } from '@app/utils/game-utils';
 import {
-    BattleWonPayload, DebugMovePayload,
+    DebugMovePayload,
     MovePlayerPayload,
     ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
@@ -25,6 +25,7 @@ const PLAYER_DIRECTION: Record<string, string> = {
 };
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
+const TIME_ROUND = 10;
 
 export enum ContextMenuType {
     PlayerToolTip = 'player',
@@ -85,6 +86,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
             return;
         }
+
+        if (this.gameService.activeCombat()) {
+            return;
+        }
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -126,6 +131,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
+        if (this.gameService.activeCombat()) {
+            return;
+        }
+
         const directionVector = DIRECTION_STRING[direction];
         const newPosition: Position = addPositions(player.position, directionVector);
 
@@ -189,13 +198,16 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     doActionAt(position: Position): void {
+        if (this.gameService.activeCombat()) {
+            return;
+        }
         const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
         if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
 
         if (player) {
-            this.killPlayer(player.id);
+            this.startCombat(player.id);
         } else {
             const tile = this.mapService.getTile(position);
             if (!tile) return;
@@ -220,12 +232,17 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.changeActionMode();
     }
 
-    killPlayer(playerId: string): void {
+    startCombat(playerId: string): void {
         const player = this.gameService.players().find(p => p.id === playerId);
         const clientPlayer = this.gameService.clientPlayer();
         if (!player || !clientPlayer) return;
+
         this.gameService.clearCombatRound();
-        this.socketService.send(GatewayEvents.BattleWon, { loserId: playerId, winnerId: clientPlayer.id } as BattleWonPayload);
+        this.socketService.send(GatewayEvents.StartCombat, {
+            attackerId: clientPlayer.id,
+            defenderId: playerId,
+            roundTimeSeconds: TIME_ROUND,
+        });
     }
 
     onTileClick(event: MouseEvent, position: Position): void {
@@ -246,6 +263,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (this.gameService.getActionMode()) return;
 
         if (this.gameService.isWaitTurn()) return;
+
+        if (this.gameService.activeCombat()) return;
 
         const player = this.gameService.clientPlayer();
         if (!player) return;

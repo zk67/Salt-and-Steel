@@ -1,7 +1,12 @@
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
-import { BattleWonPayload, DebugMovePayload, MovePlayerPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    ActiveCombatPayload,
+    DebugMovePayload, MovePlayerPayload,
+    SubmitCombatPosturePayload,
+    ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Position } from '@common/utils/map.utils';
@@ -65,11 +70,6 @@ export class CurrentGameGateway implements OnGatewayInit {
         this.playService.handleDebugMove(client, payload);
     }
 
-    @SubscribeMessage(GatewayEvents.BattleWon)
-    handleBattleWon(client: Socket, payload: BattleWonPayload): void {
-        this.playService.handleBattleWon(client, payload);
-    }
-
     @SubscribeMessage(GatewayEvents.Surrender)
     handleSurrender(client: Socket): void {
         this.lobbyService.handleSurrender(client);
@@ -108,5 +108,15 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.ActionOnTile)
     handleActionOnTile(client: Socket, position: Position): void {
         this.playService.handleActionOnTile(client, position);
+    }
+
+    @SubscribeMessage(GatewayEvents.StartCombat)
+    handleStartCombat(client: Socket, payload: ActiveCombatPayload): void {
+        this.playService.handleStartCombat(client, payload);
+    }
+
+    @SubscribeMessage(GatewayEvents.SubmitCombatPosture)
+    handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
+        this.playService.handleSubmitCombatPosture(client, payload);
     }
 }

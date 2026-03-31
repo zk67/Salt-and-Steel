@@ -56,16 +56,34 @@
                 </div>
             </section>
         }
+        @if (isClientInActiveCombat() && activeCombat(); as combat) {
+            <section class="combat-posture-panel">
+                <h3>Choix de posture</h3>
+                <p>Tour de combat en cours</p>
+
+                <div class="combat-posture-actions">
+                    <app-game-button
+                        label="Posture offensive"
+                        variant="action"
+                        (clicked)="onChooseOffensivePosture()">
+                    </app-game-button>
+
+                    <app-game-button
+                        label="Posture défensive"
+                        variant="action"
+                        (clicked)="onChooseDefensivePosture()">
+                    </app-game-button>
+                </div>
+            </section>
+        }
     </div>
-    <div>combatRound présent : {{ combatRound() ? 'oui' : 'non' }}</div>
-    <div>{{ combatRound()?.attacker?.playerName }}</div>
     <div class="buttons-grid">
         <div class="time-display"> {{ currentTime() }}s</div>
         <div class="action-button">
-            <app-game-button label="Action" variant="action" [disabled]="!isYourTurn() || !actionPointsLeft()" (clicked)="onAction()"></app-game-button>
+            <app-game-button label="Action" variant="action" [disabled]="!isYourTurn() || !actionPointsLeft() || isCombatActive()" (clicked)="onAction()"></app-game-button>
         </div>
         <div class="end-turn-button">
-            <app-game-button label="Terminer le tour" variant="end-turn" [disabled]="!(this.isYourTurn() || (this.isDebugMode() && this.isHost()))" (clicked)="onEndTurn()"></app-game-button>
+            <app-game-button label="Terminer le tour" variant="end-turn" [disabled]=" isCombatActive() || !(this.isYourTurn() || (this.isDebugMode() && this.isHost()))" (clicked)="onEndTurn()"></app-game-button>
         </div>
         <div class="surrender-button">
             <app-game-button label="Abandonner" variant="surrender" (clicked)="onSurrender()"></app-game-button>

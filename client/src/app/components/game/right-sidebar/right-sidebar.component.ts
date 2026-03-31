@@ -6,6 +6,7 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { TimeService } from '@app/services/game/time.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({
@@ -21,6 +22,8 @@ export class RightSidebarComponent {
     isHost = computed(() => this.gameService.hostId() === this.gameService.clientPlayer()?.id);
     isDebugMode = computed(() => this.gameService.isDebugMode());
     combatRound = this.gameService.currentCombatRound;
+    activeCombat = this.gameService.activeCombat;
+    isClientInActiveCombat = this.gameService.isClientInActiveCombat;
 
     constructor(private timerService: TimeService, private gameService: GameService,
         private socketService: SocketClientService, private router: Router) {}
@@ -31,12 +34,18 @@ export class RightSidebarComponent {
     }
 
     onAction = () => {
+        if (this.isCombatActive()) {
+            return;
+        }
         if (this.isYourTurn() && this.actionPointsLeft()) {
             this.gameService.changeActionMode();
         }
     };
 
     onEndTurn = () => {
+        if (this.isCombatActive()) {
+            return;
+        }
         if (this.isYourTurn() || (this.isDebugMode() && this.isHost())) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
@@ -51,4 +60,25 @@ export class RightSidebarComponent {
     formatModifier(value: number): string {
         return value > 0 ? `+${value}` : `${value}`;
     }
+
+    onChooseOffensivePosture(): void {
+        this.socketService.send(GatewayEvents.SubmitCombatPosture, {
+            posture: CombatPosture.Offensive,
+        } as SubmitCombatPosturePayload);
+    }
+
+    onChooseDefensivePosture(): void {
+        this.socketService.send(GatewayEvents.SubmitCombatPosture, {
+            posture: CombatPosture.Defensive,
+        } as SubmitCombatPosturePayload);
+    }
+
+    isCombatActive = computed(() => !!this.gameService.activeCombat());
+    displayedTime = computed(() => {
+        if (this.isCombatActive() && !this.isClientInActiveCombat()) {
+            return '--';
+        }
+
+        return `${this.currentTime()}s`;
+    });
 }

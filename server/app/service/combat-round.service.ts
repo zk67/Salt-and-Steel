@@ -1,19 +1,29 @@
 import { PlayableGame } from '@app/interface/game.interface';
 import { DiceTarget } from '@common/enums/player.enums';
-import { CombatParticipantRoundDetails, CombatRoundDetails, CombatStatBreakdown } from '@common/interfaces/game.interface';
+import {
+    CombatParticipantRoundDetails,
+    CombatPosture,
+    CombatRoundDetails,
+    CombatStatBreakdown,
+} from '@common/interfaces/game.interface';
 import { TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
-const COMBAT_POSTURE_BONUS = 0;
 const ICE_COMBAT_PENALTY = -2;
 const DICE_6 = 6;
 const DICE_4 = 4;
-const MAX_SIMULATED_COMBAT_ROUNDS = 100;
+const POSTURE_BONUS = 2;
 
 export class CombatRoundService {
-    buildCombatRoundDetails(game: PlayableGame, attacker: Player, defender: Player): CombatRoundDetails {
-        const attackerRound = this.createCombatParticipantRound(game, attacker);
-        const defenderRound = this.createCombatParticipantRound(game, defender);
+    buildCombatRoundDetails(
+        game: PlayableGame,
+        attacker: Player,
+        defender: Player,
+        attackerPosture: CombatPosture,
+        defenderPosture: CombatPosture,
+    ): CombatRoundDetails {
+        const attackerRound = this.createCombatParticipantRound(game, attacker, attackerPosture);
+        const defenderRound = this.createCombatParticipantRound(game, defender, defenderPosture);
 
         attackerRound.damageDealt = Math.max(0, attackerRound.attack.total - defenderRound.defense.total);
         attackerRound.damageTaken = Math.max(0, defenderRound.attack.total - attackerRound.defense.total);
@@ -23,29 +33,55 @@ export class CombatRoundService {
         return { attacker: attackerRound, defender: defenderRound };
     }
 
-    private createCombatParticipantRound(game: PlayableGame, player: Player): CombatParticipantRoundDetails {
+    private createCombatParticipantRound(
+        game: PlayableGame,
+        player: Player,
+        posture: CombatPosture,
+    ): CombatParticipantRoundDetails {
         const penalty = this.getPlayerCombatPenalty(game, player);
         const attackDiceResult = this.getCombatDiceResult(player, DiceTarget.Attack);
         const defenseDiceResult = this.getCombatDiceResult(player, DiceTarget.Defense);
 
+        const attackPostureBonus = this.getPostureBonus(posture, CombatPosture.Offensive);
+        const defensePostureBonus = this.getPostureBonus(posture, CombatPosture.Defensive);
+
         return {
             playerId: player.id,
             playerName: player.name,
-            attack: this.createCombatBreakdown(player.attack ?? 0, attackDiceResult, penalty),
-            defense: this.createCombatBreakdown(player.defense ?? 0, defenseDiceResult, penalty),
+            attack: this.createCombatBreakdown(
+                player.attack ?? 0,
+                attackDiceResult,
+                penalty,
+                attackPostureBonus,
+            ),
+            defense: this.createCombatBreakdown(
+                player.defense ?? 0,
+                defenseDiceResult,
+                penalty,
+                defensePostureBonus,
+            ),
             damageDealt: 0,
             damageTaken: 0,
         };
     }
 
-    private createCombatBreakdown(baseValue: number, diceResult: number, penalty: number): CombatStatBreakdown {
+    private createCombatBreakdown(
+        baseValue: number,
+        diceResult: number,
+        penalty: number,
+        postureBonus: number,
+    ): CombatStatBreakdown {
         return {
             baseValue,
-            postureBonus: COMBAT_POSTURE_BONUS,
+            postureBonus,
             diceResult,
             penalty,
-            total: baseValue + COMBAT_POSTURE_BONUS + diceResult + penalty,
+            total: baseValue + postureBonus + diceResult + penalty,
         };
+    }
+
+    private getPostureBonus(posture: CombatPosture, expected: CombatPosture): number {
+        return posture === expected ? POSTURE_BONUS : 0;
     }
 
     private getPlayerCombatPenalty(game: PlayableGame, player: Player): number {
@@ -66,51 +102,4 @@ export class CombatRoundService {
     private rollDice(sides: number): number {
         return Math.floor(Math.random() * sides) + 1;
     }
-
-    resolveCombatUntilWinner(game: PlayableGame, attacker: Player, defender: Player): CombatResolutionResult | null {
-        let attackerHp = attacker.hp ?? 0;
-        let defenderHp = defender.hp ?? 0;
-        let lastRound: CombatRoundDetails | null = null;
-
-        for (let round = 0; round < MAX_SIMULATED_COMBAT_ROUNDS && attackerHp > 0 && defenderHp > 0; round++) {
-            lastRound = this.buildCombatRoundDetails(game, attacker, defender);
-            attackerHp = Math.max(0, attackerHp - lastRound.attacker.damageTaken);
-            defenderHp = Math.max(0, defenderHp - lastRound.defender.damageTaken);
-        }
-
-        if (!lastRound) {
-            return null;
-        }
-
-        if (attackerHp <= 0 && defenderHp <= 0) {
-            return null;
-        }
-
-        if (attackerHp <= 0) {
-            return {
-                winner: defender,
-                loser: attacker,
-                winnerHp: defenderHp,
-                lastRound,
-            };
-        }
-
-        if (defenderHp <= 0) {
-            return {
-                winner: attacker,
-                loser: defender,
-                winnerHp: attackerHp,
-                lastRound,
-            };
-        }
-
-        return null;
-    }
-
-}
-export interface CombatResolutionResult {
-    winner: Player;
-    loser: Player;
-    winnerHp: number;
-    lastRound: CombatRoundDetails;
 }

@@ -1,4 +1,5 @@
 import {
+    ActiveCombatPayload,
     BattleWonPayload,
     CombatRoundDetails,
     DebugMovePayload,
@@ -81,5 +82,13 @@ export class CurrentGameBroadcastService {
 
     emitActionOnTile(roomId: string, position: Position, playerId: string): void {
         this.server?.to(roomId).emit(GatewayEvents.ActionOnTile, { position, playerId });
+    }
+
+    emitCombatStarted(playerIds: string[], payload: ActiveCombatPayload): void {
+        const uniquePlayerIds = [...new Set(playerIds)];
+
+        for (const playerId of uniquePlayerIds) {
+            this.server?.to(playerId).emit(GatewayEvents.CombatStarted, payload);
+        }
     }
 }

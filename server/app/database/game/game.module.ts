@@ -5,6 +5,7 @@ import { GamesService } from '@app/database/game/services/game.service';
 import { ChatGateway } from '@app/gateways/chat.gateway';
 import { CurrentGameGateway } from '@app/gateways/current-game.gateway';
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
+import { CurrentGameCombatService } from '@app/gateways/services/current-game-combat.service';
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import { Gateway } from '@app/gateways/gateway';
@@ -33,6 +34,7 @@ import { MongooseModule } from '@nestjs/mongoose';
         CurrentGamesService,
         ChatGateway,
         CurrentGameBroadcastService,
+        CurrentGameCombatService,
         CurrentGameLobbyService,
         CurrentGamePlayService,
     ],

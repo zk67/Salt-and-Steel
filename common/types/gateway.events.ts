@@ -21,7 +21,6 @@ export enum GatewayEvents {
     PlayerMoved = 'playerMoved',
     DebugMove = 'debugMove',
     HandleClickDebug = 'handleClickDebug',
-    BattleWon = 'battleWon',
     HandleBattleWon = 'handleBattleWon',
     EndTurnEarly = 'endTurnEarly',
     NewTurn = 'newTurn',
@@ -39,4 +38,7 @@ export enum GatewayEvents {
     ClearSelectedAvatarInJoinForm = 'clearSelectedAvatarInJoinForm',
     ActionOnTile = 'actionOnTile',
     HandleCombatRound = 'handleCombatRound',
+    StartCombat = 'startCombat',
+    CombatStarted = 'combatStarted',
+    SubmitCombatPosture = 'submitCombatPosture',
 }
