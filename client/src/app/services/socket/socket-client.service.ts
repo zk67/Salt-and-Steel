@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { io, Socket } from 'socket.io-client';
-import { environment } from 'src/environments/environment.prod';
+import { environment } from 'src/environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SocketClientService {
