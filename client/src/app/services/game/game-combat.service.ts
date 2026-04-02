@@ -72,6 +72,14 @@ export class GameCombatService {
 
     private applyBattleOutcomeUpdates(payload: BattleWonPayload, winner: Player, loser: Player): void {
         this.playerState.addVictoryPoint(winner.id);
+        this.playerState.addDefeatPoint(loser.id);
+        this.playerState.addCombatPoint(winner.id);
+        this.playerState.addCombatPoint(loser.id);
+
+        this.playerState.addTotalLifeLost(winner.id, (winner.hp ?? 0) - (payload.winnerHp ?? 0));
+        this.playerState.addTotalLifeLost(loser.id, loser.hp ?? 0);
+        this.playerState.addTotalDamageDealt(winner.id, loser.hp ?? 0);
+        this.playerState.addTotalDamageDealt(loser.id, (winner.hp ?? 0) - (payload.winnerHp ?? 0));
 
         this.playerState.updatePlayer(winner.id, {
             hp: payload.winnerHp ?? winner.hp,

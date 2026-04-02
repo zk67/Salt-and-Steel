@@ -13,7 +13,7 @@ export class GamePlayerStateService {
     readonly activePlayer = computed(() => this.players().find((player) => player.id === this.activePlayerId()) ?? null);
     readonly clientPlayer = computed(() => this.players().find((player) => player.id === this.clientPlayerId) ?? null);
     readonly victoryLeaderboard = computed(() =>
-        this.players().map((player) => ({ playerName: player.name, victoryPoints: player.victoryPoints || 0 })),
+        this.players().map((player) => ({ playerName: player.name, victoryPoints: player.stats.victoryPoints || 0 })),
     );
 
     addPlayer(player: Player): void {
@@ -46,9 +46,53 @@ export class GamePlayerStateService {
     }
 
     addVictoryPoint(playerId: string): void {
-        this.updatePlayer(playerId, {
-            victoryPoints: (this.players().find((player) => player.id === playerId)?.victoryPoints || 0) + 1,
-        });
+        const player = this.players().find((p) => p.id === playerId);
+        if (!player) return;
+        const newStats = {
+            ...player.stats,
+            victoryPoints: (player.stats?.victoryPoints || 0) + 1,
+        };
+        this.updatePlayer(playerId, { stats: newStats });
+    }
+
+    addDefeatPoint(playerId: string): void {
+        const player = this.players().find((p) => p.id === playerId);
+        if (!player) return;
+        const newStats = {
+            ...player.stats,
+            defeatPoints: (player.stats?.defeatPoints || 0) + 1,
+        };
+        this.updatePlayer(playerId, { stats: newStats });
+    }
+
+    addCombatPoint(playerId: string): void {
+        const player = this.players().find((p) => p.id === playerId);
+        if (!player) return;
+        const newStats = {
+            ...player.stats,
+            combatPoints: (player.stats?.combatPoints || 0) + 1,
+        };
+        this.updatePlayer(playerId, { stats: newStats });
+    }
+
+    addTotalLifeLost(playerId: string, lifeLost: number): void {
+        const player = this.players().find((p) => p.id === playerId);
+        if (!player) return;
+        const newStats = {
+            ...player.stats,
+            totalLifeLost: (player.stats?.totalLifeLost || 0) + lifeLost,
+        };
+        this.updatePlayer(playerId, { stats: newStats });
+    }
+
+    addTotalDamageDealt(playerId: string, damageDealt: number): void {
+        const player = this.players().find((p) => p.id === playerId);
+        if (!player) return;
+        const newStats = {
+            ...player.stats,
+            totalDamageDealt: (player.stats?.totalDamageDealt || 0) + damageDealt,
+        };
+        this.updatePlayer(playerId, { stats: newStats });
     }
 
     setActivePlayer(id: string): void {

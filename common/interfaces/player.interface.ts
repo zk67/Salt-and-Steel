@@ -13,11 +13,21 @@ export interface Player {
     defense: NullableNumber;
     d6target: DiceTarget | null;
     d4target: DiceTarget | null;
-    position: Position
+    position: Position;
     movementPoints: number;
     actionsLeft: number;
-    victoryPoints: number;
     hasAbandoned: boolean;
     isOrganizer: boolean;
     turnOrder: number;
+    stats: PlayerStats;
+    visitedTiles?: string[];
+}
+
+export interface PlayerStats {
+    combatPoints: number;
+    victoryPoints: number;
+    defeatPoints: number;
+    totalLifeLost: number;
+    totalDamageDealt: number;
+    percentageOfTileVisited: number;
 }
