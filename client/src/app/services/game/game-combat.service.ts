@@ -58,6 +58,9 @@ export class GameCombatService {
         const winner = this.playerState.players().find((player) => player.id === payload.winnerId);
 
         if (!loser || !winner) {
+            this.combatRoundState.set(null);
+            this.activeCombatState.set(null);
+            this.turnService.stopCombatTimerOnly();
             return;
         }
 
@@ -97,9 +100,12 @@ export class GameCombatService {
         loser: Player,
         wasClientInCombat: boolean,
     ): void {
-        if (wasClientInCombat) {
-            const shouldResumeWinnerTurn = this.playerState.isClientPlayer(winner.id) && this.turnService.isClientPlayerTurn();
-            this.turnService.resumeAfterCombat(shouldResumeWinnerTurn ? payload.remainingTurnSeconds : 0);
+        const shouldResumePausedTurnForEveryone = payload.remainingTurnSeconds !== undefined;
+
+        if (shouldResumePausedTurnForEveryone) {
+            this.turnService.resumeAfterCombat(payload.remainingTurnSeconds);
+        } else if (wasClientInCombat) {
+            this.turnService.stopCombatTimerOnly();
         }
 
         if (this.playerState.isClientPlayer(loser.id) && this.turnService.isClientPlayerTurn()) {
@@ -116,6 +122,7 @@ export class GameCombatService {
             }
         }
 
+        this.combatRoundState.set(null);
         this.activeCombatState.set(null);
     }
 }

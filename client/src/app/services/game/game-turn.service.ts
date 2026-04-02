@@ -1,10 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
-import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { GamePlayerStateService } from './game-player-state.service';
 import { TimeService } from './time.service';
 
@@ -86,10 +86,15 @@ export class GameTurnService {
         this.isWaitTurn.set(false);
         this.timeService.stopTimer();
         this.timeService.startTimer(TIMER_TURN);
+        this.actionMode = false;
+        this.actionTile.set([]);
 
         if (player.id !== newTurn.playerId) {
+            this.isClientPlayerTurn.set(false);
             return;
         }
+
+        this.isClientPlayerTurn.set(true);
 
         if (!this.canPlayerStillDoAction()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
@@ -158,11 +163,18 @@ export class GameTurnService {
         const seconds = remainingTurnSeconds ?? this.pausedTurnTime;
 
         this.timeService.stopTimer();
+        this.cancelActionMode();
 
         if (seconds > 0) {
             this.timeService.startTimer(seconds);
         }
 
+        this.pausedTurnTime = 0;
+    }
+
+    stopCombatTimerOnly(): void {
+        this.timeService.stopTimer();
+        this.cancelActionMode();
         this.pausedTurnTime = 0;
     }
 }

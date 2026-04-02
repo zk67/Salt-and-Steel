@@ -78,7 +78,7 @@
         }
     </div>
     <div class="buttons-grid">
-        <div class="time-display"> {{ currentTime() }}s</div>
+        <div class="time-display"> {{ displayedTime() }}</div>
         <div class="action-button">
             <app-game-button label="Action" variant="action" [disabled]="!isYourTurn() || !actionPointsLeft() || isCombatActive()" (clicked)="onAction()"></app-game-button>
         </div>

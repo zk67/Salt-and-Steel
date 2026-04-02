@@ -30,6 +30,7 @@ export interface GameInfoPayload {
 export interface NewTurnPayload {
     playerId: string;
     phase: TurnPhase;
+    remainingSeconds?: number;
 }
 
 export interface BattleWonPayload {
