@@ -5,59 +5,52 @@ html, body {
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    background-image: url('../../../assets/main-page/backgroundgif.webp');
-    background-size:cover;
-    min-height: 100vh;
-    background-attachment: fixed;
-    background-position: center ;
+  display: flex;
+  flex-direction: column;
+  background-image: url('../../../assets/main-page/clouds.png');
+  background-size: cover;
+  min-height: 100vh;
+  background-attachment: fixed;
+  background-position: center;
 }
 
 .title-banner {
-  width: 700px;
-  height: 500px;
-
-  margin: 35px 570px -30px;
-
-  background-image: url('../../../assets/main-page/titlebanner.webp');
+  width: 40%;
+  padding-bottom: 20%;
+  margin: 3% auto -2%;
+  background-image: url('../../../assets/main-page/titlebanner.png');
   background-repeat: no-repeat;
-  background-position: center -30px ;
-  background-size: 100% auto;
+  background-position: center;
+  background-size: 80% auto;
 }
 
 .content {
-  flex: 1;                 
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content :flex-start;
+  justify-content: flex-start;
 }
 
 .buttons {
-  width: 600px;
+  width: 35%;
+  display: flex;
   flex-direction: column;
-  gap: 14px;
-  border: none;
-  background: transparent;
+  align-items: center;    
+  margin-top: 5%;
 }
 
-#Join, #Create,#admin {
-  width: 550px;
-  height: 100px;
+#Join, #Create, #admin {
+  width: 85%;
+  aspect-ratio: 5.5 / 1;
   background-size: 100% 100%;
-}
-
-#Join{
-  background-image: url('../../../assets/main-page/join.webp'); 
-}
-
-#Create{
-  background-image: url('../../../assets/main-page/create.webp'); 
-}
-
-#admin{
-  background-image: url('../../../assets/main-page/admin.webp'); 
+  cursor: pointer;
+  background-image: url('../../../assets/main-page/parchment.png');
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #633513;
+  margin-bottom: 20px;
 }
 
 .button {
@@ -67,7 +60,8 @@ html, body {
 
 .button:hover:enabled {
   filter: brightness(1.06) contrast(1.02);
-  transform: translateY(-7px);
+  transform: translateY(-0.5%);
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .button:active:enabled {
@@ -81,14 +75,13 @@ html, body {
 
 .footer-item {
   text-align: center;
-  padding-top: 18px;
+  padding-top: 1.5%;
 }
 
 .footer-text {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 0.8rem;
   font-weight: 900;
-  opacity: 0.85;
   text-shadow: -1px 0 black, 0 2px black, 2px 0 black, 0 -1px black;
   color: #ffffff;
 }
