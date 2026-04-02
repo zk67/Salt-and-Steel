@@ -12,7 +12,7 @@
                         {{ player.name }}
                         @if (player.isOrganizer) { <span class="organizer-badge">★</span> }
                     </span>
-                    <span class="player-stat">Combats gagnés: {{ player.victoryPoints }}</span>
+                    <span class="player-stat">Combats gagnés: {{ player.stats.victoryPoints }}</span>
                 </div>
             </li>
         }

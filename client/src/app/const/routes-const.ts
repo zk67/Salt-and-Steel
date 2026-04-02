@@ -8,4 +8,5 @@ export const APP_ROUTES = {
     admin: '/admin',
     game: '/game',
     joinGame: '/join-game',
+    statistics: '/statistics',
 } as const;

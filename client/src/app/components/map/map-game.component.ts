@@ -26,6 +26,7 @@ const PLAYER_DIRECTION: Record<string, string> = {
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 const TIME_ROUND = 10;
+const PERCENTAGE = 100;
 
 export enum ContextMenuType {
     PlayerToolTip = 'player',
@@ -158,9 +159,17 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const tile = this.mapService.getTile(newPosition);
         if (!tile) return;
 
+        const visitedTiles: string[] = Array.isArray(player.visitedTiles) ? [...player.visitedTiles] : [];
+        const newTile = `${newPosition.x},${newPosition.y}`;
+        if (!visitedTiles.includes(newTile)) {
+            visitedTiles.push(newTile);
+        }
+
         const updatedPlayer = {
-            ...player, position: newPosition,
+            ...player,
+            position: newPosition,
             movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tile.tileType],
+            visitedTiles,
         };
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
@@ -304,10 +313,40 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
+        // Calcul du pourcentage de tuiles de terrain visitées pour chaque joueur
+        const tiles = this.mapService.getTileMap();
+        const terrainTypes = [0, 1, 2];
+        let totalTerrainTiles = 0;
+        for (const row of tiles) {
+            for (const tile of row) {
+                if (terrainTypes.includes(tile.tileType)) totalTerrainTiles++;
+            }
+        }
+
+        this.gameService.getPlayers().forEach(player => {
+            const visited = player.visitedTiles ? Array.from(player.visitedTiles) : [];
+            let visitedTerrain = 0;
+            for (const key of visited) {
+                const [x, y] = key.split(',').map(Number);
+                if (terrainTypes.includes(tiles[y][x].tileType)) {
+                    visitedTerrain++;
+                }
+            }
+
+            const percentVisited = totalTerrainTiles > 0 ? Math.round((visitedTerrain / totalTerrainTiles) * PERCENTAGE) : 0;
+
+            this.gameService.updatePlayer(player.id, {
+                stats: {
+                    ...player.stats,
+                    percentageOfTileVisited: percentVisited,
+                },
+            });
+        });
+
         this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
         setTimeout(() => {
             this.popupService.close();
-            this.router.navigate([APP_ROUTES.home]);
+            this.router.navigate([APP_ROUTES.statistics]);
         }, DELAY_BEFORE_NAVIGATE_HOME);
     }
 

@@ -1,0 +1,82 @@
+<div class="statistics-container">
+	<div class="left">
+		<app-chat
+            [messages]="messages"
+            [playerName]="currentPlayerName"
+            [currentPlayerId]="currentPlayerId"
+            (messageSent)="sendMessage($event)">
+        </app-chat> 
+	</div>
+	<div class="right">
+			<section class="players-list">
+				<h2>Liste des joueurs</h2>
+				<table class="players-table equal-columns">
+					<thead>
+						<tr>
+							<th (click)="setSort(playerColumn.Name)" style="cursor:pointer">
+								Nom
+								@if (sortColumn === playerColumn.Name) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.Combat)" style="cursor:pointer">
+								Combat
+								@if (sortColumn === playerColumn.Combat) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.Victory)" style="cursor:pointer">
+								Victoire
+								@if (sortColumn === playerColumn.Victory) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.Defeat)" style="cursor:pointer">
+								Défaite
+								@if (sortColumn === playerColumn.Defeat) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.TotalLifeLost)" style="cursor:pointer">
+								Vie perdue
+								@if (sortColumn === playerColumn.TotalLifeLost) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.TotalDamageDealt)" style="cursor:pointer">
+								Dégâts
+								@if (sortColumn === playerColumn.TotalDamageDealt) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+							<th (click)="setSort(playerColumn.PercentageOfTileVisited)" style="cursor:pointer">
+								Tuiles visitées
+								@if (sortColumn === playerColumn.PercentageOfTileVisited) {
+									<span>{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+								}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (player of sortedPlayers; track player.id) {
+							<tr>
+								<td>{{ player.name }}</td>
+								<td>{{ player.stats.combatPoints }}</td>
+								<td>{{ player.stats.victoryPoints }}</td>
+								<td>{{ player.stats.defeatPoints }}</td>
+								<td>{{ player.stats.totalLifeLost }}</td>
+								<td>{{ player.stats.totalDamageDealt }}</td>
+								<td>{{ player.stats.percentageOfTileVisited }}%</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</section>
+
+		<section class="global-statistics">
+			<h2>Statistiques globales</h2>
+		</section>
+
+		<button class="back-button" routerLink="/home">Retour au menu</button>
+	</div>
+</div>

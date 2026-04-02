@@ -268,10 +268,18 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       d4target,
       movementPoints: this.speed.value ?? 0,
       actionsLeft: 1,
-      victoryPoints: 0,
       hasAbandoned: false,
       isOrganizer: false,
       turnOrder: 0,
+      stats: {
+        victoryPoints: 0,
+        combatPoints: 0,
+        defeatPoints: 0,
+        totalLifeLost: 0,
+        totalDamageDealt: 0,
+        percentageOfTileVisited: 0,
+      },
+      visitedTiles: [],
     };
 
     const tryJoinCurrentGame = () => {

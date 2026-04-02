@@ -102,9 +102,9 @@ export class CombatResolutionService {
         battlePayload.loserId = loser.id;
         battlePayload.winnerHp = winner.hp ?? 0;
         battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
-        winner.victoryPoints = (winner.victoryPoints || 0) + 1;
+        winner.stats.victoryPoints = (winner.stats.victoryPoints || 0) + 1;
 
-        const isGameOver = winner.victoryPoints >= MAX_VICTORIES;
+        const isGameOver = winner.stats.victoryPoints >= MAX_VICTORIES;
         loser.hp = loser.maxHp ?? loser.hp;
 
         const loserSpawn = game.spawnPoints?.get(loser.id);
