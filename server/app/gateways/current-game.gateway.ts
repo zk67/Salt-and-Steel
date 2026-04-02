@@ -2,6 +2,7 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import {
+    ActionOnTilePayload,
     ActiveCombatPayload,
     DebugMovePayload, MovePlayerPayload,
     SubmitCombatPosturePayload,
@@ -9,7 +10,6 @@ import {
 } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { Position } from '@common/utils/map.utils';
 import { Injectable } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -106,8 +106,9 @@ export class CurrentGameGateway implements OnGatewayInit {
     }
 
     @SubscribeMessage(GatewayEvents.ActionOnTile)
-    handleActionOnTile(client: Socket, position: Position): void {
-        this.playService.handleActionOnTile(client, position);
+    handleActionOnTile(client: Socket, payload: ActionOnTilePayload): void {
+        payload.playerId = client.id;
+        this.playService.handleActionOnTile(client, payload);
     }
 
     @SubscribeMessage(GatewayEvents.StartCombat)

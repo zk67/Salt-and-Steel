@@ -89,3 +89,10 @@ export enum CombatPosture {
 export interface SubmitCombatPosturePayload {
     posture: CombatPosture;
 }
+
+export interface ActionOnTilePayload {
+    position: Position;
+    playerId: string;
+    isDoubleOrNothing: boolean;
+    DoubleOrNothingSuccess?: boolean;
+}

@@ -1,6 +1,7 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import {
+    ActionOnTilePayload,
     ActiveCombatPayload,
     DebugMovePayload,
     GameInfoPayload,
@@ -8,7 +9,6 @@ import {
     SubmitCombatPosturePayload,
     ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
-import { Position } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
@@ -118,16 +118,15 @@ export class CurrentGamePlayService {
         this.logger.log(`Toggled debug mode to ${payload.debugMode} for room: ${room}`);
     }
 
-    handleActionOnTile(client: Socket, position: Position): void {
+    handleActionOnTile(client: Socket, payload: ActionOnTilePayload): void {
         const room = getRoomIdFromSocket(client);
 
-        if (this.currentGamesService.doActionAtTile(room, client.id, position)) {
-            this.broadcastService.emitActionOnTile(room, position, client.id);
-            this.logger.log(`Player ${client.id} performed an action on tile at (${position.x}, ${position.y}) in room ${room}`);
+        if (this.currentGamesService.doActionAtTile(room, payload)) {
+            this.broadcastService.emitActionOnTile(room, payload);
+            this.logger.log(`Player ${payload.playerId} performed an action on tile at
+                (${payload.position.x}, ${payload.position.y}) in room ${room}`);
             return;
         }
-
-        this.logger.warn(`Failed to perform action on tile for player ${client.id} at (${position.x}, ${position.y}) in room ${room}`);
     }
 
     private validatePlayer(socket: Socket, playerId: string): boolean {

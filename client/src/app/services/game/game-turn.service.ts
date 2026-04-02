@@ -32,9 +32,10 @@ export class GameTurnService {
 
     changeActionMode(): void {
         const player = this.playerState.clientPlayer();
+        const gameData = this.mapService.getGameData();
         const tiles = this.mapService.getTileMap();
 
-        if (!player || tiles.length === 0) {
+        if (!player || tiles.length === 0 || !gameData) {
             return;
         }
 
@@ -46,7 +47,7 @@ export class GameTurnService {
         }
 
         if (this.actionMode) {
-            this.actionTile.set(getActionableTiles(tiles, player, this.playerState.getPlayers()));
+            this.actionTile.set(getActionableTiles(gameData, player, this.playerState.getPlayers()));
         } else {
             this.actionTile.set(movableTiles(tiles, player, this.playerState.getPlayers()));
         }
@@ -63,14 +64,27 @@ export class GameTurnService {
             this.timeService.stopTimer();
             this.timeService.startTimer(TIMER_WAIT_TURN);
             this.playerState.setActivePlayer(newTurn.playerId);
+            const shrines = this.mapService.getGameData()?.shrine ?? [];
+            shrines.forEach(s => {
+                if (s.turnLeftDeactivated > 0) {
+                    s.turnLeftDeactivated -= 1;
+                    this.mapService.updateShrine(s);
+                }
+            });
             this.actionTile.set([]);
             this.actionMode = false;
 
             if (newTurn.playerId === player.id) {
                 this.isClientPlayerTurn.set(true);
+
+                if(player.shrineBuffs){
+                    player.shrineBuffs.turnsLeft -= 1;
+                }
+
                 this.playerState.updatePlayer(player.id, {
                     movementPoints: player.speed ?? 0,
                     actionsLeft: 1,
+                    shrineBuffs: player.shrineBuffs,
                 });
             } else {
                 this.isClientPlayerTurn.set(false);
@@ -105,7 +119,13 @@ export class GameTurnService {
         }
 
         const tiles = this.mapService.getTileMap();
-        const possibleActionTiles = getActionableTiles(tiles, player, this.playerState.getPlayers());
+        const gameData = this.mapService.getGameData();
+
+        if (!gameData || tiles.length === 0) {
+            return false;
+        }
+
+        const possibleActionTiles = getActionableTiles(gameData, player, this.playerState.getPlayers());
 
         for (const possiblePosition of getNeighborPositions(player.position)) {
             if (!isValidTile(tiles, possiblePosition)) {

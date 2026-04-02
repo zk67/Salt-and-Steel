@@ -12,6 +12,7 @@ import { GamePlayerStateService } from './game-player-state.service';
 import { GameSessionService } from './game-session.service';
 import { GameSocketEventsService } from './game-socket-events.service';
 import { GameTurnService } from './game-turn.service';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
@@ -51,6 +52,10 @@ export class GameService {
             onNewTurn: this.handleNewTurn.bind(this),
             onCombatRound: this.combatService.handleCombatRound.bind(this.combatService),
             onCombatStarted: this.combatService.handleCombatStarted.bind(this.combatService),
+        });
+
+        this.socketService.on<string>(GatewayEvents.ShrineBuffOff, (playerId) => {
+            this.clearShrineBuffsIfExpired(playerId);
         });
     }
 
@@ -183,6 +188,17 @@ export class GameService {
 
     private handleNewTurn(newTurn: NewTurnPayload) {
         this.turnService.handleNewTurn(newTurn);
+    }
+
+    private clearShrineBuffsIfExpired(playerId: string): void {
+        const player = this.players().find(p => p.id === playerId);
+        if (player?.shrineBuffs) {
+            this.updatePlayer(playerId, {
+                attack: player.attack - (player.shrineBuffs.bonusAmount),
+                defense: player.defense - (player.shrineBuffs.bonusAmount),
+                shrineBuffs: undefined,
+            });
+        }
     }
 
     canPlayerStillDoAction(): boolean {

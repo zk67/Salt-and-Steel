@@ -41,4 +41,5 @@ export enum GatewayEvents {
     StartCombat = 'startCombat',
     CombatStarted = 'combatStarted',
     SubmitCombatPosture = 'submitCombatPosture',
+    ShrineBuffOff = 'shrineBuffOff',
 }

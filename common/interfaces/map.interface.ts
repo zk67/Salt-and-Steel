@@ -21,7 +21,7 @@ export interface Shrine {
     objectType: MapObjectType;
     position: Position[];
     imageUrl: string[];
-    isShrineActivated: boolean;
+    turnLeftDeactivated: number;
 }
 
 export enum GameMode {
