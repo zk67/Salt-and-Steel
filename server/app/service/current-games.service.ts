@@ -1,15 +1,17 @@
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
+import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { CombatContext, CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
-import { TileActionService } from '@app/service/tile-action.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Timer } from '@app/utils/game-timer';
-import { BattleWonPayload, CombatPosture, CombatRoundDetails, Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
+     Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isValidTile, isShrine, isTileDoor,  Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 export type SubmitCombatPostureResult = {
@@ -19,6 +21,7 @@ export type SubmitCombatPostureResult = {
     isGameOver: boolean;
 };
 
+const HALF_DOUBLE_NOTHING = 0.5;
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -27,9 +30,14 @@ export class CurrentGamesService {
     private roomPlayerStateService = new RoomPlayerStateService();
     private combatRoundService = new CombatRoundService();
     private combatResolutionService = new CombatResolutionService(this.combatRoundService);
-    private tileActionService = new TileActionService();
     private gameLifecycleService = new GameLifecycleService();
-    private turnFlowService = new TurnFlowService();
+    private turnFlowService: TurnFlowService;
+
+    constructor(private readonly broadcastService?: CurrentGameBroadcastService) {
+        this.turnFlowService = new TurnFlowService((roomId, playerId) => {
+            this.broadcastService?.emitShrineBuffOff(roomId, playerId);
+        });
+    }
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
@@ -218,11 +226,11 @@ export class CurrentGamesService {
         return this.roomPlayerStateService.clearSelectedAvatarByClientId(clientId);
     }
 
-    doActionAtTile(roomId: string, playerId: string, position: Position): boolean {
+    doActionAtTile(roomId: string, payload: ActionOnTilePayload): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game || game.activeCombat) return false;
 
-        const player = game.players.find((p) => p.id === playerId);
+        const player = game.players.find((p) => p.id === payload.playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -230,9 +238,9 @@ export class CurrentGamesService {
             return false;
         }
 
-        if (!arePositionAdjacent(player.position, position)) {
+        if (!arePositionAdjacent(player.position, payload.position)) {
             Logger.warn(`Le joueur (${player.name}) ne peut pas interagir avec une tile non adjacente.
-                Position du joueur: (${player.position.x},${player.position.y}), position ciblÃ©e: (${position.x},${position.y})`);
+                Position du joueur: (${player.position.x},${player.position.y}), position ciblée: (${payload.position.x},${payload.position.y})`);
             return false;
         }
 
@@ -242,13 +250,46 @@ export class CurrentGamesService {
             return false;
         }
 
-        const tile = game._game.tiles[position.y][position.x];
-        if (!this.tileActionService.applyAction(player, tile)) {
-            Logger.warn(`La tile ciblÃ©e n'est pas une mapObject interactive pour le joueur (${player.name}).
-                    Position du joueur: (${player.position.x},${player.position.y}), position ciblÃ©e: (${position.x},${position.y})`);
-            return false;
+        const tile = game._game.tiles[payload.position.y][payload.position.x];
+        if(isShrine(tile.mapObject)) {
+            const shrine = game._game.shrine.find(s => s.position.some(p => p.x === payload.position.x && p.y === payload.position.y));
+
+            if (!shrine) {
+                return false;
+            }
+
+            let buffMultiplier = 1;
+
+            if(payload.isDoubleOrNothing) {
+                buffMultiplier = Math.random() < HALF_DOUBLE_NOTHING ? 0 : 2;
+            }
+
+            if(shrine.objectType === MapObjectType.HealingShrine) {
+                player.hp = Math.min(player.maxHp, player.hp + 2 * buffMultiplier);
+            } else if(shrine.objectType === MapObjectType.CombatShrine) {
+                player.attack = player.attack + 1 * buffMultiplier;
+                player.defense = player.defense + 1 * buffMultiplier;
+                player.shrineBuffs = {
+                    bonusAmount: buffMultiplier,
+                    turnsLeft: 2,
+                };
+                Logger.warn(`Player ${player.name} received a combat buff from the shrine! Attack: ${player.attack}, Defense: ${player.defense}`);
+            }
+
+            if(buffMultiplier === 0) {
+                payload.DoubleOrNothingSuccess = false;
+            } else if (buffMultiplier === 2) {
+                payload.DoubleOrNothingSuccess = true;
+            }
+
+            shrine.turnLeftDeactivated = 3;
         }
 
+        if(isTileDoor(tile)) {
+            tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
+        }
+
+        player.actionsLeft = player.actionsLeft - 1;
         return true;
     }
 

@@ -3,8 +3,11 @@ import { Timer } from '@app/utils/game-timer';
 import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
+import { Logger } from '@nestjs/common';
 
 export class TurnFlowService {
+    constructor(private readonly emitShrineBuffOff: (roomId: string, playerId: string) => void) {}
+
     startGameTurn(game: PlayableGame, timer: Timer, emitTurnUpdate: (roomId: string, payload: NewTurnPayload) => void): void {
         game.currentPhase = TurnPhase.WaitTurn;
         game.currentTurnIndex = 0;
@@ -42,6 +45,11 @@ export class TurnFlowService {
 
         timer.stopTimer(game.roomId);
         game.currentPhase = TurnPhase.WaitTurn;
+        game._game.shrine.forEach((s) => {
+            if (s.turnLeftDeactivated > 0) {
+                s.turnLeftDeactivated -= 1;
+            }
+        });
 
         const lastPlayerId = game.turnOrder[game.currentTurnIndex];
         const lastPlayer = game.players.find((p) => p.id === lastPlayerId);
@@ -50,6 +58,19 @@ export class TurnFlowService {
         }
 
         lastPlayer.movementPoints = 0;
+        Logger.log(`Ending turn for player ${lastPlayer.name}`);
+        if(lastPlayer.shrineBuffs) {
+            lastPlayer.shrineBuffs.turnsLeft -= 1;
+            Logger.warn(`Player ${lastPlayer.name} has ${lastPlayer.shrineBuffs.turnsLeft} turns left on their shrine buff.`);
+            if(lastPlayer.shrineBuffs.turnsLeft <= 0) {
+                Logger.warn(`Player ${lastPlayer.name}'s shrine buff has expired.`);
+                lastPlayer.attack -= 1 * lastPlayer.shrineBuffs.bonusAmount;
+                lastPlayer.defense -= 1 * lastPlayer.shrineBuffs.bonusAmount;
+                lastPlayer.shrineBuffs = undefined;
+                this.emitShrineBuffOff(game.roomId, lastPlayer.id);
+            }
+
+        }
         game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
         timer.startTurnTimer(game.roomId, TIMER_WAIT_TURN);
         this.emitTurnUpdate(game, emitTurnUpdate);

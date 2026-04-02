@@ -1,4 +1,5 @@
 import {
+    ActionOnTilePayload,
     ActiveCombatPayload,
     BattleWonPayload,
     CombatRoundDetails,
@@ -8,7 +9,6 @@ import {
     ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { Position } from '@common/utils/map.utils';
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
 
@@ -80,8 +80,8 @@ export class CurrentGameBroadcastService {
         this.server?.to(roomId).emit(GatewayEvents.HandleToggleDebugMode, payload);
     }
 
-    emitActionOnTile(roomId: string, position: Position, playerId: string): void {
-        this.server?.to(roomId).emit(GatewayEvents.ActionOnTile, { position, playerId });
+    emitActionOnTile(roomId: string, payload: ActionOnTilePayload): void {
+        this.server?.to(roomId).emit(GatewayEvents.ActionOnTile, payload);
     }
 
     emitCombatStarted(playerIds: string[], payload: ActiveCombatPayload): void {
@@ -90,5 +90,9 @@ export class CurrentGameBroadcastService {
         for (const playerId of uniquePlayerIds) {
             this.server?.to(playerId).emit(GatewayEvents.CombatStarted, payload);
         }
+    }
+
+    emitShrineBuffOff(roomId: string, playerId: string): void {
+        this.server?.to(roomId).emit(GatewayEvents.ShrineBuffOff, playerId);
     }
 }

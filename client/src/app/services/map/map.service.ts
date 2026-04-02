@@ -139,7 +139,7 @@ export class MapService {
         this.gameSignal.update(game => {
             if (!game) return null;
 
-            const shrine = game.shrine.find((s) => s.position.some((p) => p.x === position.x && p.y === position.y));
+            const shrine = this.getShrineAtPosition(position);
             if (!shrine) {
                 return game;
             }
@@ -152,5 +152,20 @@ export class MapService {
         });
 
         return removedShrine;
+    }
+
+    getShrineAtPosition(position: Position): Shrine | null {
+        const game = this.gameSignal();
+        return game?.shrine.find((s) => s.position.some((p) => p.x === position.x && p.y === position.y)) ?? null;
+    }
+
+    updateShrine(shrine: Shrine): void {
+        this.gameSignal.update(game => {
+            if (!game) return null;
+            return {
+                ...game,
+                shrine: game.shrine.map(s => s === shrine ? shrine : s),
+            };
+        });
     }
 }

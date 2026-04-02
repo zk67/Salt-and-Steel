@@ -1,3 +1,4 @@
+import { Game } from '@common/interfaces/game.interface';
 import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
@@ -50,6 +51,7 @@ export function isValidTile(tiles: TileData[][], position: Position): boolean {
 export function canMoveToTile(tiles: TileData[][], players: Player[], state: MovementState, target: Position): number | null {
     if (!isValidTile(tiles, target)) return null;
     if (getPlayerAt(players, target)) return null;
+    if (isShrine(tiles[target.y][target.x].mapObject)) return null;
 
     const tile = tiles[target.y][target.x];
     const movementCost = TILE_MOVEMENT_COST[tile.tileType];
@@ -99,7 +101,8 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
     return result;
 }
 
-export function getActionableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
+export function getActionableTiles(game: Game, player: Player, players: Player[]): boolean[][] {
+    const tiles = game.tiles;
     const result = createBooleanGrid(tiles);
 
     DIRECTION.forEach(direction => {
@@ -110,8 +113,14 @@ export function getActionableTiles(tiles: TileData[][], player: Player, players:
             return;
         }
 
-        if (getPlayerAt(players, newPosition) || isTileDoor(tile)
-         || (tile.mapObject !== MapObjectType.None) && (tile.mapObject !== MapObjectType.SpawnPoint)) {
+        const shrine = game.shrine.find(s => s.position.some(pos => equalPositions(pos, newPosition)));
+
+        if (shrine !== undefined && shrine.turnLeftDeactivated > 0) {
+            return;
+        }
+
+        if (getPlayerAt(players, newPosition) || isTileDoor(tile) || isShrine(tile.mapObject)
+         || tile.mapObject === MapObjectType.Flag) {
             result[newPosition.y][newPosition.x] = true;
         }
     });

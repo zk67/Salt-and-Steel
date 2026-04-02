@@ -173,7 +173,7 @@ export class ToolService {
             objectType: this.mapObjectType,
             position: positions,
             imageUrl: [] as string[],
-            isShrineActivated: false,
+            turnLeftDeactivated: 0,
         };
 
         for (let i = 0; i < positions.length; i++) {

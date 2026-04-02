@@ -10,6 +10,7 @@ import {
     DebugMovePayload,
     MovePlayerPayload,
     ToggleDebugPayload,
+    ActionOnTilePayload,
 } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
@@ -55,6 +56,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
     isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
+    shrinePopupPosition = signal<Position | null>(null);
 
     private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
     private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
@@ -104,7 +106,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
-        this.socketService.on<{ position: Position; playerId: string }>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
+        this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -116,6 +118,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.off(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
+        this.socketService.off(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
     }
 
     getPlayerAt(position: Position): Player | null {
@@ -225,20 +228,37 @@ export class MapGameComponent implements OnInit, OnDestroy {
                     this.popupService.open(`Action sur le drapeau à la position (${position.x}, ${position.y})`);
                     break;
                 case MapObjectType.HealingShrine:
-                    this.popupService.open(`Action sur le sanctuaire de soin à la position (${position.x}, ${position.y})`);
-                    break;
                 case MapObjectType.CombatShrine:
-                    this.popupService.open(`Action sur le sanctuaire de combat à la position (${position.x}, ${position.y})`);
+                    const shrine = this.mapService.getShrineAtPosition(position);
+                    if (!shrine) {
+                        break;
+                    }
+
+                    if (shrine.turnLeftDeactivated > 0) {
+                        this.popupService.open('Ce sanctuaire est temporairement desactive.');
+                        break;
+                    }
+
+                    this.shrinePopupPosition.set(position);
                     break;
                 case MapObjectType.None:
                     if (isTileDoor(tile) && !player) {
-                        this.socketService.send(GatewayEvents.ActionOnTile, position);
+                        this.socketService.send(GatewayEvents.ActionOnTile, {position});
                     }
                     break;
             }
         }
 
         this.gameService.changeActionMode();
+    }
+
+    selectShrineChoice(isDoubleOrNothing: boolean): void {
+        const position = this.shrinePopupPosition();
+        if (!position) return;
+
+        // Current gateway contract expects only Position for ActionOnTile.
+        this.socketService.send(GatewayEvents.ActionOnTile, {position, isDoubleOrNothing});
+        this.shrinePopupPosition.set(null);
     }
 
     startCombat(playerId: string): void {
@@ -350,19 +370,46 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }, DELAY_BEFORE_NAVIGATE_HOME);
     }
 
-    private handleActionOnTile(payload: { position: Position; playerId: string }): void {
+    private handleActionOnTile(payload: ActionOnTilePayload): void {
         const player = this.gameService.players().find(p => p.id === payload.playerId);
         if (!player) return;
 
         const tile = this.mapService.getTile(payload.position);
         if (!tile) return;
 
+        let shrineMultiplier = 1;
+
+        if(payload.isDoubleOrNothing) {
+            if(payload.DoubleOrNothingSuccess) {
+                shrineMultiplier = 2;
+            } else {
+                shrineMultiplier = 0;
+            }
+        }
+
         switch (tile.mapObject) {
             case MapObjectType.HealingShrine:
-                this.popupService.open(`Action sur le sanctuaire de soin à la position (${payload.position.x}, ${payload.position.y})`);
+                const healingShrine = this.mapService.getShrineAtPosition(payload.position);
+                if (healingShrine){
+                    this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
+                    healingShrine.turnLeftDeactivated = 3;
+                    this.mapService.updateShrine(healingShrine);
+                }
                 break;
             case MapObjectType.CombatShrine:
-                this.popupService.open(`Action sur le sanctuaire de combat à la position (${payload.position.x}, ${payload.position.y})`);
+                const combatShrine = this.mapService.getShrineAtPosition(payload.position);
+                if (combatShrine) {
+                    combatShrine.turnLeftDeactivated = 3;
+                    this.mapService.updateShrine(combatShrine);
+                    this.gameService.updatePlayer(player.id, {
+                        attack: player.attack + 1 * shrineMultiplier,
+                        defense: player.defense + 1 * shrineMultiplier,
+                        shrineBuffs: {
+                            bonusAmount: shrineMultiplier,
+                            turnsLeft: 2,
+                        },
+                    });
+                }
                 break;
             case MapObjectType.None:
                 if (isTileDoor(tile)) {

@@ -7,7 +7,7 @@ import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interf
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { createBooleanGrid, isValidTile, getNeighborPositions,Position, isTileDoor } from '@common/utils/map.utils';
+import { createBooleanGrid, isValidTile, getNeighborPositions,Position, isTileDoor, isShrine } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -103,7 +103,7 @@ export class SaveService {
     }
 
     private isTileAccessible(tile: TileData): boolean {
-        return tile.tileType !== TileType.Wall;
+        return tile.tileType !== TileType.Wall && !isShrine(tile.mapObject);
     }
 
     private hasUnvisitedAccessibleTile(tiles: TileData[][], visited: boolean[][]): boolean {

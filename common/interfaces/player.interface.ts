@@ -1,16 +1,15 @@
 import { DiceTarget } from '@common/enums/player.enums';
-import { NullableNumber } from '@common/types/shared.types';
 import { Position } from "@common/utils/map.utils";
 
 export interface Player {
     id: string;
     name: string;
     imageUrl?: string;
-    speed: NullableNumber;
-    hp: NullableNumber;
-    maxHp: NullableNumber;
-    attack: NullableNumber;
-    defense: NullableNumber;
+    speed: number;
+    hp: number;
+    maxHp: number;
+    attack: number;
+    defense: number;
     d6target: DiceTarget | null;
     d4target: DiceTarget | null;
     position: Position;
@@ -19,10 +18,15 @@ export interface Player {
     hasAbandoned: boolean;
     isOrganizer: boolean;
     turnOrder: number;
+    shrineBuffs?: ShrineBuff;
     stats: PlayerStats;
     visitedTiles?: string[];
 }
 
+export interface ShrineBuff {
+    bonusAmount: number;
+    turnsLeft: number;
+}
 export interface PlayerStats {
     combatPoints: number;
     victoryPoints: number;
