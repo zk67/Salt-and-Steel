@@ -1,17 +1,19 @@
-import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
+import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CombatContext, CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Timer } from '@app/utils/game-timer';
-import { ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
-     Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
+    Game, NewTurnPayload, ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
+import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, isValidTile, isShrine, isTileDoor,  Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isShrine, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 export type SubmitCombatPostureResult = {
@@ -19,6 +21,7 @@ export type SubmitCombatPostureResult = {
     combatRound?: CombatRoundDetails;
     battlePayload?: BattleWonPayload;
     isGameOver: boolean;
+    shouldAdvanceTurn?: boolean;
 };
 
 const HALF_DOUBLE_NOTHING = 0.5;
@@ -136,6 +139,10 @@ export class CurrentGamesService {
         this.turnFlowService.nextPlayerTurn(game, this.timer, this.emitTurnUpdate.bind(this));
     }
 
+    resumeTurnTimer(roomId: string, remainingSeconds: number): void {
+        this.timer.startTurnTimer(roomId, remainingSeconds);
+    }
+
     debugMove(roomId: string, playerId: string, position: Position): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
@@ -251,7 +258,7 @@ export class CurrentGamesService {
         }
 
         const tile = game._game.tiles[payload.position.y][payload.position.x];
-        if(isShrine(tile.mapObject)) {
+        if (isShrine(tile.mapObject)) {
             const shrine = game._game.shrine.find(s => s.position.some(p => p.x === payload.position.x && p.y === payload.position.y));
 
             if (!shrine) {
@@ -260,13 +267,13 @@ export class CurrentGamesService {
 
             let buffMultiplier = 1;
 
-            if(payload.isDoubleOrNothing) {
+            if (payload.isDoubleOrNothing) {
                 buffMultiplier = Math.random() < HALF_DOUBLE_NOTHING ? 0 : 2;
             }
 
-            if(shrine.objectType === MapObjectType.HealingShrine) {
+            if (shrine.objectType === MapObjectType.HealingShrine) {
                 player.hp = Math.min(player.maxHp, player.hp + 2 * buffMultiplier);
-            } else if(shrine.objectType === MapObjectType.CombatShrine) {
+            } else if (shrine.objectType === MapObjectType.CombatShrine) {
                 player.attack = player.attack + 1 * buffMultiplier;
                 player.defense = player.defense + 1 * buffMultiplier;
                 player.shrineBuffs = {
@@ -276,7 +283,7 @@ export class CurrentGamesService {
                 Logger.warn(`Player ${player.name} received a combat buff from the shrine! Attack: ${player.attack}, Defense: ${player.defense}`);
             }
 
-            if(buffMultiplier === 0) {
+            if (buffMultiplier === 0) {
                 payload.DoubleOrNothingSuccess = false;
             } else if (buffMultiplier === 2) {
                 payload.DoubleOrNothingSuccess = true;
@@ -285,7 +292,7 @@ export class CurrentGamesService {
             shrine.turnLeftDeactivated = 3;
         }
 
-        if(isTileDoor(tile)) {
+        if (isTileDoor(tile)) {
             tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
         }
 
@@ -371,8 +378,12 @@ export class CurrentGamesService {
             combatContext.defender,
         );
 
+        const attackerWon = result.payload.winnerId === combatContext.attacker.id;
+        const shouldResumeAttackerTurn = attackerWon && pausedTurnRemainingSeconds > 0;
+
         combatContext.game.activeCombat = null;
-        if (result.payload.winnerId === combatContext.attacker.id && pausedTurnRemainingSeconds > 0) {
+
+        if (shouldResumeAttackerTurn) {
             result.payload.remainingTurnSeconds = pausedTurnRemainingSeconds;
             this.timer.startTurnTimer(roomId, pausedTurnRemainingSeconds);
         }
@@ -382,6 +393,7 @@ export class CurrentGamesService {
             combatRound,
             battlePayload: result.payload,
             isGameOver: result.isGameOver,
+            shouldAdvanceTurn: !result.isGameOver && !shouldResumeAttackerTurn,
         };
     }
 

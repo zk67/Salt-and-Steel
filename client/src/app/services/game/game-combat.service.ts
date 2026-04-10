@@ -12,6 +12,7 @@ import { GameTurnService } from './game-turn.service';
     providedIn: 'root',
 })
 export class GameCombatService {
+    private combatStartHp = new Map<string, number>();
     private readonly combatRoundState = signal<CombatRoundDetails | null>(null);
     private readonly activeCombatState = signal<ActiveCombatPayload | null>(null);
     private readonly mapService = inject(MapService);
@@ -34,11 +35,40 @@ export class GameCombatService {
 
     handleCombatStarted(payload: ActiveCombatPayload): void {
         this.activeCombatState.set(payload);
+
+        const attacker = this.playerState.players().find((player) => player.id === payload.attackerId);
+        const defender = this.playerState.players().find((player) => player.id === payload.defenderId);
+
+        this.combatStartHp.clear();
+
+        if (attacker) {
+            this.combatStartHp.set(attacker.id, attacker.hp ?? 0);
+        }
+
+        if (defender) {
+            this.combatStartHp.set(defender.id, defender.hp ?? 0);
+        }
+
         this.turnService.pauseForCombat(payload.roundTimeSeconds, this.isClientInActiveCombat());
     }
 
     handleCombatRound(payload: CombatRoundDetails): void {
         this.combatRoundState.set(payload);
+
+        const attacker = this.playerState.players().find((player) => player.id === payload.attacker.playerId);
+        const defender = this.playerState.players().find((player) => player.id === payload.defender.playerId);
+
+        if (attacker) {
+            this.playerState.updatePlayer(attacker.id, {
+                hp: Math.max(0, (attacker.hp ?? 0) - (payload.attacker.damageTaken ?? 0)),
+            });
+        }
+
+        if (defender) {
+            this.playerState.updatePlayer(defender.id, {
+                hp: Math.max(0, (defender.hp ?? 0) - (payload.defender.damageTaken ?? 0)),
+            });
+        }
     }
 
     clearCombatRound(): void {
@@ -60,6 +90,7 @@ export class GameCombatService {
         if (!loser || !winner) {
             this.combatRoundState.set(null);
             this.activeCombatState.set(null);
+            this.combatStartHp.clear();
             this.turnService.stopCombatTimerOnly();
             return;
         }
@@ -71,18 +102,25 @@ export class GameCombatService {
     clear(): void {
         this.combatRoundState.set(null);
         this.activeCombatState.set(null);
+        this.combatStartHp.clear();
     }
 
     private applyBattleOutcomeUpdates(payload: BattleWonPayload, winner: Player, loser: Player): void {
+        const winnerStartHp = this.combatStartHp.get(winner.id) ?? winner.hp ?? 0;
+        const loserStartHp = this.combatStartHp.get(loser.id) ?? loser.hp ?? 0;
+
+        const winnerLifeLost = Math.max(0, winnerStartHp - (payload.winnerHp ?? winner.hp ?? 0));
+        const loserLifeLost = Math.max(0, loserStartHp);
+
         this.playerState.addVictoryPoint(winner.id);
         this.playerState.addDefeatPoint(loser.id);
         this.playerState.addCombatPoint(winner.id);
         this.playerState.addCombatPoint(loser.id);
 
-        this.playerState.addTotalLifeLost(winner.id, (winner.hp ?? 0) - (payload.winnerHp ?? 0));
-        this.playerState.addTotalLifeLost(loser.id, loser.hp ?? 0);
-        this.playerState.addTotalDamageDealt(winner.id, loser.hp ?? 0);
-        this.playerState.addTotalDamageDealt(loser.id, (winner.hp ?? 0) - (payload.winnerHp ?? 0));
+        this.playerState.addTotalLifeLost(winner.id, winnerLifeLost);
+        this.playerState.addTotalLifeLost(loser.id, loserLifeLost);
+        this.playerState.addTotalDamageDealt(winner.id, loserLifeLost);
+        this.playerState.addTotalDamageDealt(loser.id, winnerLifeLost);
 
         this.playerState.updatePlayer(winner.id, {
             hp: payload.winnerHp ?? winner.hp,
@@ -92,6 +130,9 @@ export class GameCombatService {
             position: payload.loserPos,
             hp: payload.loserHp ?? loser.hp,
         });
+
+        this.combatStartHp.delete(winner.id);
+        this.combatStartHp.delete(loser.id);
     }
 
     private resumeClientAfterCombatIfNeeded(

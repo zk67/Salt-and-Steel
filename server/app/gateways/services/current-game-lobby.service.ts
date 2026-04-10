@@ -7,6 +7,7 @@ import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
+import { CurrentGameCombatService } from './current-game-combat.service';
 
 @Injectable()
 export class CurrentGameLobbyService {
@@ -15,6 +16,7 @@ export class CurrentGameLobbyService {
         private readonly currentGamesService: CurrentGamesService,
         private readonly gamesService: GamesService,
         private readonly broadcastService: CurrentGameBroadcastService,
+        private readonly combatService: CurrentGameCombatService,
     ) {}
 
     async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
@@ -99,6 +101,11 @@ export class CurrentGameLobbyService {
             this.emitJoinableGames();
             return;
         }
+        const battleWonPayload = this.combatService.handleCombatSurrender(room, client.id);
+
+        if (battleWonPayload) {
+            this.logger.log(`Player ${client.id} surrendered during combat in room: ${room}`);
+        }
 
         if (this.currentGamesService.removePlayerFromGame(room, client.id)) {
             this.logger.log(`Player ${client.id} has surrendered in room: ${room}`);
@@ -106,6 +113,7 @@ export class CurrentGameLobbyService {
             this.broadcastPlayers(room);
             this.emitUnavailableAvatars(room);
             this.emitJoinableGames();
+
         }
 
         if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
