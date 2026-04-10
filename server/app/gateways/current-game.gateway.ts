@@ -1,13 +1,9 @@
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
-import {
-    ActionOnTilePayload,
-    ActiveCombatPayload,
-    DebugMovePayload, MovePlayerPayload,
-    SubmitCombatPosturePayload,
-    ToggleDebugPayload,
-} from '@common/interfaces/game.interface';
+import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { DebugMovePayload, MovePlayerPayload, ActiveCombatPayload, ActionOnTilePayload,
+        SubmitCombatPosturePayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';
@@ -43,11 +39,6 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.CreateGame)
     async createGame(client: Socket, data: { gameDbId: string; gameId: string }): Promise<boolean> {
         return this.lobbyService.createGame(client, data);
-    }
-
-    @SubscribeMessage(GatewayEvents.AddPlayerToGame)
-    addPlayerToGame(client: Socket, player: Player): void {
-        this.lobbyService.addPlayerToGame(client, player);
     }
 
     @SubscribeMessage(GatewayEvents.GetPlayersToGame)
@@ -119,5 +110,19 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.SubmitCombatPosture)
     handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
         this.playService.handleSubmitCombatPosture(client, payload);
+    }
+
+    @SubscribeMessage(GatewayEvents.PassFlag)
+    handlePassFlag(client: Socket, payload: PassFlagPayload): void {
+        if (this.playService.handlePassFlag(client, payload)) {
+            this.broadcastService.emitHandlePassFlag(getRoomIdFromSocket(client), payload);
+        }
+    }
+
+    @SubscribeMessage(GatewayEvents.UpdateFlag)
+    handleUpdateFlag(client: Socket, payload: UpdateFlagPayload): void {
+        if (this.playService.handleUpdateFlag(client, payload)) {
+            this.broadcastService.emitUpdateFlag(getRoomIdFromSocket(client), payload);
+        }
     }
 }

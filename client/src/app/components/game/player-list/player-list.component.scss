@@ -40,6 +40,16 @@ ul {
             text-decoration: line-through;
         }
     }
+
+    &.red-team {
+        background: #4a1a1a;
+        border-color: #891f1f;
+    }
+
+    &.blue-team {
+        background: #282872;
+        border-color: #5757d8;
+    }
 }
 
 .player-avatar {

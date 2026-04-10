@@ -6,23 +6,16 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { getObjectDescription } from '@app/utils/game-utils';
-import {
-    DebugMovePayload,
-    MovePlayerPayload,
-    ToggleDebugPayload,
-    ActionOnTilePayload,
-} from '@common/interfaces/game.interface';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { DebugMovePayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, 
+    UpdateFlagPayload, ActionOnTilePayload } from '@common/interfaces/game.interface';
+import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { addPositions, equalPositions, isTileDoor, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
-    w: 'up',
-    a: 'left',
-    s: 'down',
-    d: 'right',
+    w: 'up', a: 'left', s: 'down', d: 'right',
 };
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
@@ -51,6 +44,7 @@ interface ContextMenuContent {
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
 
+    gameMode = GameMode;
     tileType = TileType;
     mapObjectType = MapObjectType;
 
@@ -63,6 +57,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleGameOverBound = this.handleGameOver.bind(this);
     private handleToggleDebugModeBound = this.handleToggleDebugMode.bind(this);
     private handleActionOnTileBound = this.handleActionOnTile.bind(this);
+    private handlePassFlagBound = this.handlePassFlag.bind(this);
+    private handleUpdateFlagBound = this.handleUpdateFlag.bind(this);
 
     constructor(
         public mapService: MapService,
@@ -72,7 +68,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         public popupService: PopupService,
     ) {}
 
-    // TODO: check si M vient de clavardage, const M a bouger lorsque permanent
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
         const activeElement = document.activeElement;
@@ -86,13 +81,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     private globalKeyUpListener = (event: KeyboardEvent) => {
         const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
-            return;
-        }
+        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) return;
 
-        if (this.gameService.activeCombat()) {
-            return;
-        }
+        if (this.gameService.activeCombat()) return;
+        
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -106,6 +98,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
+        this.socketService.on<PassFlagPayload>(GatewayEvents.HandlePassFlag, this.handlePassFlagBound);
+        this.socketService.on<UpdateFlagPayload>(GatewayEvents.HandleUpdateFlag, this.handleUpdateFlagBound);
         this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
@@ -173,7 +167,13 @@ export class MapGameComponent implements OnInit, OnDestroy {
             position: newPosition,
             movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tile.tileType],
             visitedTiles,
+            hasFlag: player.hasFlag,
         };
+
+        if (this.mapService.getGameMode() === GameMode.CTF && tile.mapObject === MapObjectType.Flag) {
+            updatedPlayer.hasFlag = true;
+            tile.mapObject = MapObjectType.None;
+        }
 
         this.gameService.updatePlayer(player.id, updatedPlayer);
 
@@ -217,9 +217,19 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const clientPlayer = this.gameService.clientPlayer();
 
         if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
+        else return;
 
         if (player) {
-            this.startCombat(player.id);
+            if (this.mapService.getGameMode() === GameMode.CTF && clientPlayer?.hasFlag && player.isRedTeam === clientPlayer.isRedTeam) {
+                const payload: PassFlagPayload = {
+                    initiatorId: clientPlayer.id,
+                    targetId: player.id,
+                };
+
+                this.socketService.send(GatewayEvents.PassFlag, payload);
+            } else {
+                this.startCombat(player.id);
+            }
         } else {
             const tile = this.mapService.getTile(position);
             if (!tile) return;
@@ -424,5 +434,21 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
         this.gameService.setDebugMode(payload.debugMode);
         this.gameService.setHostId(payload.hostId);
+    }
+
+    private handlePassFlag(payload: PassFlagPayload): void {
+        const initiator = this.gameService.players().find(p => p.id === payload.initiatorId);
+        const target = this.gameService.players().find(p => p.id === payload.targetId);
+        if (!initiator || !target) return;
+
+        this.gameService.updatePlayer(initiator.id, { hasFlag: false });
+        this.gameService.updatePlayer(target.id, { hasFlag: true });
+    }
+
+    private handleUpdateFlag(payload: UpdateFlagPayload): void {
+        const player = this.gameService.players().find(p => p.id === payload.playerId);
+        if (!player) return;
+        this.gameService.updatePlayer(player.id, { hasFlag: payload.flagStatus });
+        this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
     }
 }

@@ -1,13 +1,7 @@
 import {
-    ActionOnTilePayload,
-    ActiveCombatPayload,
-    BattleWonPayload,
-    CombatRoundDetails,
-    DebugMovePayload,
-    GameInfoPayload,
-    MovePlayerPayload,
-    ToggleDebugPayload,
-} from '@common/interfaces/game.interface';
+    ActionOnTilePayload, ActiveCombatPayload, BattleWonPayload, CombatRoundDetails, DebugMovePayload, GameInfoPayload,
+    MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
+import { GameMode } from '@common/interfaces/map.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
@@ -94,5 +88,17 @@ export class CurrentGameBroadcastService {
 
     emitShrineBuffOff(roomId: string, playerId: string): void {
         this.server?.to(roomId).emit(GatewayEvents.ShrineBuffOff, playerId);
+    }
+
+    emitGameMode(roomId: string, gameMode: GameMode): void {
+        this.server?.to(roomId).emit(GatewayEvents.GetGameModes, { gameMode });
+    }
+
+    emitHandlePassFlag(roomId: string, payload: PassFlagPayload): void {
+        this.server?.to(roomId).emit(GatewayEvents.HandlePassFlag, payload);
+    }
+
+    emitUpdateFlag(roomId: string, payload: UpdateFlagPayload): void {
+        this.server?.to(roomId).emit(GatewayEvents.HandleUpdateFlag, payload);
     }
 }

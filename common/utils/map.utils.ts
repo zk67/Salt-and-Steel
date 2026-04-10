@@ -120,8 +120,13 @@ export function getActionableTiles(game: Game, player: Player, players: Player[]
         }
 
         if (getPlayerAt(players, newPosition) || isTileDoor(tile) || isShrine(tile.mapObject)
-         || tile.mapObject === MapObjectType.Flag) {
+            || tile.mapObject === MapObjectType.Flag) {
             result[newPosition.y][newPosition.x] = true;
+        }
+
+        if (player.isRedTeam !== undefined && getPlayerAt(players, newPosition)
+            && !player.hasFlag && player.isRedTeam === getPlayerAt(players, newPosition)?.isRedTeam) {
+            result[newPosition.y][newPosition.x] = false;
         }
     });
 

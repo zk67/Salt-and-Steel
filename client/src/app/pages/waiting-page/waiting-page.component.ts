@@ -1,11 +1,13 @@
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, computed, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
 import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
+import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
@@ -22,12 +24,26 @@ const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
 export class WaitingPageComponent implements OnInit, OnDestroy {
 
     messages: ChatMessage[] = [];
-    players: Player[] = [];
+    playersSignal = signal<Player[]>([]);
     showClosedMessage = false;
     showKickedMessage = false;
 
     currentPlayerName: string = '';
     currentPlayerId: string = '';
+
+    gameMode = GameMode;
+    currentGameMode = signal<GameMode | null>(null);
+
+
+    isStartingGameValid = computed(() => {
+        if (!this.isOrganizer || !this.currentGameMode()) return false;
+
+        if (this.currentGameMode() === GameMode.CTF) {
+            return this.playersSignal().length % 2 === 0;
+        } else {
+            return this.playersSignal().length >= 2;
+        }
+    });
 
     private onPopState = () => {
         this.goHome();
@@ -38,7 +54,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     private onPlayersToGame = (p: Player[]) => {
         this.ngZone.run(() => {
-            this.players = p;
+            this.playersSignal.set(p);
         });
     };
 
@@ -81,6 +97,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         private ngZone: NgZone,
         private router: Router,
         private gameService: GameService,
+        protected mapService: MapService,
     ) {}
 
     get isOrganizer(): boolean {
@@ -92,7 +109,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     }
 
     startGame(): void {
-        if (!this.isOrganizer || this.players.length < 2) {
+        if (!this.isStartingGameValid()) {
             return;
         }
 
@@ -127,6 +144,10 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.addEventListener('unload', this.onBeforeUnload);
         window.addEventListener('pagehide', this.onBeforeUnload);
         window.addEventListener('popstate', this.onPopState);
+
+        this.socketService.on<{ gameMode: GameMode }>(GatewayEvents.GetGameModes, (payload) => {
+            this.currentGameMode.set(payload.gameMode);
+        });
 
         this.socketService.on(GatewayEvents.PlayersToGame, this.onPlayersToGame);
         this.socketService.on(GatewayEvents.Message, this.addMessage);

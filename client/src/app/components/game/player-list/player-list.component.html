@@ -2,7 +2,7 @@
     <h3 class="title">Joueurs</h3>
     <ul>
         @for (player of players(); track player.id) {
-            <li class="player-item" [class.active]="isActive(player)" [class.abandoned]="player.hasAbandoned">
+            <li class="player-item" [class.active]="isActive(player)" [class.abandoned]="player.hasAbandoned" [class.red-team]="isRedTeam(player)" [class.blue-team]="!isRedTeam(player) && player.isRedTeam !== undefined">
                 @if (player.imageUrl) {
                     <img [src]="player.imageUrl" class="player-avatar" alt="avatar" />
                 }
@@ -11,6 +11,7 @@
                         @if (isActive(player)) { <span class="active-indicator">▶</span> }
                         {{ player.name }}
                         @if (player.isOrganizer) { <span class="organizer-badge">★</span> }
+                        @if (player.hasFlag) { <span class="flag-indicator">🏴‍☠️</span> }
                     </span>
                     <span class="player-stat">Combats gagnés: {{ player.stats.victoryPoints }}</span>
                 </div>
