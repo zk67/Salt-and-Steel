@@ -21,6 +21,8 @@ export interface Player {
     shrineBuffs?: ShrineBuff;
     stats: PlayerStats;
     visitedTiles?: string[];
+    isRedTeam?: boolean;
+    hasFlag?: boolean;
 }
 
 export interface ShrineBuff {

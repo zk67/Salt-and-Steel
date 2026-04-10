@@ -7,7 +7,7 @@ import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interf
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { createBooleanGrid, isValidTile, getNeighborPositions,Position, isTileDoor, isShrine } from '@common/utils/map.utils';
+import { createBooleanGrid, isValidTile, getNeighborPositions, Position, isTileDoor, isShrine } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -43,8 +43,12 @@ export class SaveService {
             errors.push('Un jeu avec ce nom existe déjà.');
         }
 
-        if(!this.areDoorBetweenWalls(game.tiles)) {
+        if (!this.areDoorBetweenWalls(game.tiles)) {
             errors.push('Les portes doivent avoir des murs entre eux.');
+        }
+
+        if (!this.hasCorrectFlags()) {
+            errors.push('Le nombre de drapeaux ne correspond pas aux exigences.');
         }
 
         return errors;
@@ -112,6 +116,10 @@ export class SaveService {
 
     private hasCorrectSpawnPoints(): boolean {
         return this.toolService.getNumberObject(MapObjectType.SpawnPoint) === 0;
+    }
+
+    private hasCorrectFlags(): boolean {
+        return this.toolService.getNumberObject(MapObjectType.Flag) === 0;
     }
 
     getAllGames(): Observable<Game[]> {

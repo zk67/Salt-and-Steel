@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { getShrineImageUrl } from '@app/utils/tile';
-import { MapObjectType, MapSize, Shrine, TileType } from '@common/interfaces/map.interface';
+import { MapObjectType, MapSize, Shrine, TileType, GameMode } from '@common/interfaces/map.interface';
 import { isShrine, Position } from '@common/utils/map.utils';
 
 const OBJECT_QUANTITY_SMALL = 2;
@@ -64,14 +64,14 @@ export class ToolService {
                 this.mapService.setMapObject(position, MapObjectType.None);
             }
 
-            if(this.tileType === TileType.CloseDoor){
-                if(!this.isDoorPlacementValid(position))
+            if (this.tileType === TileType.CloseDoor) {
+                if (!this.isDoorPlacementValid(position))
                     return;
 
-                if(tile.tileType === TileType.CloseDoor) {
+                if (tile.tileType === TileType.CloseDoor) {
                     this.mapService.setTile(position, TileType.OpenDoor);
                     return;
-                } else if(tile.tileType === TileType.OpenDoor) {
+                } else if (tile.tileType === TileType.OpenDoor) {
                     this.mapService.setTile(position, TileType.CloseDoor);
                     return;
                 }
@@ -109,7 +109,9 @@ export class ToolService {
     }
 
     defaultNumbers(): void {
-        this.numberFlag = 1; // Pareil pour tous les tailles de carte
+        if (this.mapService.getGameMode() === GameMode.CTF) {
+            this.numberFlag = 1; // Pareil pour tous les tailles de carte
+        }
 
         switch (this.mapService.getSize()) {
             case MapSize.Small:
@@ -159,7 +161,7 @@ export class ToolService {
 
     private isDoorPlacementValid(position: Position): boolean {
         const isOnBorder = position.x === 0 || position.y === 0 ||
-         position.x === this.mapService.getSize() - 1 || position.y === this.mapService.getSize() - 1;
+            position.x === this.mapService.getSize() - 1 || position.y === this.mapService.getSize() - 1;
         return !isOnBorder;
     }
 

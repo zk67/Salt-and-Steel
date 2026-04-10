@@ -1,17 +1,19 @@
-import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
+import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CombatContext, CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Timer } from '@app/utils/game-timer';
-import { ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
-     Game, NewTurnPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
+    Game, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
+} from '@common/interfaces/game.interface';
+import { GameMode, MapObjectType, TileType, TileData } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, isValidTile, isShrine, isTileDoor,  Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isShrine, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 export type SubmitCombatPostureResult = {
@@ -29,14 +31,15 @@ export class CurrentGamesService {
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
     private roomPlayerStateService = new RoomPlayerStateService();
     private combatRoundService = new CombatRoundService();
-    private combatResolutionService = new CombatResolutionService(this.combatRoundService);
     private gameLifecycleService = new GameLifecycleService();
     private turnFlowService: TurnFlowService;
+    private combatResolutionService: CombatResolutionService;
 
     constructor(private readonly broadcastService?: CurrentGameBroadcastService) {
         this.turnFlowService = new TurnFlowService((roomId, playerId) => {
             this.broadcastService?.emitShrineBuffOff(roomId, playerId);
         });
+        this.combatResolutionService = new CombatResolutionService(this.combatRoundService);
     }
 
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
@@ -99,6 +102,24 @@ export class CurrentGamesService {
 
         player.movementPoints -= movementCost;
         player.position = newPosition;
+
+        const tile = game._game.tiles[newPosition.y][newPosition.x];
+
+        if (game._game.gameMode === GameMode.CTF && tile.mapObject === MapObjectType.Flag) {
+            tile.mapObject = MapObjectType.None;
+
+            const payload: UpdateFlagPayload = {
+                playerId: player.id,
+                flagStatus: true,
+                position: newPosition,
+            };
+
+            this.handleUpdateFlag(roomId, payload);
+            this.broadcastService.emitUpdateFlag(roomId, payload);
+
+            Logger.log(`${player.name} picked up the flag in room ${roomId}.`);
+        }
+
         return true;
     }
 
@@ -112,6 +133,10 @@ export class CurrentGamesService {
         game.turnOrder = this.gameLifecycleService.initializeTurnOrder(game.players);
         this.allocateSpawnPoints(roomId);
         this.turnFlowService.startGameTurn(game, this.timer, this.emitTurnUpdate.bind(this));
+        if (game._game.gameMode === GameMode.CTF) {
+            this.gameLifecycleService.createTeams(game);
+        }
+
         return game;
     }
 
@@ -207,9 +232,7 @@ export class CurrentGamesService {
 
     getUnavailableAvatars(roomId: string): string[] {
         const game = this.getGameByRoomId(roomId);
-        if (game) {
-            return this.roomPlayerStateService.getUnavailableAvatars(roomId, game.players);
-        }
+        if (game) return this.roomPlayerStateService.getUnavailableAvatars(roomId, game.players);
 
         return [];
     }
@@ -245,52 +268,52 @@ export class CurrentGamesService {
         }
 
         if (player.actionsLeft <= 0) {
-            Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante pour interagir avec la tile.
+            Logger.warn(`Le joueur (${player.name}) n'a plus d'action restante.
                 Actions restantes: ${player.actionsLeft}`);
             return false;
         }
 
         const tile = game._game.tiles[payload.position.y][payload.position.x];
-        if(isShrine(tile.mapObject)) {
-            const shrine = game._game.shrine.find(s => s.position.some(p => p.x === payload.position.x && p.y === payload.position.y));
 
-            if (!shrine) {
-                return false;
-            }
+        this.applyShrine(game, player, tile, payload);
 
-            let buffMultiplier = 1;
-
-            if(payload.isDoubleOrNothing) {
-                buffMultiplier = Math.random() < HALF_DOUBLE_NOTHING ? 0 : 2;
-            }
-
-            if(shrine.objectType === MapObjectType.HealingShrine) {
-                player.hp = Math.min(player.maxHp, player.hp + 2 * buffMultiplier);
-            } else if(shrine.objectType === MapObjectType.CombatShrine) {
-                player.attack = player.attack + 1 * buffMultiplier;
-                player.defense = player.defense + 1 * buffMultiplier;
-                player.shrineBuffs = {
-                    bonusAmount: buffMultiplier,
-                    turnsLeft: 2,
-                };
-                Logger.warn(`Player ${player.name} received a combat buff from the shrine! Attack: ${player.attack}, Defense: ${player.defense}`);
-            }
-
-            if(buffMultiplier === 0) {
-                payload.DoubleOrNothingSuccess = false;
-            } else if (buffMultiplier === 2) {
-                payload.DoubleOrNothingSuccess = true;
-            }
-
-            shrine.turnLeftDeactivated = 3;
-        }
-
-        if(isTileDoor(tile)) {
+        if (isTileDoor(tile)) {
             tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
         }
 
-        player.actionsLeft = player.actionsLeft - 1;
+        player.actionsLeft--;
         return true;
+    }
+
+    private applyShrine(game: PlayableGame, player: Player, tile: TileData, payload: ActionOnTilePayload): void {
+        if (!isShrine(tile.mapObject)) return;
+
+        const shrine = game._game.shrine.find(s =>
+            s.position.some(p => p.x === payload.position.x && p.y === payload.position.y),
+        );
+
+        if (!shrine) return;
+
+        let buffMultiplier = 1;
+
+        if (payload.isDoubleOrNothing) {
+            buffMultiplier = Math.random() < HALF_DOUBLE_NOTHING ? 0 : 2;
+        }
+
+        if (shrine.objectType === MapObjectType.HealingShrine) {
+            player.hp = Math.min(player.maxHp, player.hp + 2 * buffMultiplier);
+        } else if (shrine.objectType === MapObjectType.CombatShrine) {
+            player.attack = player.attack + 1 * buffMultiplier;
+            player.defense = player.defense + 1 * buffMultiplier;
+            player.shrineBuffs = { bonusAmount: buffMultiplier, turnsLeft: 2 };
+
+            Logger.warn(`Player ${player.name} received a combat buff from the shrine! Attack: ${player.attack}, Defense: ${player.defense}`);
+        }
+
+        if (buffMultiplier === 0) payload.DoubleOrNothingSuccess = false;
+        else if (buffMultiplier === 2) payload.DoubleOrNothingSuccess = true;
+
+        shrine.turnLeftDeactivated = 3;
     }
 
     startCombat(roomId: string, attackerId: string, defenderId: string): boolean {
@@ -299,9 +322,7 @@ export class CurrentGamesService {
 
         const attacker = game.players.find((p) => p.id === attackerId);
         const defender = game.players.find((p) => p.id === defenderId);
-        if (!attacker || !defender) {
-            return false;
-        }
+        if (!attacker || !defender) return false;
 
         if (!game.turnOrder || game.turnOrder[game.currentTurnIndex] !== attacker.id) {
             Logger.warn(`Ce n'est pas le tour de l'attaquant (${attacker.name}) dans la room ${roomId}.`);
@@ -332,26 +353,17 @@ export class CurrentGamesService {
     submitCombatPosture(roomId: string, playerId: string, posture: CombatPosture): SubmitCombatPostureResult | null {
         const game = this.getGameByRoomId(roomId);
         const combatContext = this.combatResolutionService.getCombatContext(game, playerId);
-        if (!combatContext) {
-            return null;
-        }
+        if (!combatContext) return null;
 
         const roundPostures = this.combatResolutionService.submitPlayerPosture(combatContext.game, playerId, posture);
-        if (!roundPostures) {
-            return { roundResolved: false, isGameOver: false };
-        }
+        if (!roundPostures) return { roundResolved: false, isGameOver: false };
 
-        const combatRound = this.combatResolutionService.resolveCombatRound(
-            combatContext,
-            roundPostures.attackerPosture,
-            roundPostures.defenderPosture,
+        const combatRound = this.combatResolutionService.resolveCombatRound( 
+            combatContext, roundPostures.attackerPosture, roundPostures.defenderPosture,
         );
+
         if (!this.combatResolutionService.isCombatFinished(combatContext.attacker, combatContext.defender)) {
-            return {
-                roundResolved: true,
-                combatRound,
-                isGameOver: false,
-            };
+            return { roundResolved: true, combatRound, isGameOver: false };
         }
 
         return this.finishCombat(roomId, combatContext, combatRound);
@@ -365,10 +377,7 @@ export class CurrentGamesService {
         const pausedTurnRemainingSeconds = combatContext.game.activeCombat?.pausedTurnRemainingSeconds ?? 0;
         const battlePayload = this.combatResolutionService.createBattlePayload(combatRound);
         const result = this.combatResolutionService.finalizeCombatAfterRound(
-            combatContext.game,
-            battlePayload,
-            combatContext.attacker,
-            combatContext.defender,
+            combatContext.game, battlePayload, combatContext.attacker, combatContext.defender,
         );
 
         combatContext.game.activeCombat = null;
@@ -377,45 +386,51 @@ export class CurrentGamesService {
             this.timer.startTurnTimer(roomId, pausedTurnRemainingSeconds);
         }
 
+        if (result.flagPayload) {
+            this.handleUpdateFlag(roomId, result.flagPayload);
+            this.broadcastService.emitUpdateFlag(roomId, result.flagPayload);
+        }
+
         return {
-            roundResolved: true,
-            combatRound,
-            battlePayload: result.payload,
-            isGameOver: result.isGameOver,
+            roundResolved: true, combatRound, battlePayload: result.payload, isGameOver: result.isGameOver,
         };
     }
 
     resolveCombatRoundOnTimeout(roomId: string): SubmitCombatPostureResult | null {
         const game = this.getGameByRoomId(roomId);
-        if (!game?.activeCombat) {
-            return null;
-        }
+        if (!game?.activeCombat) return null;
 
         const attackerId = game.activeCombat.attackerId;
         const defenderId = game.activeCombat.defenderId;
 
         const combatContext = this.combatResolutionService.getCombatContext(game, attackerId);
-        if (!combatContext) {
-            return null;
-        }
+        if (!combatContext) return null;
 
         const attackerPosture = game.activeCombat.postures[attackerId] ?? CombatPosture.None;
         const defenderPosture = game.activeCombat.postures[defenderId] ?? CombatPosture.None;
 
         const combatRound = this.combatResolutionService.resolveCombatRound(
-            combatContext,
-            attackerPosture,
-            defenderPosture,
+            combatContext, attackerPosture, defenderPosture,
         );
 
         if (!this.combatResolutionService.isCombatFinished(combatContext.attacker, combatContext.defender)) {
             return {
-                roundResolved: true,
-                combatRound,
-                isGameOver: false,
+                roundResolved: true, combatRound, isGameOver: false,
             };
         }
 
         return this.finishCombat(roomId, combatContext, combatRound);
+    }
+
+    handleUpdateFlag(roomId: string, payload: UpdateFlagPayload): boolean {
+        const game = this.getGameByRoomId(roomId);
+        if (!game) return false;
+
+        const player = game.players.find(p => p.id === payload.playerId);
+        if (!player) return false;
+
+        player.hasFlag = payload.flagStatus;
+
+        return true;
     }
 }

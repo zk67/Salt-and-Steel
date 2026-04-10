@@ -41,7 +41,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
         this.messages = this.gameService.getChatMessages();
         this.currentPlayerName = currentPlayer.name;
         this.currentPlayerId = currentPlayer.id;
-        this.socketService.on(GatewayEvents.Message, this.addMessage);
+        this.socketService.on(GatewayEvents.Message, this.addMessage);    
     }
 
     ngOnDestroy(): void {
