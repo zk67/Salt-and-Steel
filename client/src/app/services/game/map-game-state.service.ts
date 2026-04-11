@@ -5,8 +5,6 @@ import {
     ActionOnTilePayload,
     DebugMovePayload,
     MovePlayerPayload,
-    PassFlagPayload,
-    UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
