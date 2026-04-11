@@ -194,7 +194,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             if (!tile) return;
             switch (tile.mapObject) {
                 case MapObjectType.Flag:
-                    this.popupService.open(`Action sur le drapeau Ã  la position (${position.x}, ${position.y})`);
+                    this.popupService.open(`Action sur le drapeau à la position (${position.x}, ${position.y})`);
                     break;
                 case MapObjectType.HealingShrine:
                 case MapObjectType.CombatShrine:
@@ -285,6 +285,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
     }
+
     private handleGameOver(payload: { winnerId: string }): void {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
@@ -292,7 +293,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.clearCombatState();
         this.mapGameStateService.updateVisitedTileStats();
 
-        this.popupService.open(`Partie terminÃ©e ! Le gagnant est ${winner.name} !`);
+        this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
         setTimeout(() => {
             this.popupService.close();
             this.router.navigate([APP_ROUTES.statistics]);
