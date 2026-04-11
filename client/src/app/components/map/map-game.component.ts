@@ -1,18 +1,25 @@
-import { Component, computed, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
+import { MapGameStateService } from '@app/services/game/map-game-state.service';
 import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { getObjectDescription } from '@app/utils/game-utils';
-import { DebugMovePayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, 
-    UpdateFlagPayload, ActionOnTilePayload } from '@common/interfaces/game.interface';
+import {
+    ActionOnTilePayload,
+    DebugMovePayload,
+    MovePlayerPayload,
+    PassFlagPayload,
+    ToggleDebugPayload,
+    UpdateFlagPayload,
+} from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { addPositions, equalPositions, isTileDoor, movableTiles, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, equalPositions, isTileDoor, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up', a: 'left', s: 'down', d: 'right',
@@ -20,7 +27,6 @@ const PLAYER_DIRECTION: Record<string, string> = {
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 const TIME_ROUND = 10;
-const PERCENTAGE = 100;
 
 export enum ContextMenuType {
     PlayerToolTip = 'player',
@@ -42,6 +48,8 @@ interface ContextMenuContent {
 })
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
+    private readonly router = inject(Router);
+    private readonly mapGameStateService = inject(MapGameStateService);
 
     gameMode = GameMode;
     tileType = TileType;
@@ -63,7 +71,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         public mapService: MapService,
         public gameService: GameService,
         private readonly socketService: SocketClientService,
-        private router: Router,
         public popupService: PopupService,
     ) {}
 
@@ -83,7 +90,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) return;
 
         if (this.gameService.activeCombat()) return;
-        
+
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
         if (direction) {
             const player = this.gameService.clientPlayer();
@@ -144,42 +151,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handlePlayerMovePayload(payload: MovePlayerPayload) {
-        const player = this.gameService.players().find(p => p.id === payload.playerId);
-        if (!player) return;
+        this.mapGameStateService.handlePlayerMovePayload(payload);
 
-        const directionVector = DIRECTION_STRING[payload.direction];
-        const newPosition = addPositions(player.position, directionVector);
-
-        const tile = this.mapService.getTile(newPosition);
-        if (!tile) return;
-
-        const visitedTiles: string[] = Array.isArray(player.visitedTiles) ? [...player.visitedTiles] : [];
-        const newTile = `${newPosition.x},${newPosition.y}`;
-        if (!visitedTiles.includes(newTile)) {
-            visitedTiles.push(newTile);
-        }
-
-        const updatedPlayer = {
-            ...player,
-            position: newPosition,
-            movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tile.tileType],
-            visitedTiles,
-            hasFlag: player.hasFlag,
-        };
-
-        if (this.mapService.getGameMode() === GameMode.CTF && tile.mapObject === MapObjectType.Flag) {
-            updatedPlayer.hasFlag = true;
-            tile.mapObject = MapObjectType.None;
-        }
-
-        this.gameService.updatePlayer(player.id, updatedPlayer);
-
-        if (this.gameService.isClientPlayerTurn()) {
-            if (!this.gameService.canPlayerStillDoAction()) {
-                this.socketService.send(GatewayEvents.EndTurnEarly);
-            } else {
-                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
-            }
+        if (this.gameService.isClientPlayerTurn() && !this.gameService.canPlayerStillDoAction()) {
+            this.socketService.send(GatewayEvents.EndTurnEarly);
         }
     }
 
@@ -230,7 +205,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             if (!tile) return;
             switch (tile.mapObject) {
                 case MapObjectType.Flag:
-                    this.popupService.open(`Action sur le drapeau à la position (${position.x}, ${position.y})`);
+                    this.popupService.open(`Action sur le drapeau Ã  la position (${position.x}, ${position.y})`);
                     break;
                 case MapObjectType.HealingShrine:
                 case MapObjectType.CombatShrine:
@@ -316,18 +291,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
-        const player = this.gameService.players().find(p => p.id === payload.playerId);
-        if (!player) return;
+        this.mapGameStateService.handleClickDebugPayload(payload);
 
-        const updatedPlayer: Player = { ...player, position: payload.targetPos };
-        this.gameService.updatePlayer(player.id, updatedPlayer);
-
-        if (this.gameService.clientPlayer()?.id === player.id) {
-            if (!this.gameService.canPlayerStillDoAction()) {
-                this.socketService.send(GatewayEvents.EndTurnEarly);
-            } else {
-                this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.gameService.getPlayers()));
-            }
+        if (this.gameService.clientPlayer()?.id === payload.playerId && !this.gameService.canPlayerStillDoAction()) {
+            this.socketService.send(GatewayEvents.EndTurnEarly);
         }
     }
 
@@ -335,37 +302,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
-        // Calcul du pourcentage de tuiles de terrain visitées pour chaque joueur
-        const tiles = this.mapService.getTileMap();
-        const terrainTypes = [0, 1, 2];
-        let totalTerrainTiles = 0;
-        for (const row of tiles) {
-            for (const tile of row) {
-                if (terrainTypes.includes(tile.tileType)) totalTerrainTiles++;
-            }
-        }
+        this.mapGameStateService.updateVisitedTileStats();
 
-        this.gameService.getPlayers().forEach(player => {
-            const visited = player.visitedTiles ? Array.from(player.visitedTiles) : [];
-            let visitedTerrain = 0;
-            for (const key of visited) {
-                const [x, y] = key.split(',').map(Number);
-                if (terrainTypes.includes(tiles[y][x].tileType)) {
-                    visitedTerrain++;
-                }
-            }
-
-            const percentVisited = totalTerrainTiles > 0 ? Math.round((visitedTerrain / totalTerrainTiles) * PERCENTAGE) : 0;
-
-            this.gameService.updatePlayer(player.id, {
-                stats: {
-                    ...player.stats,
-                    percentageOfTileVisited: percentVisited,
-                },
-            });
-        });
-
-        this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
+        this.popupService.open(`Partie terminÃ©e ! Le gagnant est ${winner.name} !`);
         setTimeout(() => {
             this.popupService.close();
             this.router.navigate([APP_ROUTES.statistics]);
@@ -373,45 +312,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleActionOnTile(payload: ActionOnTilePayload): void {
-        const player = this.gameService.players().find(p => p.id === payload.playerId);
-        if (!player) return;
-
-        const tile = this.mapService.getTile(payload.position);
-        if (!tile) return;
-
-        const shrineMultiplier = payload.isDoubleOrNothing ? (payload.DoubleOrNothingSuccess ? 2 : 0) : 1;
-
-        switch (tile.mapObject) {
-            case MapObjectType.HealingShrine:
-                const healingShrine = this.mapService.getShrineAtPosition(payload.position);
-                if (healingShrine) {
-                    this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
-                    healingShrine.turnLeftDeactivated = 3;
-                    this.mapService.updateShrine(healingShrine);
-                }
-                break;
-            case MapObjectType.CombatShrine:
-                const combatShrine = this.mapService.getShrineAtPosition(payload.position);
-                if (combatShrine) {
-                    combatShrine.turnLeftDeactivated = 3;
-                    this.mapService.updateShrine(combatShrine);
-                    this.gameService.updatePlayer(player.id, {
-                        attack: player.attack + 1 * shrineMultiplier,
-                        defense: player.defense + 1 * shrineMultiplier,
-                        shrineBuffs: {
-                            bonusAmount: shrineMultiplier,
-                            turnsLeft: 2,
-                        },
-                    });
-                }
-                break;
-            case MapObjectType.None:
-                if (isTileDoor(tile)) {
-                    this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
-                    this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
-                }
-                break;
-        }
+        this.mapGameStateService.handleActionOnTile(payload);
     }
 
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
@@ -420,18 +321,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handlePassFlag(payload: PassFlagPayload): void {
-        const initiator = this.gameService.players().find(p => p.id === payload.initiatorId);
-        const target = this.gameService.players().find(p => p.id === payload.targetId);
-        if (!initiator || !target) return;
-
-        this.gameService.updatePlayer(initiator.id, { hasFlag: false });
-        this.gameService.updatePlayer(target.id, { hasFlag: true });
+        this.mapGameStateService.handlePassFlag(payload);
     }
 
     private handleUpdateFlag(payload: UpdateFlagPayload): void {
-        const player = this.gameService.players().find(p => p.id === payload.playerId);
-        if (!player) return;
-        this.gameService.updatePlayer(player.id, { hasFlag: payload.flagStatus });
-        this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
+        this.mapGameStateService.handleUpdateFlag(payload);
     }
 }
