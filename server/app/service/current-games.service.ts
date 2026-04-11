@@ -21,6 +21,7 @@ export type SubmitCombatPostureResult = {
     combatRound?: CombatRoundDetails;
     battlePayload?: BattleWonPayload;
     isGameOver: boolean;
+    shouldAdvanceTurn?: boolean;
 };
 
 const HALF_DOUBLE_NOTHING = 0.5;
@@ -159,6 +160,10 @@ export class CurrentGamesService {
         if (!game) return;
 
         this.turnFlowService.nextPlayerTurn(game, this.timer, this.emitTurnUpdate.bind(this));
+    }
+
+    resumeTurnTimer(roomId: string, remainingSeconds: number): void {
+        this.timer.startTurnTimer(roomId, remainingSeconds);
     }
 
     debugMove(roomId: string, playerId: string, position: Position): boolean {
@@ -380,8 +385,12 @@ export class CurrentGamesService {
             combatContext.game, battlePayload, combatContext.attacker, combatContext.defender,
         );
 
+        const attackerWon = result.payload.winnerId === combatContext.attacker.id;
+        const shouldResumeAttackerTurn = attackerWon && pausedTurnRemainingSeconds > 0;
+
         combatContext.game.activeCombat = null;
-        if (result.payload.winnerId === combatContext.attacker.id && pausedTurnRemainingSeconds > 0) {
+
+        if (shouldResumeAttackerTurn) {
             result.payload.remainingTurnSeconds = pausedTurnRemainingSeconds;
             this.timer.startTurnTimer(roomId, pausedTurnRemainingSeconds);
         }
@@ -392,7 +401,11 @@ export class CurrentGamesService {
         }
 
         return {
-            roundResolved: true, combatRound, battlePayload: result.payload, isGameOver: result.isGameOver,
+            roundResolved: true,
+            combatRound,
+            battlePayload: result.payload,
+            isGameOver: result.isGameOver,
+            shouldAdvanceTurn: !result.isGameOver && !shouldResumeAttackerTurn,
         };
     }
 

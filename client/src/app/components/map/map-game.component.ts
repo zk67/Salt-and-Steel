@@ -35,7 +35,6 @@ interface ContextMenuContent {
     cost?: number;
 }
 
-
 @Component({
     selector: 'app-map-game',
     templateUrl: './map-game.component.html',
@@ -129,9 +128,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
-        if (this.gameService.activeCombat()) {
-            return;
-        }
+        if (this.gameService.activeCombat()) return;
 
         const directionVector = DIRECTION_STRING[direction];
         const newPosition: Position = addPositions(player.position, directionVector);
@@ -210,9 +207,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     doActionAt(position: Position): void {
-        if (this.gameService.activeCombat()) {
-            return;
-        }
+        if (this.gameService.activeCombat()) return;
         const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
@@ -285,13 +280,13 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     onTileClick(event: MouseEvent, position: Position): void {
-        if (event.button === 2) { // clique droit
+        if (event.button === 2) {
             if (this.gameService.isDebugMode()) {
                 this.debugClick(position);
             } else {
                 this.showContextMenu(event, position);
             }
-        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) { // clique gauche
+        } else if (event.button === 0 && this.gameService.getActionMode() && this.getMovableTilesAt(position)) {
             this.doActionAt(position);
         }
     }
@@ -309,10 +304,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (!player) return;
 
         const tile = this.mapService.getTile(position);
-        if (!tile ||
-            tile.tileType === TileType.Wall ||
-            this.getPlayerAt(position) ||
-            tile.mapObject !== MapObjectType.None)
+        if (!tile || tile.tileType === TileType.Wall || this.getPlayerAt(position) || tile.mapObject !== MapObjectType.None)
             return;
 
         const debugPayload: DebugMovePayload = {
@@ -387,20 +379,12 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const tile = this.mapService.getTile(payload.position);
         if (!tile) return;
 
-        let shrineMultiplier = 1;
-
-        if(payload.isDoubleOrNothing) {
-            if(payload.DoubleOrNothingSuccess) {
-                shrineMultiplier = 2;
-            } else {
-                shrineMultiplier = 0;
-            }
-        }
+        const shrineMultiplier = payload.isDoubleOrNothing ? (payload.DoubleOrNothingSuccess ? 2 : 0) : 1;
 
         switch (tile.mapObject) {
             case MapObjectType.HealingShrine:
                 const healingShrine = this.mapService.getShrineAtPosition(payload.position);
-                if (healingShrine){
+                if (healingShrine) {
                     this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
                     healingShrine.turnLeftDeactivated = 3;
                     this.mapService.updateShrine(healingShrine);
@@ -423,8 +407,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 break;
             case MapObjectType.None:
                 if (isTileDoor(tile)) {
-                    tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
-                    this.mapService.setTile(payload.position, tile.tileType);
+                    this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
                     this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
                 }
                 break;
