@@ -132,23 +132,6 @@ export class MapGameStateService {
         }
     }
 
-    handlePassFlag(payload: PassFlagPayload): void {
-        const initiator = this.gameService.players().find((p) => p.id === payload.initiatorId);
-        const target = this.gameService.players().find((p) => p.id === payload.targetId);
-        if (!initiator || !target) return;
-
-        this.gameService.updatePlayer(initiator.id, { hasFlag: false });
-        this.gameService.updatePlayer(target.id, { hasFlag: true });
-    }
-
-    handleUpdateFlag(payload: UpdateFlagPayload): void {
-        const player = this.gameService.players().find((p) => p.id === payload.playerId);
-        if (!player) return;
-
-        this.gameService.updatePlayer(player.id, { hasFlag: payload.flagStatus });
-        this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
-    }
-
     private createMovedPlayer(player: Player, newPosition: { x: number; y: number }, tileType: TileType): Player {
         const visitedTiles: string[] = Array.isArray(player.visitedTiles) ? [...player.visitedTiles] : [];
         const newTile = `${newPosition.x},${newPosition.y}`;
