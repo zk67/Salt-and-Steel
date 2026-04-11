@@ -5,11 +5,10 @@ import {
     ActionOnTilePayload,
     DebugMovePayload,
     MovePlayerPayload,
-    PassFlagPayload,
-    UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { SHRINE_BUFF_DURATION, SHRINE_TURN_LEFT } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, isTileDoor, movableTiles, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
@@ -66,7 +65,7 @@ export class MapGameStateService {
         }
 
         this.gameService.getPlayers().forEach((player) => {
-            const visited = player.visitedTiles ? Array.from(player.visitedTiles) : [];
+            const visited: string[] = player.visitedTiles ? [...player.visitedTiles] : [];
             let visitedTerrain = 0;
 
             for (const key of visited) {
@@ -101,7 +100,7 @@ export class MapGameStateService {
                 const healingShrine = this.mapService.getShrineAtPosition(payload.position);
                 if (healingShrine) {
                     this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
-                    healingShrine.turnLeftDeactivated = 3;
+                    healingShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
                     this.mapService.updateShrine(healingShrine);
                 }
                 break;
@@ -109,14 +108,14 @@ export class MapGameStateService {
             case MapObjectType.CombatShrine: {
                 const combatShrine = this.mapService.getShrineAtPosition(payload.position);
                 if (combatShrine) {
-                    combatShrine.turnLeftDeactivated = 3;
+                    combatShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
                     this.mapService.updateShrine(combatShrine);
                     this.gameService.updatePlayer(player.id, {
                         attack: player.attack + shrineMultiplier,
                         defense: player.defense + shrineMultiplier,
                         shrineBuffs: {
                             bonusAmount: shrineMultiplier,
-                            turnsLeft: 2,
+                            turnsLeft: SHRINE_BUFF_DURATION,
                         },
                     });
                 }
@@ -129,23 +128,6 @@ export class MapGameStateService {
                 }
                 break;
         }
-    }
-
-    handlePassFlag(payload: PassFlagPayload): void {
-        const initiator = this.gameService.players().find((p) => p.id === payload.initiatorId);
-        const target = this.gameService.players().find((p) => p.id === payload.targetId);
-        if (!initiator || !target) return;
-
-        this.gameService.updatePlayer(initiator.id, { hasFlag: false });
-        this.gameService.updatePlayer(target.id, { hasFlag: true });
-    }
-
-    handleUpdateFlag(payload: UpdateFlagPayload): void {
-        const player = this.gameService.players().find((p) => p.id === payload.playerId);
-        if (!player) return;
-
-        this.gameService.updatePlayer(player.id, { hasFlag: payload.flagStatus });
-        this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
     }
 
     private createMovedPlayer(player: Player, newPosition: { x: number; y: number }, tileType: TileType): Player {
