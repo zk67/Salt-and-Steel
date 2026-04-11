@@ -13,6 +13,7 @@ const ICE_COMBAT_PENALTY = -2;
 const DICE_6 = 6;
 const DICE_4 = 4;
 const POSTURE_BONUS = 2;
+const MIN_DICE_VALUE = 1;
 
 export class CombatRoundService {
     buildCombatRoundDetails(
@@ -22,8 +23,8 @@ export class CombatRoundService {
         attackerPosture: CombatPosture,
         defenderPosture: CombatPosture,
     ): CombatRoundDetails {
-        const attackerRound = this.createCombatParticipantRound(game, attacker, attackerPosture);
-        const defenderRound = this.createCombatParticipantRound(game, defender, defenderPosture);
+        const attackerRound = this.createCombatParticipantRound(game, attacker, attackerPosture, true);
+        const defenderRound = this.createCombatParticipantRound(game, defender, defenderPosture, false);
 
         attackerRound.damageDealt = Math.max(0, attackerRound.attack.total - defenderRound.defense.total);
         attackerRound.damageTaken = Math.max(0, defenderRound.attack.total - attackerRound.defense.total);
@@ -37,10 +38,11 @@ export class CombatRoundService {
         game: PlayableGame,
         player: Player,
         posture: CombatPosture,
+        isInstigator: boolean,
     ): CombatParticipantRoundDetails {
         const penalty = this.getPlayerCombatPenalty(game, player);
-        const attackDiceResult = this.getCombatDiceResult(player, DiceTarget.Attack);
-        const defenseDiceResult = this.getCombatDiceResult(player, DiceTarget.Defense);
+        const attackDiceResult = this.getCombatDiceResult(game, player, DiceTarget.Attack, isInstigator);
+        const defenseDiceResult = this.getCombatDiceResult(game, player, DiceTarget.Defense, isInstigator);
 
         const attackPostureBonus = this.getPostureBonus(posture, CombatPosture.Offensive);
         const defensePostureBonus = this.getPostureBonus(posture, CombatPosture.Defensive);
@@ -89,13 +91,33 @@ export class CombatRoundService {
         return tile?.tileType === TileType.Ice ? ICE_COMBAT_PENALTY : 0;
     }
 
-    private getCombatDiceResult(player: Player, target: DiceTarget): number {
+    private getCombatDiceResult(
+        game: PlayableGame,
+        player: Player,
+        target: DiceTarget,
+        isInstigator: boolean,
+    ): number {
+        const sides = this.getDiceSides(player, target);
+        if (sides === 0) {
+            return 0;
+        }
+
+        if (game.debugMode) {
+            return isInstigator ? sides : MIN_DICE_VALUE;
+        }
+
+        return this.rollDice(sides);
+    }
+
+    private getDiceSides(player: Player, target: DiceTarget): number {
         if (player.d6target === target) {
-            return this.rollDice(DICE_6);
+            return DICE_6;
         }
+
         if (player.d4target === target) {
-            return this.rollDice(DICE_4);
+            return DICE_4;
         }
+
         return 0;
     }
 

@@ -22,6 +22,7 @@ const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 })
 export class GameService {
     private isGameStarted = false;
+    private readonly handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
     private readonly mapService = inject(MapService);
     private readonly socketService = inject(SocketClientService);
     private readonly router = inject(Router);
@@ -59,7 +60,7 @@ export class GameService {
             this.clearShrineBuffsIfExpired(playerId);
         });
 
-        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayload);
+        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
     }
 
     setChatMessages(messages: ChatMessage[]): void {
