@@ -1,5 +1,6 @@
 import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/game-const';
-import { MapObjectType, MapSize } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, MapSize } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
 
 export function getMinMaxPlayers(size: number): { minPlayers: number; maxPlayers: number } {
     const minPlayers: number = MIN_PLAYERS;
@@ -33,3 +34,10 @@ export function getObjectDescription(objectType: number): string {
     }
 }
 
+export function canPassFlag(gameMode: GameMode, clientPlayer: Player, player: Player): boolean {
+    return (
+        gameMode === GameMode.CTF &&
+        (clientPlayer.hasFlag ?? false) &&
+        (clientPlayer.isRedTeam ?? false) === (player.isRedTeam ?? false)
+    );
+}

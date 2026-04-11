@@ -10,10 +10,11 @@ import {
     ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
     Game, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileType, TileData } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, isShrine, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isValidTile, isTileDoor,  Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { giveShrineBuff } from '@app/utils/game-utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 export type SubmitCombatPostureResult = {
@@ -24,7 +25,6 @@ export type SubmitCombatPostureResult = {
     shouldAdvanceTurn?: boolean;
 };
 
-const HALF_DOUBLE_NOTHING = 0.5;
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -279,46 +279,14 @@ export class CurrentGamesService {
         }
 
         const tile = game._game.tiles[payload.position.y][payload.position.x];
+        giveShrineBuff(game._game, player, payload);
 
-        this.applyShrine(game, player, tile, payload);
-
-        if (isTileDoor(tile)) {
+        if(isTileDoor(tile)) {
             tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
         }
 
         player.actionsLeft--;
         return true;
-    }
-
-    private applyShrine(game: PlayableGame, player: Player, tile: TileData, payload: ActionOnTilePayload): void {
-        if (!isShrine(tile.mapObject)) return;
-
-        const shrine = game._game.shrine.find(s =>
-            s.position.some(p => p.x === payload.position.x && p.y === payload.position.y),
-        );
-
-        if (!shrine) return;
-
-        let buffMultiplier = 1;
-
-        if (payload.isDoubleOrNothing) {
-            buffMultiplier = Math.random() < HALF_DOUBLE_NOTHING ? 0 : 2;
-        }
-
-        if (shrine.objectType === MapObjectType.HealingShrine) {
-            player.hp = Math.min(player.maxHp, player.hp + 2 * buffMultiplier);
-        } else if (shrine.objectType === MapObjectType.CombatShrine) {
-            player.attack = player.attack + 1 * buffMultiplier;
-            player.defense = player.defense + 1 * buffMultiplier;
-            player.shrineBuffs = { bonusAmount: buffMultiplier, turnsLeft: 2 };
-
-            Logger.warn(`Player ${player.name} received a combat buff from the shrine! Attack: ${player.attack}, Defense: ${player.defense}`);
-        }
-
-        if (buffMultiplier === 0) payload.DoubleOrNothingSuccess = false;
-        else if (buffMultiplier === 2) payload.DoubleOrNothingSuccess = true;
-
-        shrine.turnLeftDeactivated = 3;
     }
 
     startCombat(roomId: string, attackerId: string, defenderId: string): boolean {

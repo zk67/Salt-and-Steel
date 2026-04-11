@@ -10,6 +10,7 @@ import {
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { SHRINE_BUFF_DURATION, SHRINE_TURN_LEFT } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, isTileDoor, movableTiles, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
@@ -101,7 +102,7 @@ export class MapGameStateService {
                 const healingShrine = this.mapService.getShrineAtPosition(payload.position);
                 if (healingShrine) {
                     this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
-                    healingShrine.turnLeftDeactivated = 3;
+                    healingShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
                     this.mapService.updateShrine(healingShrine);
                 }
                 break;
@@ -109,14 +110,14 @@ export class MapGameStateService {
             case MapObjectType.CombatShrine: {
                 const combatShrine = this.mapService.getShrineAtPosition(payload.position);
                 if (combatShrine) {
-                    combatShrine.turnLeftDeactivated = 3;
+                    combatShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
                     this.mapService.updateShrine(combatShrine);
                     this.gameService.updatePlayer(player.id, {
                         attack: player.attack + shrineMultiplier,
                         defense: player.defense + shrineMultiplier,
                         shrineBuffs: {
                             bonusAmount: shrineMultiplier,
-                            turnsLeft: 2,
+                            turnsLeft: SHRINE_BUFF_DURATION,
                         },
                     });
                 }

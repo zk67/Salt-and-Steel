@@ -79,14 +79,18 @@ export class ToolService {
 
             this.mapService.setTile(position, this.tileType);
         } else if (this.mapObjectType !== MapObjectType.None) {
-            if (tile.mapObject !== this.mapObjectType && tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
+            if (tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
                 if(isShrine(this.mapObjectType)){
                     this.placeShrine(position);
                     return;
                 }
 
-                if (tile.mapObject !== MapObjectType.None)
+                if(isShrine(tile.mapObject)){
+                    this.deleteShrine(position);
+                } else if (tile.mapObject !== MapObjectType.None){
                     this.setNumberObject(tile.mapObject, false);
+                }
+
                 this.mapService.setMapObject(position, this.mapObjectType);
                 this.setNumberObject(this.mapObjectType);
             }
@@ -134,8 +138,12 @@ export class ToolService {
         const gameData = this.mapService.getGameData();
 
         if (gameData) {
-            gameData.tiles.flat().filter(t => t.mapObject !== MapObjectType.None).forEach((tile) => {
+            gameData.tiles.flat().filter(t => t.mapObject !== MapObjectType.None && !isShrine(t.mapObject)).forEach((tile) => {
                 this.setNumberObject(tile.mapObject);
+            });
+
+            gameData.shrine.forEach((shrine) => {
+                this.setNumberObject(shrine.objectType);
             });
         }
     }

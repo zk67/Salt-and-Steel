@@ -6,15 +6,9 @@ import { MapGameStateService } from '@app/services/game/map-game-state.service';
 import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { getObjectDescription } from '@app/utils/game-utils';
-import {
-    ActionOnTilePayload,
-    DebugMovePayload,
-    MovePlayerPayload,
-    PassFlagPayload,
-    ToggleDebugPayload,
-    UpdateFlagPayload,
-} from '@common/interfaces/game.interface';
+import { canPassFlag, getObjectDescription } from '@app/utils/game-utils';
+import { DebugMovePayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload,
+    ActionOnTilePayload } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
@@ -60,12 +54,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
     shrinePopupPosition = signal<Position | null>(null);
 
     private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
-    private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
     private handleGameOverBound = this.handleGameOver.bind(this);
     private handleToggleDebugModeBound = this.handleToggleDebugMode.bind(this);
     private handleActionOnTileBound = this.handleActionOnTile.bind(this);
-    private handlePassFlagBound = this.handlePassFlag.bind(this);
-    private handleUpdateFlagBound = this.handleUpdateFlag.bind(this);
 
     constructor(
         public mapService: MapService,
@@ -101,11 +92,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     async ngOnInit(): Promise<void> {
         this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
-        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
-        this.socketService.on<PassFlagPayload>(GatewayEvents.HandlePassFlag, this.handlePassFlagBound);
-        this.socketService.on<UpdateFlagPayload>(GatewayEvents.HandleUpdateFlag, this.handleUpdateFlagBound);
         this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         window.addEventListener('keyup', this.globalKeyUpListener);
 
@@ -115,7 +103,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         window.removeEventListener('keyup', this.globalKeyUpListener);
         this.socketService.off(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
-        this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.off(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
         this.socketService.off(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
@@ -190,7 +177,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         else return;
 
         if (player) {
-            if (this.mapService.getGameMode() === GameMode.CTF && clientPlayer?.hasFlag && player.isRedTeam === clientPlayer.isRedTeam) {
+            if (canPassFlag(this.mapService.getGameMode(), clientPlayer, player)) {
                 const payload: PassFlagPayload = {
                     initiatorId: clientPlayer.id,
                     targetId: player.id,
@@ -235,8 +222,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     selectShrineChoice(isDoubleOrNothing: boolean): void {
         const position = this.shrinePopupPosition();
         if (!position) return;
-
-        // Current gateway contract expects only Position for ActionOnTile.
+        
         this.socketService.send(GatewayEvents.ActionOnTile, {position, isDoubleOrNothing});
         this.shrinePopupPosition.set(null);
     }
@@ -290,14 +276,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.send(GatewayEvents.DebugMove, debugPayload);
     }
 
-    handleClickDebugPayload(payload: DebugMovePayload): void {
-        this.mapGameStateService.handleClickDebugPayload(payload);
-
-        if (this.gameService.clientPlayer()?.id === payload.playerId && !this.gameService.canPlayerStillDoAction()) {
-            this.socketService.send(GatewayEvents.EndTurnEarly);
-        }
-    }
-
     private handleGameOver(payload: { winnerId: string }): void {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
@@ -318,13 +296,5 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
         this.gameService.setDebugMode(payload.debugMode);
         this.gameService.setHostId(payload.hostId);
-    }
-
-    private handlePassFlag(payload: PassFlagPayload): void {
-        this.mapGameStateService.handlePassFlag(payload);
-    }
-
-    private handleUpdateFlag(payload: UpdateFlagPayload): void {
-        this.mapGameStateService.handleUpdateFlag(payload);
     }
 }
