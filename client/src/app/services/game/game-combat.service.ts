@@ -77,8 +77,14 @@ export class GameCombatService {
 
     handleBattleWon(payload: BattleWonPayload): void {
         const clientId = this.playerState.clientPlayer()?.id;
-        const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
         const wasClientInCombat = this.isClientInActiveCombat();
+
+        if (payload.doubleKo) {
+            this.handleDoubleKoBattle(payload, wasClientInCombat);
+            return;
+        }
+
+        const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
 
         if (!isParticipant) {
             this.combatRoundState.set(null);
@@ -91,7 +97,9 @@ export class GameCombatService {
             this.combatRoundState.set(null);
             this.activeCombatState.set(null);
             this.combatStartHp.clear();
-            this.turnService.stopCombatTimerOnly();
+            if (wasClientInCombat) {
+                this.turnService.stopCombatTimerOnly();
+            }
             return;
         }
 
@@ -135,6 +143,77 @@ export class GameCombatService {
         this.combatStartHp.delete(loser.id);
     }
 
+    private handleDoubleKoBattle(payload: BattleWonPayload, wasClientInCombat: boolean): void {
+        if (!payload.attackerRespawn || !payload.defenderRespawn) {
+            this.combatRoundState.set(null);
+            this.activeCombatState.set(null);
+            this.combatStartHp.clear();
+
+            if (wasClientInCombat) {
+                this.turnService.stopCombatTimerOnly();
+            }
+            return;
+        }
+
+        this.applyDoubleKoOutcomeUpdates(payload);
+
+        if (wasClientInCombat) {
+            this.turnService.stopCombatTimerOnly();
+        }
+
+        this.combatRoundState.set(null);
+        this.activeCombatState.set(null);
+    }
+
+    private applyDoubleKoOutcomeUpdates(payload: BattleWonPayload): void {
+        const attackerRespawn = payload.attackerRespawn;
+        const defenderRespawn = payload.defenderRespawn;
+
+        if (!attackerRespawn || !defenderRespawn) {
+            return;
+        }
+
+        const attacker = this.playerState.players().find((player) => player.id === attackerRespawn.playerId);
+        const defender = this.playerState.players().find((player) => player.id === defenderRespawn.playerId);
+
+        if (!attacker || !defender) {
+            this.combatStartHp.delete(attackerRespawn.playerId);
+            this.combatStartHp.delete(defenderRespawn.playerId);
+            return;
+        }
+
+        const attackerStartHp = this.combatStartHp.get(attacker.id) ?? attacker.hp ?? 0;
+        const defenderStartHp = this.combatStartHp.get(defender.id) ?? defender.hp ?? 0;
+
+        const attackerLifeLost = Math.max(0, attackerStartHp);
+        const defenderLifeLost = Math.max(0, defenderStartHp);
+
+        this.playerState.addCombatPoint(attacker.id);
+        this.playerState.addCombatPoint(defender.id);
+
+        this.playerState.addDefeatPoint(attacker.id);
+        this.playerState.addDefeatPoint(defender.id);
+
+        this.playerState.addTotalLifeLost(attacker.id, attackerLifeLost);
+        this.playerState.addTotalLifeLost(defender.id, defenderLifeLost);
+
+        this.playerState.addTotalDamageDealt(attacker.id, defenderLifeLost);
+        this.playerState.addTotalDamageDealt(defender.id, attackerLifeLost);
+
+        this.playerState.updatePlayer(attacker.id, {
+            position: attackerRespawn.position,
+            hp: attackerRespawn.hp,
+        });
+
+        this.playerState.updatePlayer(defender.id, {
+            position: defenderRespawn.position,
+            hp: defenderRespawn.hp,
+        });
+
+        this.combatStartHp.delete(attacker.id);
+        this.combatStartHp.delete(defender.id);
+    }
+
     private resumeClientAfterCombatIfNeeded(
         payload: BattleWonPayload,
         winner: Player,
@@ -151,6 +230,7 @@ export class GameCombatService {
 
         if (this.playerState.isClientPlayer(loser.id) && this.turnService.isClientPlayerTurn()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
+            this.combatRoundState.set(null);
             this.activeCombatState.set(null);
             return;
         }

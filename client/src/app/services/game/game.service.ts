@@ -133,6 +133,7 @@ export class GameService {
 
     private handleStartGame(payload: GameInfoPayload): void {
         this.isGameStarted = true;
+        this.combatService.clear();
 
         const sorted = [...payload.players].sort((a, b) => a.turnOrder - b.turnOrder);
         this.playerState.setPlayers(sorted);
@@ -207,5 +208,9 @@ export class GameService {
 
     clearCombatRound(): void {
         this.combatService.clearCombatRound();
+    }
+
+    clearCombatState(): void {
+        this.combatService.clear();
     }
 }

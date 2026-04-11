@@ -302,6 +302,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const winner = this.gameService.players().find(p => p.id === payload.winnerId);
         if (!winner) return;
 
+        this.gameService.clearCombatState();
         this.mapGameStateService.updateVisitedTileStats();
 
         this.popupService.open(`Partie terminÃ©e ! Le gagnant est ${winner.name} !`);

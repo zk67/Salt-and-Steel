@@ -385,7 +385,7 @@ export class CurrentGamesService {
             combatContext.game, battlePayload, combatContext.attacker, combatContext.defender,
         );
 
-        const attackerWon = result.payload.winnerId === combatContext.attacker.id;
+        const attackerWon = result.payload.doubleKo !== true && result.payload.winnerId === combatContext.attacker.id;
         const shouldResumeAttackerTurn = attackerWon && pausedTurnRemainingSeconds > 0;
 
         combatContext.game.activeCombat = null;
