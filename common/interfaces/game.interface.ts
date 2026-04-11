@@ -97,3 +97,15 @@ export interface ActionOnTilePayload {
     isDoubleOrNothing: boolean;
     DoubleOrNothingSuccess?: boolean;
 }
+
+
+export interface PassFlagPayload {
+    initiatorId: string;
+    targetId: string;
+}
+
+export interface UpdateFlagPayload {
+    playerId: string;
+    flagStatus: boolean;
+    position: Position;
+}

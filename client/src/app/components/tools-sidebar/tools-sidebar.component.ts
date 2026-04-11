@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PopupComponent } from '@app/components/popup/popup.component';
 import { Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -16,12 +16,14 @@ import { firstValueFrom } from 'rxjs';
     templateUrl: './tools-sidebar.component.html',
     styleUrls: ['./tools-sidebar.component.scss'],
 })
-export class ToolsSidebarComponent {
+export class ToolsSidebarComponent implements OnInit {
 
     // Pour le html
     private _tileType = TileType;
     private _mapObjectType = MapObjectType;
     private _toolType = ToolType;
+    private _mode = GameMode.Classic;
+    gameMode = GameMode;
 
     showPopup = false;
     popupMessage = '';
@@ -33,6 +35,14 @@ export class ToolsSidebarComponent {
         private saveService: SaveService,
         private mapPreviewService: MapPreviewService,
     ) {}
+
+    ngOnInit(): void {
+        this._mode = this.mapService.getGameMode();
+    }
+
+    get mode(): GameMode {
+        return this._mode;
+    }
 
     get tileType(): typeof TileType {
         return this._tileType;

@@ -2,6 +2,7 @@ import { GamesService } from '@app/database/game/services/game.service';
 import { JoinableGameSummary } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { ToggleDebugPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
@@ -40,16 +41,15 @@ export class CurrentGameLobbyService {
         return true;
     }
 
-    addPlayerToGame(client: Socket, player: Player): void {
-        const room = getRoomIdFromSocket(client);
-        this.currentGamesService.addPlayerToGame(room, player);
-        this.broadcastPlayers(room);
-    }
-
     getPlayersToGame(client: Socket): void {
         const room = getRoomIdFromSocket(client);
         const players = this.currentGamesService.getPlayersToGame(room);
         client.emit(GatewayEvents.PlayersToGame, players);
+
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (game) {
+            client.emit(GatewayEvents.GetGameModes, { gameMode: game._game.gameMode });
+        }
     }
 
     emitJoinableGamesToClient(client: Socket): void {
@@ -76,6 +76,10 @@ export class CurrentGameLobbyService {
         const game = this.currentGamesService.getGameByRoomId(room);
         if (game && player.isOrganizer) {
             game.idHost = player.id;
+        }
+
+        if (game) {
+            this.broadcastService.emitGameMode(room, game._game.gameMode);
         }
 
         this.logger.log(`Player ${player.name} added to current game in room ${room}`);
@@ -116,9 +120,16 @@ export class CurrentGameLobbyService {
 
         }
 
+
         if (game.idHost === client.id && this.currentGamesService.isDebugMode(room)) {
             this.logger.log(`Host ${client.id} has surrendered. Debug mode disabled in room: ${room}`);
-            this.broadcastService.emitToggleDebugMode(room);
+
+            const payload: ToggleDebugPayload = {
+                hostId: game.idHost,
+                debugMode: false,
+            };
+
+            this.broadcastService.emitToggleDebugMode(room, payload);
         }
     }
 

@@ -1,8 +1,10 @@
 import { PlayableGame } from '@app/interface/game.interface';
-import { BattleWonPayload, CombatPosture, CombatRoundDetails } from '@common/interfaces/game.interface';
+import { BattleWonPayload, CombatPosture, CombatRoundDetails, UpdateFlagPayload } from '@common/interfaces/game.interface';
+import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES } from '@common/types/game.constant';
 import { findNearestFreeSpawn } from '@common/utils/map.utils';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { CombatRoundService } from './combat-round.service';
 
 export type CombatContext = {
@@ -89,32 +91,67 @@ export class CombatResolutionService {
     }
 
     finalizeCombatAfterRound(game: PlayableGame, battlePayload: BattleWonPayload, attacker: Player, defender: Player)
-        : { payload: BattleWonPayload; isGameOver: boolean } {
+        : { payload: BattleWonPayload; isGameOver: boolean; flagPayload?: UpdateFlagPayload } {
+
         const attackerDead = (attacker.hp ?? 0) <= 0;
         const defenderDead = (defender.hp ?? 0) <= 0;
         if (attackerDead && defenderDead) {
             return { payload: battlePayload, isGameOver: false };
         }
 
+        const { winner, loser } = this.resolveWinnerAndLoser(attacker, defender, attackerDead);
+        this.applyBattleResults(battlePayload, winner, loser);
+
+        const isGameOver = winner.stats.victoryPoints >= MAX_VICTORIES;
+        const flagPayload = this.handleFlagDrop(game, loser);
+        this.respawnLoser(game, loser, battlePayload);
+
+        return { payload: battlePayload, isGameOver, flagPayload };
+    }
+
+    private resolveWinnerAndLoser(attacker: Player, defender: Player, attackerDead: boolean) {
         const winner = attackerDead ? defender : attacker;
         const loser = attackerDead ? attacker : defender;
+
+        winner.stats.victoryPoints = (winner.stats.victoryPoints || 0) + 1;
+        loser.hp = loser.maxHp ?? loser.hp;
+
+        return { winner, loser };
+    }
+
+    private applyBattleResults(battlePayload: BattleWonPayload, winner: Player, loser: Player): void {
         battlePayload.winnerId = winner.id;
         battlePayload.loserId = loser.id;
         battlePayload.winnerHp = winner.hp ?? 0;
         battlePayload.loserHp = loser.maxHp ?? loser.hp ?? 0;
-        winner.stats.victoryPoints = (winner.stats.victoryPoints || 0) + 1;
+    }
 
-        const isGameOver = winner.stats.victoryPoints >= MAX_VICTORIES;
-        loser.hp = loser.maxHp ?? loser.hp;
-
-        const loserSpawn = game.spawnPoints?.get(loser.id);
-        if (loserSpawn) {
-            const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
-            loser.position = respawnPos;
-            battlePayload.loserPos = respawnPos;
+    private handleFlagDrop(game: PlayableGame, loser: Player): UpdateFlagPayload | undefined {
+        if (game._game.gameMode !== GameMode.CTF || !loser.hasFlag) {
+            return;
         }
+        loser.hasFlag = false;
 
-        return { payload: battlePayload, isGameOver };
+        const tile = game._game.tiles[loser.position.y][loser.position.x];
+        tile.mapObject = MapObjectType.Flag;
+
+        Logger.warn(`${loser.name} lost the flag.`);
+
+        return {
+            playerId: loser.id,
+            flagStatus: false,
+            position: loser.position,
+        };
+    }
+
+    private respawnLoser(game: PlayableGame, loser: Player, battlePayload: BattleWonPayload): void {
+        const loserSpawn = game.spawnPoints?.get(loser.id);
+        if (!loserSpawn) return;
+
+        const respawnPos = findNearestFreeSpawn(game._game.tiles, loserSpawn, game.players, loser.id);
+
+        loser.position = respawnPos;
+        battlePayload.loserPos = respawnPos;
     }
 
     createBattlePayload(combatRound: CombatRoundDetails): BattleWonPayload {

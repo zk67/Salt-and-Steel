@@ -218,7 +218,7 @@ h3 {
     transform: translateY(0);
 }
 
-.option-btn.disabled {
+.option-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;

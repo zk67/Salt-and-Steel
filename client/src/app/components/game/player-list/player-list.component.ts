@@ -17,4 +17,8 @@ export class PlayerListComponent {
     isActive(player: Player): boolean {
         return this.gameService.activePlayer()?.id === player.id;
     }
+
+    isRedTeam(player: Player): boolean {
+        return player.isRedTeam ?? false;
+    }   
 }

@@ -56,4 +56,18 @@ export class GameLifecycleService {
         }
         return game.players.length < game._game.maxPlayers && game.currentPhase === undefined;
     }
+
+    createTeams(game: PlayableGame): void {
+        const players = [...game.players];
+
+        for (let i = players.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [players[i], players[j]] = [players[j], players[i]];
+        }
+
+        const half = players.length / 2;
+        players.forEach((player, index) => {
+            player.isRedTeam = index < half;
+        });
+    }
 }
