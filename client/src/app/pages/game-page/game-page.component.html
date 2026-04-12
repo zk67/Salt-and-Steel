@@ -12,6 +12,18 @@
         </div>
     </div>
 }
+
+<app-choice-popup
+    [show]="popupService.choiceShow()"
+    [title]="popupService.choiceTitle()"
+    [message]="popupService.choiceMessage()"
+    [firstOptionLabel]="popupService.choiceFirstOptionLabel()"
+    [secondOptionLabel]="popupService.choiceSecondOptionLabel()"
+    (firstOptionSelected)="popupService.selectChoiceFirstOption()"
+    (secondOptionSelected)="popupService.selectChoiceSecondOption()"
+    (closeRequested)="popupService.closeChoice()">
+</app-choice-popup>
+
 <div class="container">
     <div class="map-game-section">
         <app-map-game></app-map-game>

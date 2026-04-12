@@ -6,6 +6,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
         @if (show) {
             <div class="popup-overlay" role="dialog" aria-modal="true">
                 <div class="popup">
+                    <button type="button" class="close-button" aria-label="Fermer" (click)="onClose()">×</button>
+
                     @if (title) {
                         <h2>{{ title }}</h2>
                     }
@@ -37,6 +39,7 @@ export class ChoicePopupComponent {
 
     @Output() firstOptionSelected = new EventEmitter<void>();
     @Output() secondOptionSelected = new EventEmitter<void>();
+    @Output() closeRequested = new EventEmitter<void>();
 
     onFirstOption(): void {
         this.firstOptionSelected.emit();
@@ -44,5 +47,9 @@ export class ChoicePopupComponent {
 
     onSecondOption(): void {
         this.secondOptionSelected.emit();
+    }
+
+    onClose(): void {
+        this.closeRequested.emit();
     }
 }

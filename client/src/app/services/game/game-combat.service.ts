@@ -43,6 +43,10 @@ export class GameCombatService {
         const attacker = this.playerState.players().find((player) => player.id === payload.attackerId);
         const defender = this.playerState.players().find((player) => player.id === payload.defenderId);
 
+        if (attacker && attacker.actionsLeft > 0) {
+            this.playerState.updatePlayer(attacker.id, { actionsLeft: attacker.actionsLeft - 1 });
+        }
+
         this.combatStartHp.clear();
 
         if (attacker) {

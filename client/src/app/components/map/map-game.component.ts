@@ -50,7 +50,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
     isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
-    shrinePopupPosition = signal<Position | null>(null);
 
     private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
     private handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
@@ -175,8 +174,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         const player = this.getPlayerAt(position);
         const clientPlayer = this.gameService.clientPlayer();
 
-        if (clientPlayer) this.gameService.updatePlayer(clientPlayer.id, { actionsLeft: clientPlayer.actionsLeft - 1 });
-        else return;
+        if (!clientPlayer) return;
 
         if (player) {
             if (canPassFlag(this.mapService.getGameMode(), clientPlayer, player)) {
@@ -208,7 +206,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                         break;
                     }
 
-                    this.shrinePopupPosition.set(position);
+                    this.openShrineChoicePopup(position);
                     break;
                 case MapObjectType.None:
                     if (isTileDoor(tile) && !player) {
@@ -219,14 +217,6 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
 
         this.gameService.changeActionMode();
-    }
-
-    selectShrineChoice(isDoubleOrNothing: boolean): void {
-        const position = this.shrinePopupPosition();
-        if (!position) return;
-        
-        this.socketService.send(GatewayEvents.ActionOnTile, {position, isDoubleOrNothing});
-        this.shrinePopupPosition.set(null);
     }
 
     startCombat(playerId: string): void {
@@ -302,6 +292,23 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     private handleActionOnTile(payload: ActionOnTilePayload): void {
         this.mapGameStateService.handleActionOnTile(payload);
+    }
+
+    private openShrineChoicePopup(position: Position): void {
+        this.popupService.openChoice({
+            title: 'Choix du sanctuaire',
+            message: 'Selectionnez un mode pour cette action.',
+            firstOptionLabel: 'Double ou rien',
+            secondOptionLabel: 'Normal',
+            context: 'shrine-action',
+            data: { position },
+            onFirstOption: () => this.sendShrineChoice(position, true),
+            onSecondOption: () => this.sendShrineChoice(position, false),
+        });
+    }
+
+    private sendShrineChoice(position: Position, isDoubleOrNothing: boolean): void {
+        this.socketService.send(GatewayEvents.ActionOnTile, { position, isDoubleOrNothing });
     }
 
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
