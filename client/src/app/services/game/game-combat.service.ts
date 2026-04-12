@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
+import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ActiveCombatPayload, BattleWonPayload, CombatRoundDetails } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
@@ -7,6 +8,8 @@ import { GatewayEvents } from '@common/types/gateway.events';
 import { movableTiles } from '@common/utils/map.utils';
 import { GamePlayerStateService } from './game-player-state.service';
 import { GameTurnService } from './game-turn.service';
+
+const COMBAT_RESULT_NOTIFICATION_DURATION_MS = 3000;
 
 @Injectable({
     providedIn: 'root',
@@ -16,6 +19,7 @@ export class GameCombatService {
     private readonly combatRoundState = signal<CombatRoundDetails | null>(null);
     private readonly activeCombatState = signal<ActiveCombatPayload | null>(null);
     private readonly mapService = inject(MapService);
+    private readonly popupService = inject(PopupService);
     private readonly socketService = inject(SocketClientService);
     private readonly playerState = inject(GamePlayerStateService);
     private readonly turnService = inject(GameTurnService);
@@ -80,6 +84,9 @@ export class GameCombatService {
         const wasClientInCombat = this.isClientInActiveCombat();
 
         if (payload.doubleKo) {
+            if (wasClientInCombat) {
+                this.popupService.openNotification('Double KO ! Vous réapparaissez après le combat.', COMBAT_RESULT_NOTIFICATION_DURATION_MS);
+            }
             this.handleDoubleKoBattle(payload, wasClientInCombat);
             return;
         }
@@ -101,6 +108,10 @@ export class GameCombatService {
                 this.turnService.stopCombatTimerOnly();
             }
             return;
+        }
+
+        if (isParticipant) {
+            this.showBattleResultNotification(winner, loser);
         }
 
         this.applyBattleOutcomeUpdates(payload, winner, loser);
@@ -212,6 +223,20 @@ export class GameCombatService {
 
         this.combatStartHp.delete(attacker.id);
         this.combatStartHp.delete(defender.id);
+    }
+
+    private showBattleResultNotification(winner: Player, loser: Player): void {
+        const clientPlayer = this.playerState.clientPlayer();
+        if (!clientPlayer) {
+            return;
+        }
+
+        const message =
+            clientPlayer.id === winner.id
+                ? `Victoire ! Vous avez vaincu ${loser.name}.`
+                : `Défaite. ${winner.name} vous a vaincu.`;
+
+        this.popupService.openNotification(message, COMBAT_RESULT_NOTIFICATION_DURATION_MS);
     }
 
     private resumeClientAfterCombatIfNeeded(
