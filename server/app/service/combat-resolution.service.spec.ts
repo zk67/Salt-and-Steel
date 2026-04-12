@@ -8,10 +8,36 @@ import { BattleWonPayload, CombatPosture, CombatRoundDetails, Game } from '@comm
 import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
-
-const BASIC_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
-const QUATRE = 4;
-const SIX = 6;
+/**
+ * Description:
+ * Ce fichier de tests verifie que CombatResolutionService gere correctement
+ * la resolution d'un combat, la soumission des postures, les degats,
+ * les respawns, la gestion du drapeau et la fin de partie.
+ *
+ * Fonctionnement:
+ * 1) On construit un contexte de jeu minimal avec deux joueurs et un combat actif.
+ *
+ * 2) On simule les differentes issues d'un round pour valider les mises a jour
+ * des joueurs, les payloads retournes et les effets relies au mode de jeu.
+ */
+const DEFAULT_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
+const ROUND_GRID_SIZE = 4;
+const DEFAULT_PLAYER_SPEED = 6;
+const DEFAULT_PLAYER_HP = 6;
+const DEFAULT_PLAYER_STAT = 4;
+const DEFAULT_MOVEMENT_POINTS = 6;
+const DEFAULT_ACTIONS_LEFT = 1;
+const DEFAULT_DICE_RESULT = 1;
+const DEFAULT_ROUND_TOTAL = 5;
+const DEFAULT_ROUND_TIME_SECONDS = 10;
+const DEFAULT_PAUSED_TURN_SECONDS = 12;
+const MINOR_DAMAGE = 2;
+const HIGH_DAMAGE = 4;
+const LETHAL_DAMAGE = 6;
+const VICTORIES_BEFORE_LAST_WIN = 2;
+const ATTACKER_SPAWN_POSITION = { x: 0, y: 0 };
+const DEFENDER_START_POSITION = { x: 1, y: 0 };
+const DEFENDER_SPAWN_POSITION = { x: 3, y: 3 };
 
 describe('CombatResolutionService', () => {
     let combatRoundService: jest.Mocked<CombatRoundService>;
@@ -29,16 +55,16 @@ describe('CombatResolutionService', () => {
         return {
             id,
             name,
-            speed: 6,
-            hp: 6,
-            maxHp: 6,
-            attack: 4,
-            defense: 4,
+            speed: DEFAULT_PLAYER_SPEED,
+            hp: DEFAULT_PLAYER_HP,
+            maxHp: DEFAULT_PLAYER_HP,
+            attack: DEFAULT_PLAYER_STAT,
+            defense: DEFAULT_PLAYER_STAT,
             d6target: DiceTarget.Attack,
             d4target: DiceTarget.Defense,
-            position: { x: 0, y: 0 },
-            movementPoints: 6,
-            actionsLeft: 1,
+            position: { ...ATTACKER_SPAWN_POSITION },
+            movementPoints: DEFAULT_MOVEMENT_POINTS,
+            actionsLeft: DEFAULT_ACTIONS_LEFT,
             hasAbandoned: false,
             isOrganizer: false,
             turnOrder: 0,
@@ -56,7 +82,9 @@ describe('CombatResolutionService', () => {
     }
 
     function createGame(gameMode = GameMode.Classic): PlayableGame {
-        const tiles = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => ({ ...BASIC_TILE })));
+        const tiles = Array.from({ length: ROUND_GRID_SIZE }, () =>
+            Array.from({ length: ROUND_GRID_SIZE }, () => ({ ...DEFAULT_TILE })),
+        );
         const game: Game = {
             _id: 'g1',
             name: 'Test',
@@ -66,28 +94,28 @@ describe('CombatResolutionService', () => {
             visible: true,
             imageUrl: '',
             date: new Date('2026-01-01'),
-            size: 4,
+            size: ROUND_GRID_SIZE,
             gameMode,
             tiles,
             shrine: [],
         };
 
-        const attacker = createPlayer('a1', 'Attacker', { position: { x: 0, y: 0 } });
-        const defender = createPlayer('d1', 'Defender', { position: { x: 1, y: 0 } });
+        const attacker = createPlayer('a1', 'Attacker', { position: { ...ATTACKER_SPAWN_POSITION } });
+        const defender = createPlayer('d1', 'Defender', { position: { ...DEFENDER_START_POSITION } });
 
         return {
             _game: game,
             roomId: 'room-1',
             players: [attacker, defender],
             spawnPoints: new Map([
-                ['a1', { x: 0, y: 0 }],
-                ['d1', { x: 3, y: 3 }],
+                ['a1', { ...ATTACKER_SPAWN_POSITION }],
+                ['d1', { ...DEFENDER_SPAWN_POSITION }],
             ]),
             activeCombat: {
                 attackerId: 'a1',
                 defenderId: 'd1',
-                roundTimeSeconds: 10,
-                pausedTurnRemainingSeconds: 12,
+                roundTimeSeconds: DEFAULT_ROUND_TIME_SECONDS,
+                pausedTurnRemainingSeconds: DEFAULT_PAUSED_TURN_SECONDS,
                 postures: {
                     a1: CombatPosture.None,
                     d1: CombatPosture.None,
@@ -101,16 +129,16 @@ describe('CombatResolutionService', () => {
             attacker: {
                 playerId: 'a1',
                 playerName: 'Attacker',
-                attack: { baseValue: 4, postureBonus: 0, diceResult: 1, penalty: 0, total: 5 },
-                defense: { baseValue: 4, postureBonus: 0, diceResult: 1, penalty: 0, total: 5 },
+                attack: { baseValue: DEFAULT_PLAYER_STAT, postureBonus: 0, diceResult: DEFAULT_DICE_RESULT, penalty: 0, total: DEFAULT_ROUND_TOTAL },
+                defense: { baseValue: DEFAULT_PLAYER_STAT, postureBonus: 0, diceResult: DEFAULT_DICE_RESULT, penalty: 0, total: DEFAULT_ROUND_TOTAL },
                 damageDealt: defenderDamageTaken,
                 damageTaken: attackerDamageTaken,
             },
             defender: {
                 playerId: 'd1',
                 playerName: 'Defender',
-                attack: { baseValue: 4, postureBonus: 0, diceResult: 1, penalty: 0, total: 5 },
-                defense: { baseValue: 4, postureBonus: 0, diceResult: 1, penalty: 0, total: 5 },
+                attack: { baseValue: DEFAULT_PLAYER_STAT, postureBonus: 0, diceResult: DEFAULT_DICE_RESULT, penalty: 0, total: DEFAULT_ROUND_TOTAL },
+                defense: { baseValue: DEFAULT_PLAYER_STAT, postureBonus: 0, diceResult: DEFAULT_DICE_RESULT, penalty: 0, total: DEFAULT_ROUND_TOTAL },
                 damageDealt: attackerDamageTaken,
                 damageTaken: defenderDamageTaken,
             },
@@ -151,7 +179,7 @@ describe('CombatResolutionService', () => {
         const context = service.getCombatContext(game, 'a1');
         if (!context) throw new Error('Missing context');
 
-        combatRoundService.buildCombatRoundDetails.mockReturnValue(makeRound(2, QUATRE));
+        combatRoundService.buildCombatRoundDetails.mockReturnValue(makeRound(MINOR_DAMAGE, HIGH_DAMAGE));
 
         const round = service.resolveCombatRound(
             context,
@@ -159,10 +187,10 @@ describe('CombatResolutionService', () => {
             CombatPosture.Defensive,
         );
 
-        expect(round.attacker.damageTaken).toBe(2);
-        expect(round.defender.damageTaken).toBe(QUATRE);
-        expect(context.attacker.hp).toBe(QUATRE);
-        expect(context.defender.hp).toBe(2);
+        expect(round.attacker.damageTaken).toBe(MINOR_DAMAGE);
+        expect(round.defender.damageTaken).toBe(HIGH_DAMAGE);
+        expect(context.attacker.hp).toBe(HIGH_DAMAGE);
+        expect(context.defender.hp).toBe(MINOR_DAMAGE);
         expect(game.activeCombat?.postures.a1).toBe(CombatPosture.None);
         expect(game.activeCombat?.postures.d1).toBe(CombatPosture.None);
     });
@@ -174,7 +202,7 @@ describe('CombatResolutionService', () => {
         attacker.hp = 0;
         defender.hp = 0;
 
-        const payload: BattleWonPayload = service.createBattlePayload(makeRound(SIX, SIX));
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(LETHAL_DAMAGE, LETHAL_DAMAGE));
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
         expect(result.isGameOver).toBe(false);
@@ -183,16 +211,16 @@ describe('CombatResolutionService', () => {
         expect(result.payload.doubleKo).toBe(true);
         expect(result.payload.attackerRespawn).toEqual({
             playerId: attacker.id,
-            position: { x: 0, y: 0 },
+            position: ATTACKER_SPAWN_POSITION,
             hp: attacker.maxHp,
         });
         expect(result.payload.defenderRespawn).toEqual({
             playerId: defender.id,
-            position: { x: 3, y: 3 },
+            position: DEFENDER_SPAWN_POSITION,
             hp: defender.maxHp,
         });
-        expect(attacker.position).toEqual({ x: 0, y: 0 });
-        expect(defender.position).toEqual({ x: 3, y: 3 });
+        expect(attacker.position).toEqual(ATTACKER_SPAWN_POSITION);
+        expect(defender.position).toEqual(DEFENDER_SPAWN_POSITION);
         expect(attacker.hp).toBe(attacker.maxHp);
         expect(defender.hp).toBe(defender.maxHp);
         expect(attacker.stats.victoryPoints).toBe(0);
@@ -214,7 +242,7 @@ describe('CombatResolutionService', () => {
         attacker.hp = 0;
         defender.hp = 0;
 
-        const payload = service.createBattlePayload(makeRound(SIX, SIX));
+        const payload = service.createBattlePayload(makeRound(LETHAL_DAMAGE, LETHAL_DAMAGE));
 
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
@@ -239,15 +267,15 @@ describe('CombatResolutionService', () => {
         attacker.hp = 0;
         defender.hp = 0;
         defender.hasFlag = true;
-        defender.position = { x: 1, y: 0 };
+        defender.position = { ...DEFENDER_START_POSITION };
 
-        const payload: BattleWonPayload = service.createBattlePayload(makeRound(SIX, SIX));
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(LETHAL_DAMAGE, LETHAL_DAMAGE));
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
         expect(result.flagPayload).toEqual({
             playerId: defender.id,
             flagStatus: false,
-            position: { x: 1, y: 0 },
+            position: DEFENDER_START_POSITION,
         });
         expect(game._game.tiles[0][1].mapObject).toBe(MapObjectType.Flag);
         expect(defender.hasFlag).toBe(false);
@@ -259,15 +287,15 @@ describe('CombatResolutionService', () => {
         const defender = game.players[1];
         defender.hp = 0;
 
-        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, SIX));
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, LETHAL_DAMAGE));
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
         expect(result.payload.winnerId).toBe(attacker.id);
         expect(result.payload.loserId).toBe(defender.id);
         expect(attacker.stats.victoryPoints).toBe(1);
         expect(defender.hp).toBe(defender.maxHp);
-        expect(defender.position).toEqual({ x: 3, y: 3 });
-        expect(result.payload.loserPos).toEqual({ x: 3, y: 3 });
+        expect(defender.position).toEqual(DEFENDER_SPAWN_POSITION);
+        expect(result.payload.loserPos).toEqual(DEFENDER_SPAWN_POSITION);
     });
 
     it('dépose le drapeau si le perdant le transportait en mode CTF', () => {
@@ -276,15 +304,15 @@ describe('CombatResolutionService', () => {
         const defender = game.players[1];
         defender.hp = 0;
         defender.hasFlag = true;
-        defender.position = { x: 1, y: 0 };
+        defender.position = { ...DEFENDER_START_POSITION };
 
-        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, SIX));
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, LETHAL_DAMAGE));
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
         expect(result.flagPayload).toEqual({
             playerId: 'd1',
             flagStatus: false,
-            position: { x: 1, y: 0 },
+            position: DEFENDER_START_POSITION,
         });
         expect(game._game.tiles[0][1].mapObject).toBe(MapObjectType.Flag);
         expect(defender.hasFlag).toBe(false);
@@ -294,10 +322,10 @@ describe('CombatResolutionService', () => {
         const game = createGame();
         const attacker = game.players[0];
         const defender = game.players[1];
-        attacker.stats.victoryPoints = 2;
+        attacker.stats.victoryPoints = VICTORIES_BEFORE_LAST_WIN;
         defender.hp = 0;
 
-        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, SIX));
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, LETHAL_DAMAGE));
         const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
 
         expect(result.isGameOver).toBe(true);

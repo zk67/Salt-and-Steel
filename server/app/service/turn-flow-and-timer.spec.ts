@@ -8,6 +8,18 @@ import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interf
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 
+/**
+ * Description:
+ * Ce fichier de tests verifie le bon fonctionnement du timer de tour
+ * ainsi que la gestion du flux des tours dans TurnFlowService.
+ *
+ * Fonctionnement:
+ * 1) On valide le comportement du timer avec des faux timers pour verifier
+ * la decrementation du temps, l'arret du timer et l'expiration du tour.
+ *
+ * 2) On verifie ensuite les transitions de phase et le passage entre joueurs
+ * pour s'assurer que TurnFlowService met correctement a jour l'etat de la partie.
+ */
 const ONE_SECOND_MS = 1000;
 const TWO_SECONDS_MS = 2000;
 const FIVE_SECONDS_MS = 5000;
