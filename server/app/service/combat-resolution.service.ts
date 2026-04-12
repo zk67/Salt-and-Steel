@@ -45,6 +45,11 @@ export class CombatResolutionService {
         }
 
         const { attackerId, defenderId, postures } = game.activeCombat;
+
+        if (postures[playerId] !== CombatPosture.None) {
+            return null;
+        }
+
         postures[playerId] = posture;
 
         const attackerPosture = postures[attackerId];

@@ -65,12 +65,14 @@
                     <app-game-button
                         label="Posture offensive"
                         variant="action"
+                        [disabled]="isCombatPostureSelectionDisabled()"
                         (clicked)="onChooseOffensivePosture()">
                     </app-game-button>
 
                     <app-game-button
                         label="Posture défensive"
                         variant="action"
+                        [disabled]="isCombatPostureSelectionDisabled()"
                         (clicked)="onChooseDefensivePosture()">
                     </app-game-button>
                 </div>

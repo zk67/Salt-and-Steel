@@ -138,6 +138,14 @@ describe('CombatResolutionService', () => {
         });
     });
 
+    it('naccepte pas quun joueur change sa posture une fois choisie', () => {
+        const game = createGame();
+
+        expect(service.submitPlayerPosture(game, 'a1', CombatPosture.Offensive)).toBeNull();
+        expect(service.submitPlayerPosture(game, 'a1', CombatPosture.Defensive)).toBeNull();
+        expect(game.activeCombat?.postures.a1).toBe(CombatPosture.Offensive);
+    });
+
     it('applique les dégâts simultanément et réinitialise les postures', () => {
         const game = createGame();
         const context = service.getCombatContext(game, 'a1');
