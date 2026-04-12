@@ -5,15 +5,27 @@ import { CombatPosture, Game } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
-const BASIC_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
-const DICE_6 = 6;
-const DICE_4 = 4;
-const PENALTY = -2;
-const TROIS = 3;
-const DIX = 10;
-const CINQ_5 = 5;
-const MOITIE = 0.5;
-const TROIS_QUART = 0.75;
+/**
+ * Description:
+ * Ce fichier de tests vérifie que CombatRoundService construit correctement
+ * les détails d'un round de combat selon les dés attribués, les postures,
+ * les malus de terrain et le mode debug.
+ *
+ * Fonctionnement:
+ * 1) On crée un contexte de combat minimal avec des joueurs et une grille de test.
+ *
+ * 2) On contrôle les tirages aléatoires pour valider les calculs d'attaque,
+ * de défense, de dégâts ainsi que les cas particuliers gérés par le service.
+ */
+const DEFAULT_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
+const MAX_D6_ROLL = 6;
+const MAX_D4_ROLL = 4;
+const ICE_TILE_PENALTY = -2;
+const EXPECTED_TOTAL_WITH_ICE_PENALTY = 3;
+const EXPECTED_TOTAL_WITH_SINGLE_DIE = 5;
+const EXPECTED_TOTAL_WITH_POSTURE_BONUS = 10;
+const RANDOM_VALUE_FOR_D6_ROLL_OF_4 = 0.5;
+const RANDOM_VALUE_FOR_D4_ROLL_OF_4 = 0.75;
 
 
 describe('CombatRoundService', () => {
@@ -54,7 +66,7 @@ describe('CombatRoundService', () => {
     }
 
     function createGame(debugMode = false, attackerTileType = TileType.Basic, defenderTileType = TileType.Basic): PlayableGame {
-        const tiles = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ ...BASIC_TILE })));
+        const tiles = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ ...DEFAULT_TILE })));
         tiles[1][1] = { tileType: attackerTileType, mapObject: MapObjectType.None };
         tiles[1][2] = { tileType: defenderTileType, mapObject: MapObjectType.None };
 
@@ -87,10 +99,10 @@ describe('CombatRoundService', () => {
         const defender = createPlayer('d1', 'Defender', { position: { x: 2, y: 1 } });
 
         jest.spyOn(Math, 'random')
-            .mockReturnValueOnce(MOITIE) // D6 -> 4
+            .mockReturnValueOnce(RANDOM_VALUE_FOR_D6_ROLL_OF_4) // D6 -> 4
             .mockReturnValueOnce(0.0) // D4 -> 1
             .mockReturnValueOnce(0.0) // D6 -> 1
-            .mockReturnValueOnce(TROIS_QUART); // D4 -> 4
+            .mockReturnValueOnce(RANDOM_VALUE_FOR_D4_ROLL_OF_4); // D4 -> 4
 
         const round = service.buildCombatRoundDetails(
             game,
@@ -100,10 +112,10 @@ describe('CombatRoundService', () => {
             CombatPosture.Defensive,
         );
 
-        expect(round.attacker.attack.total).toBe(DIX); // 4 + 2 + 4
-        expect(round.attacker.defense.total).toBe(CINQ_5); // 4 + 1
-        expect(round.defender.attack.total).toBe(CINQ_5); // 4 + 1
-        expect(round.defender.defense.total).toBe(DIX); // 4 + 2 + 4
+        expect(round.attacker.attack.total).toBe(EXPECTED_TOTAL_WITH_POSTURE_BONUS); // 4 + 2 + 4
+        expect(round.attacker.defense.total).toBe(EXPECTED_TOTAL_WITH_SINGLE_DIE); // 4 + 1
+        expect(round.defender.attack.total).toBe(EXPECTED_TOTAL_WITH_SINGLE_DIE); // 4 + 1
+        expect(round.defender.defense.total).toBe(EXPECTED_TOTAL_WITH_POSTURE_BONUS); // 4 + 2 + 4
         expect(round.attacker.damageDealt).toBe(0);
         expect(round.defender.damageDealt).toBe(0);
     });
@@ -127,10 +139,10 @@ describe('CombatRoundService', () => {
             CombatPosture.None,
         );
 
-        expect(round.attacker.attack.penalty).toBe(PENALTY);
-        expect(round.attacker.defense.penalty).toBe(PENALTY);
-        expect(round.attacker.attack.total).toBe(TROIS); // 4 + 1 - 2
-        expect(round.attacker.defense.total).toBe(TROIS); // 4 + 1 - 2
+        expect(round.attacker.attack.penalty).toBe(ICE_TILE_PENALTY);
+        expect(round.attacker.defense.penalty).toBe(ICE_TILE_PENALTY);
+        expect(round.attacker.attack.total).toBe(EXPECTED_TOTAL_WITH_ICE_PENALTY); // 4 + 1 - 2
+        expect(round.attacker.defense.total).toBe(EXPECTED_TOTAL_WITH_ICE_PENALTY); // 4 + 1 - 2
     });
 
     it('force les dés à max/min quand le debug est actif', () => {
@@ -146,8 +158,8 @@ describe('CombatRoundService', () => {
             CombatPosture.None,
         );
 
-        expect(round.attacker.attack.diceResult).toBe(DICE_6);
-        expect(round.attacker.defense.diceResult).toBe(DICE_4);
+        expect(round.attacker.attack.diceResult).toBe(MAX_D6_ROLL);
+        expect(round.attacker.defense.diceResult).toBe(MAX_D4_ROLL);
         expect(round.defender.attack.diceResult).toBe(1);
         expect(round.defender.defense.diceResult).toBe(1);
     });
@@ -184,8 +196,8 @@ describe('CombatRoundService', () => {
             CombatPosture.None,
         );
 
-        expect(round2.attacker.attack.diceResult).toBe(DICE_6);
-        expect(round2.attacker.defense.diceResult).toBe(DICE_4);
+        expect(round2.attacker.attack.diceResult).toBe(MAX_D6_ROLL);
+        expect(round2.attacker.defense.diceResult).toBe(MAX_D4_ROLL);
         expect(round2.defender.attack.diceResult).toBe(1);
         expect(round2.defender.defense.diceResult).toBe(1);
     });
