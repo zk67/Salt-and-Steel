@@ -5,14 +5,27 @@ import { CurrentGamesService, SubmitCombatPostureResult } from '@app/service/cur
 import { CombatPosture, CombatRoundDetails, Game } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import type { Socket } from 'socket.io';
-
-const DOUZE = 12;
-const DIX_MILLE = 10000;
-const NEUF = 9;
-const TROIS = 3;
-const NEUF_MILLE = 9000;
-const NEUF_CENT_QUATRE_VINGT_DIX_NEUF = 999;
-const NEUF_MILLE_UN = 9001;
+/**
+ * Description:
+ * Ce fichier de tests vérifie que CurrentGameCombatService orchestre correctement
+ * le cycle d'un combat en cours, incluant le démarrage, les timeouts de round,
+ * la diffusion des événements, l'abandon et la fin du combat.
+ * Fonctionnement:
+ * 1) On isole le service avec des mocks pour CurrentGamesService et
+ * CurrentGameBroadcastService, puis on utilise des faux timers pour contrôler le temps.
+ * 2) On simule les différents scénarios de combat afin de valider les appels
+ * émis, les transitions entre rounds et la gestion du tour après résolution.
+ */
+const DEFAULT_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
+const GRID_SIZE = 3;
+const DEFAULT_PAUSED_TURN_SECONDS = 12;
+const ROUND_TIME_SECONDS = 10;
+const ROUND_TIMEOUT_MS = 10000;
+const SHORT_PAUSED_TURN_SECONDS = 9;
+const EXPECTED_COMBAT_STARTED_CALL_COUNT = 3;
+const TIME_BEFORE_ORIGINAL_TIMEOUT_MS = 9000;
+const TIME_UNTIL_ORIGINAL_TIMEOUT_WOULD_FIRE_MS = 999;
+const TIME_TO_REACH_NEXT_ROUND_TIMEOUT_MS = 9001;
 
 describe('CurrentGameCombatService', () => {
     let currentGamesService: jest.Mocked<CurrentGamesService>;
@@ -21,7 +34,6 @@ describe('CurrentGameCombatService', () => {
 
     beforeEach(() => {
         jest.useFakeTimers();
-
         currentGamesService = {
             startCombat: jest.fn(),
             getGameByRoomId: jest.fn(),
@@ -30,14 +42,12 @@ describe('CurrentGameCombatService', () => {
             nextPlayerTurn: jest.fn(),
             resumeTurnTimer: jest.fn(),
         } as unknown as jest.Mocked<CurrentGamesService>;
-
         broadcastService = {
             emitCombatStarted: jest.fn(),
             emitCombatRoundDetails: jest.fn(),
             emitBattleWon: jest.fn(),
             emitGameOver: jest.fn(),
         } as unknown as jest.Mocked<CurrentGameBroadcastService>;
-
         service = new CurrentGameCombatService(currentGamesService, broadcastService);
     });
 
@@ -47,14 +57,13 @@ describe('CurrentGameCombatService', () => {
         jest.useRealTimers();
     });
 
-    function createGameWithCombat(pausedTurnRemainingSeconds = DOUZE): PlayableGame {
-        const tiles = Array.from({ length: 3 }, () =>
+    function createGameWithCombat(pausedTurnRemainingSeconds = DEFAULT_PAUSED_TURN_SECONDS): PlayableGame {
+        const tiles = Array.from({ length: GRID_SIZE }, () =>
             Array.from(
-                { length: 3 },
+                { length: GRID_SIZE },
                 () =>
                     ({
-                        tileType: TileType.Basic,
-                        mapObject: MapObjectType.None,
+                        ...DEFAULT_TILE,
                     }) as TileData,
             ),
         );
@@ -68,7 +77,7 @@ describe('CurrentGameCombatService', () => {
             visible: true,
             imageUrl: '',
             date: new Date('2026-01-01'),
-            size: 3,
+            size: GRID_SIZE,
             gameMode: GameMode.Classic,
             tiles,
             shrine: [],
@@ -132,7 +141,7 @@ describe('CurrentGameCombatService', () => {
             activeCombat: {
                 attackerId: 'a1',
                 defenderId: 'd1',
-                roundTimeSeconds: 10,
+                roundTimeSeconds: ROUND_TIME_SECONDS,
                 pausedTurnRemainingSeconds,
                 postures: {
                     a1: CombatPosture.None,
@@ -178,20 +187,16 @@ describe('CurrentGameCombatService', () => {
             combatRound: createRound(),
             isGameOver: false,
         });
-
         service.handleStartCombat(createSocket('a1'), {
             attackerId: 'a1',
             defenderId: 'd1',
-            roundTimeSeconds: 10,
+            roundTimeSeconds: ROUND_TIME_SECONDS,
         });
-
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledWith(
             ['a1', 'd1'],
-            { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: 10 },
+            { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: ROUND_TIME_SECONDS },
         );
-
-        jest.advanceTimersByTime(DIX_MILLE);
-
+        jest.advanceTimersByTime(ROUND_TIMEOUT_MS);
         expect(currentGamesService.resolveCombatRoundOnTimeout).toHaveBeenCalledWith('room-1');
         expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalled();
     });
@@ -200,61 +205,48 @@ describe('CurrentGameCombatService', () => {
         const game = createGameWithCombat();
         currentGamesService.startCombat.mockReturnValue(true);
         currentGamesService.getGameByRoomId.mockReturnValue(game);
-
         currentGamesService.submitCombatPosture.mockReturnValue({
             roundResolved: true,
             combatRound: createRound(),
             isGameOver: false,
         });
-
         currentGamesService.resolveCombatRoundOnTimeout.mockReturnValue({
             roundResolved: true,
             combatRound: createRound(),
             isGameOver: false,
         });
-
         service.handleStartCombat(createSocket('a1'), {
             attackerId: 'a1',
             defenderId: 'd1',
-            roundTimeSeconds: 10,
+            roundTimeSeconds: ROUND_TIME_SECONDS,
         });
-
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledTimes(1);
-
-        jest.advanceTimersByTime(NEUF_MILLE);
-
+        jest.advanceTimersByTime(TIME_BEFORE_ORIGINAL_TIMEOUT_MS);
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
-
         // Le round courant est résolu immédiatement
         expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalledTimes(1);
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledTimes(2);
-
         // L'ancien timeout aurait expiré ici s'il n'avait pas été annulé
-        jest.advanceTimersByTime(NEUF_CENT_QUATRE_VINGT_DIX_NEUF);
+        jest.advanceTimersByTime(TIME_UNTIL_ORIGINAL_TIMEOUT_WOULD_FIRE_MS);
         expect(currentGamesService.resolveCombatRoundOnTimeout).toHaveBeenCalledTimes(0);
-
         // Le nouveau round a bien son propre timeout
-        jest.advanceTimersByTime(NEUF_MILLE_UN);
+        jest.advanceTimersByTime(TIME_TO_REACH_NEXT_ROUND_TIMEOUT_MS);
         expect(currentGamesService.resolveCombatRoundOnTimeout).toHaveBeenCalledTimes(1);
-
-        // Et comme le mock dit encore "roundResolved: true" + "isGameOver: false",
         // un autre round repart immédiatement
-        expect(broadcastService.emitCombatStarted).toHaveBeenCalledTimes(TROIS);
+        expect(broadcastService.emitCombatStarted).toHaveBeenCalledTimes(EXPECTED_COMBAT_STARTED_CALL_COUNT);
     });
 
     it('quand un round se termine sans vainqueur, relance un nouveau CombatStarted pour le round suivant', () => {
         const game = createGameWithCombat();
         currentGamesService.getGameByRoomId.mockReturnValue(game);
-
         const result: SubmitCombatPostureResult = {
             roundResolved: true,
             combatRound: createRound(),
             isGameOver: false,
         };
         currentGamesService.submitCombatPosture.mockReturnValue(result);
-
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
@@ -262,7 +254,7 @@ describe('CurrentGameCombatService', () => {
         expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalledWith(['a1', 'd1'], result.combatRound);
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledWith(
             ['a1', 'd1'],
-            { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: 10 },
+            { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: ROUND_TIME_SECONDS },
         );
     });
 
@@ -283,7 +275,6 @@ describe('CurrentGameCombatService', () => {
         };
         currentGamesService.submitCombatPosture.mockReturnValue(result);
         currentGamesService.getGameByRoomId.mockReturnValue(createGameWithCombat());
-
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
@@ -338,16 +329,8 @@ describe('CurrentGameCombatService', () => {
             loserHp: 0,
             loserPos: { x: 0, y: 0 },
             doubleKo: true,
-            attackerRespawn: {
-                playerId: 'a1',
-                position: { x: 0, y: 0 },
-                hp: 6,
-            },
-            defenderRespawn: {
-                playerId: 'd1',
-                position: { x: 2, y: 2 },
-                hp: 6,
-            },
+            attackerRespawn: { playerId: 'a1', position: { x: 0, y: 0 }, hp: 6 },
+            defenderRespawn: { playerId: 'd1', position: { x: 2, y: 2 }, hp: 6 },
         });
         expect(currentGamesService.nextPlayerTurn).toHaveBeenCalledWith('room-1');
         expect(broadcastService.emitGameOver).not.toHaveBeenCalled();
@@ -358,43 +341,30 @@ describe('CurrentGameCombatService', () => {
             roundResolved: true,
             combatRound: createRound(),
             isGameOver: true,
-            battlePayload: {
-                winnerId: 'a1',
-                loserId: 'd1',
-                winnerHp: 4,
-                loserHp: 6,
-                loserPos: { x: 2, y: 2 },
-                combatRound: createRound(),
-            },
+            battlePayload: { winnerId: 'a1', loserId: 'd1', winnerHp: 4, loserHp: 6, loserPos: { x: 2, y: 2 }, combatRound: createRound() },
         };
         currentGamesService.submitCombatPosture.mockReturnValue(result);
         currentGamesService.getGameByRoomId.mockReturnValue(createGameWithCombat());
-
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
-
         expect(broadcastService.emitGameOver).toHaveBeenCalledWith('room-1', 'a1');
         expect(currentGamesService.nextPlayerTurn).not.toHaveBeenCalled();
     });
 
     it('si le défenseur abandonne, linstigateur reprend son timer restant', () => {
-        const game = createGameWithCombat(NEUF);
+        const game = createGameWithCombat(SHORT_PAUSED_TURN_SECONDS);
         currentGamesService.getGameByRoomId.mockReturnValue(game);
-
         service.handleCombatSurrender('room-1', 'd1');
-
-        expect(currentGamesService.resumeTurnTimer).toHaveBeenCalledWith('room-1', NEUF);
+        expect(currentGamesService.resumeTurnTimer).toHaveBeenCalledWith('room-1', SHORT_PAUSED_TURN_SECONDS);
         expect(currentGamesService.nextPlayerTurn).not.toHaveBeenCalled();
         expect(broadcastService.emitBattleWon).toHaveBeenCalled();
     });
 
     it('si linstigateur abandonne, le tour passe au joueur suivant', () => {
-        const game = createGameWithCombat(NEUF);
+        const game = createGameWithCombat(SHORT_PAUSED_TURN_SECONDS);
         currentGamesService.getGameByRoomId.mockReturnValue(game);
-
         service.handleCombatSurrender('room-1', 'a1');
-
         expect(currentGamesService.nextPlayerTurn).toHaveBeenCalledWith('room-1');
         expect(currentGamesService.resumeTurnTimer).not.toHaveBeenCalled();
         expect(broadcastService.emitBattleWon).toHaveBeenCalled();
