@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { GameCardComponent } from '@app/components/game/game-card/game-card.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -15,7 +16,7 @@ interface JoinableGame {
     selector: 'app-join-game-page',
     templateUrl: './join-game-page.component.html',
     styleUrls: ['./join-game-page.component.scss'],
-    imports: [RouterLink],
+    imports: [GameCardComponent, RouterLink],
 })
 
 export class JoinGameComponent implements OnInit, OnDestroy {
