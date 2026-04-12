@@ -48,8 +48,16 @@
 
 .right-game-sidebar {
     grid-area: right;
-    overflow-y: auto;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
     padding: 10px;
+    box-sizing: border-box;
+
+    app-right-sidebar {
+        flex: 1;
+        min-height: 0;
+    }
 }
 
 .combat-notification-container {

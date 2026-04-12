@@ -1,28 +1,88 @@
-* {
-    margin: 0;
-    padding: 0;
+.games-create {
+    position: relative;
+    min-height: 100vh;
+    padding: 28px 32px;
+    background: url("../../../assets/admin-page/adminbackground4.webp");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.games-create,
+.list-frame {
     box-sizing: border-box;
 }
 
-.container {
-    background-color: #8d8d8d;
-    min-height: 100vh;
+.list-frame {
+    border: 3px solid #543630b4;
+    height: 600px;
+    margin: 0 18px;
+    padding: 12px;
+    overflow: auto;
+}
+
+.list-frame::-webkit-scrollbar {
+    width: 8px;
+}
+
+.list-frame::scroll-marker {
+    background: transparent;
+}
+
+.list-frame::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+.games-list {
     width: 100%;
+    padding: 18px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    align-content: start;
+    justify-items: center;
+}
+
+.joinable-entry {
+    width: 100%;
+    max-width: 550px;
     display: flex;
     flex-direction: column;
-    gap: 20px;         
-    padding-top: 40px; 
-    padding-left: 20px; 
+    gap: 10px;
 }
 
-button {
-    align-self: center;
-    padding: 10px 16px;
-    width: fit-content;
+.waiting-count {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.62);
+    color: #4f2f2f;
+    font-size: 1rem;
 }
 
-.game-row {
-    background: #a5a5a5;
-    padding: 15px;
-    border-radius: 10px;
+.empty-state {
+    margin: 0;
+    padding: 24px;
+    color: #2a1616;
+}
+
+@media (max-width: 640px) {
+    .games-create {
+        padding: 20px 16px 96px;
+    }
+
+    .list-frame {
+        height: auto;
+        min-height: calc(100vh - 140px);
+        margin: 0;
+    }
+
+    .games-list {
+        padding: 12px;
+        grid-template-columns: 1fr;
+    }
+
+    .joinable-entry {
+        max-width: none;
+    }
 }

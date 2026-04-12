@@ -1,20 +1,25 @@
-<div class="container">
-    <h1>Joindre une partie</h1>
-    <button routerLink="/home">Retour</button>
+<div class="games-create">
+    <header class="create-header">
+        <div class="create-header-content">
+            <h1 class="title">Joindre une partie</h1>
+            <h2 class="sous-title">Choisissez une partie disponible</h2>
+        </div>
+    </header>
 
-    @if (joinableGames().length === 0) {
-        <p>Aucune partie disponible pour le moment.</p>
-    } @else {
-        <section class="games-list">
-            @for (entry of joinableGames(); track entry.roomId) {
-                <article class="game-row">
-                    <h2>{{ entry.game.name }}</h2>
-                    <p>Joueurs en attente : {{ entry.playerCount }} / {{ entry.game.maxPlayers }}</p>
-                    <button type="button" (click)="selectGame(entry.roomId)">
-                        Joindre cette partie
-                    </button>
-                </article>
-            }
-        </section>
-    }
+    <button class="btn-back" routerLink="/home">← Retour</button>
+
+    <section class="list-frame">
+        @if (joinableGames().length === 0) {
+            <p class="empty-state">Aucune partie disponible pour le moment.</p>
+        } @else {
+            <div class="games-list">
+                @for (entry of joinableGames(); track entry.roomId) {
+                    <article class="joinable-entry">
+                        <app-game-card [game]="entry.game" (click)="selectGame(entry.roomId)"></app-game-card>
+                        <p class="waiting-count">Joueurs en attente : {{ entry.playerCount }} / {{ entry.game.maxPlayers }}</p>
+                    </article>
+                }
+            </div>
+        }
+    </section>
 </div>
