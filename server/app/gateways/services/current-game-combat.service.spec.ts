@@ -298,6 +298,61 @@ describe('CurrentGameCombatService', () => {
         expect(currentGamesService.nextPlayerTurn).toHaveBeenCalledWith('room-1');
     });
 
+    it('quand le combat finit en double KO, diffuse le payload puis passe au joueur suivant', () => {
+        const result: SubmitCombatPostureResult = {
+            roundResolved: true,
+            combatRound: createRound(),
+            isGameOver: false,
+            shouldAdvanceTurn: true,
+            battlePayload: {
+                winnerId: '',
+                loserId: '',
+                winnerHp: 0,
+                loserHp: 0,
+                loserPos: { x: 0, y: 0 },
+                doubleKo: true,
+                attackerRespawn: {
+                    playerId: 'a1',
+                    position: { x: 0, y: 0 },
+                    hp: 6,
+                },
+                defenderRespawn: {
+                    playerId: 'd1',
+                    position: { x: 2, y: 2 },
+                    hp: 6,
+                },
+                combatRound: createRound(),
+            },
+        };
+        currentGamesService.submitCombatPosture.mockReturnValue(result);
+        currentGamesService.getGameByRoomId.mockReturnValue(createGameWithCombat());
+
+        service.handleSubmitCombatPosture(createSocket('a1'), {
+            posture: CombatPosture.Offensive,
+        });
+
+        expect(broadcastService.emitBattleWon).toHaveBeenCalledWith('room-1', {
+            winnerId: '',
+            loserId: '',
+            winnerHp: 0,
+            loserHp: 0,
+            loserPos: { x: 0, y: 0 },
+            doubleKo: true,
+            attackerRespawn: {
+                playerId: 'a1',
+                position: { x: 0, y: 0 },
+                hp: 6,
+            },
+            defenderRespawn: {
+                playerId: 'd1',
+                position: { x: 2, y: 2 },
+                hp: 6,
+            },
+        });
+        expect(currentGamesService.nextPlayerTurn).toHaveBeenCalledWith('room-1');
+        expect(broadcastService.emitGameOver).not.toHaveBeenCalled();
+    });
+
     it('quand le combat termine la partie, émet GameOver et ne change pas le tour', () => {
         const result: SubmitCombatPostureResult = {
             roundResolved: true,

@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
+import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ActiveCombatPayload, BattleWonPayload, CombatRoundDetails } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
@@ -7,6 +8,8 @@ import { GatewayEvents } from '@common/types/gateway.events';
 import { movableTiles } from '@common/utils/map.utils';
 import { GamePlayerStateService } from './game-player-state.service';
 import { GameTurnService } from './game-turn.service';
+
+const COMBAT_RESULT_NOTIFICATION_DURATION_MS = 3000;
 
 @Injectable({
     providedIn: 'root',
@@ -16,6 +19,7 @@ export class GameCombatService {
     private readonly combatRoundState = signal<CombatRoundDetails | null>(null);
     private readonly activeCombatState = signal<ActiveCombatPayload | null>(null);
     private readonly mapService = inject(MapService);
+    private readonly popupService = inject(PopupService);
     private readonly socketService = inject(SocketClientService);
     private readonly playerState = inject(GamePlayerStateService);
     private readonly turnService = inject(GameTurnService);
@@ -77,8 +81,17 @@ export class GameCombatService {
 
     handleBattleWon(payload: BattleWonPayload): void {
         const clientId = this.playerState.clientPlayer()?.id;
-        const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
         const wasClientInCombat = this.isClientInActiveCombat();
+
+        if (payload.doubleKo) {
+            if (wasClientInCombat) {
+                this.popupService.openNotification('Double KO ! Vous réapparaissez après le combat.', COMBAT_RESULT_NOTIFICATION_DURATION_MS);
+            }
+            this.handleDoubleKoBattle(payload, wasClientInCombat);
+            return;
+        }
+
+        const isParticipant = clientId === payload.winnerId || clientId === payload.loserId;
 
         if (!isParticipant) {
             this.combatRoundState.set(null);
@@ -91,8 +104,14 @@ export class GameCombatService {
             this.combatRoundState.set(null);
             this.activeCombatState.set(null);
             this.combatStartHp.clear();
-            this.turnService.stopCombatTimerOnly();
+            if (wasClientInCombat) {
+                this.turnService.stopCombatTimerOnly();
+            }
             return;
+        }
+
+        if (isParticipant) {
+            this.showBattleResultNotification(winner, loser);
         }
 
         this.applyBattleOutcomeUpdates(payload, winner, loser);
@@ -135,6 +154,91 @@ export class GameCombatService {
         this.combatStartHp.delete(loser.id);
     }
 
+    private handleDoubleKoBattle(payload: BattleWonPayload, wasClientInCombat: boolean): void {
+        if (!payload.attackerRespawn || !payload.defenderRespawn) {
+            this.combatRoundState.set(null);
+            this.activeCombatState.set(null);
+            this.combatStartHp.clear();
+
+            if (wasClientInCombat) {
+                this.turnService.stopCombatTimerOnly();
+            }
+            return;
+        }
+
+        this.applyDoubleKoOutcomeUpdates(payload);
+
+        if (wasClientInCombat) {
+            this.turnService.stopCombatTimerOnly();
+        }
+
+        this.combatRoundState.set(null);
+        this.activeCombatState.set(null);
+    }
+
+    private applyDoubleKoOutcomeUpdates(payload: BattleWonPayload): void {
+        const attackerRespawn = payload.attackerRespawn;
+        const defenderRespawn = payload.defenderRespawn;
+
+        if (!attackerRespawn || !defenderRespawn) {
+            return;
+        }
+
+        const attacker = this.playerState.players().find((player) => player.id === attackerRespawn.playerId);
+        const defender = this.playerState.players().find((player) => player.id === defenderRespawn.playerId);
+
+        if (!attacker || !defender) {
+            this.combatStartHp.delete(attackerRespawn.playerId);
+            this.combatStartHp.delete(defenderRespawn.playerId);
+            return;
+        }
+
+        const attackerStartHp = this.combatStartHp.get(attacker.id) ?? attacker.hp ?? 0;
+        const defenderStartHp = this.combatStartHp.get(defender.id) ?? defender.hp ?? 0;
+
+        const attackerLifeLost = Math.max(0, attackerStartHp);
+        const defenderLifeLost = Math.max(0, defenderStartHp);
+
+        this.playerState.addCombatPoint(attacker.id);
+        this.playerState.addCombatPoint(defender.id);
+
+        this.playerState.addDefeatPoint(attacker.id);
+        this.playerState.addDefeatPoint(defender.id);
+
+        this.playerState.addTotalLifeLost(attacker.id, attackerLifeLost);
+        this.playerState.addTotalLifeLost(defender.id, defenderLifeLost);
+
+        this.playerState.addTotalDamageDealt(attacker.id, defenderLifeLost);
+        this.playerState.addTotalDamageDealt(defender.id, attackerLifeLost);
+
+        this.playerState.updatePlayer(attacker.id, {
+            position: attackerRespawn.position,
+            hp: attackerRespawn.hp,
+        });
+
+        this.playerState.updatePlayer(defender.id, {
+            position: defenderRespawn.position,
+            hp: defenderRespawn.hp,
+        });
+
+        this.combatStartHp.delete(attacker.id);
+        this.combatStartHp.delete(defender.id);
+    }
+
+    private showBattleResultNotification(winner: Player, loser: Player): void {
+        const clientPlayer = this.playerState.clientPlayer();
+        if (!clientPlayer) {
+            return;
+        }
+
+        const message =
+            clientPlayer.id === winner.id
+                ? `Victoire ! Vous avez vaincu ${loser.name}.`
+                : `Défaite. ${winner.name} vous a vaincu.`;
+
+        this.popupService.openNotification(message, COMBAT_RESULT_NOTIFICATION_DURATION_MS);
+    }
+
     private resumeClientAfterCombatIfNeeded(
         payload: BattleWonPayload,
         winner: Player,
@@ -151,6 +255,7 @@ export class GameCombatService {
 
         if (this.playerState.isClientPlayer(loser.id) && this.turnService.isClientPlayerTurn()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
+            this.combatRoundState.set(null);
             this.activeCombatState.set(null);
             return;
         }

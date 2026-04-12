@@ -65,7 +65,7 @@ export class MapGameStateService {
         }
 
         this.gameService.getPlayers().forEach((player) => {
-            const visited = player.visitedTiles ? Array.from(player.visitedTiles) : [];
+            const visited: string[] = player.visitedTiles ? [...player.visitedTiles] : [];
             let visitedTerrain = 0;
 
             for (const key of visited) {

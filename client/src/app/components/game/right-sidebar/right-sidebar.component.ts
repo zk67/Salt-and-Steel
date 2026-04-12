@@ -1,4 +1,4 @@
-import { Component, computed, HostListener } from '@angular/core';
+import { Component, computed, effect, HostListener, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Button } from '@app/components/game/game-button/game-button.component';
 import { PlayerInfoComponent } from '@app/components/game/player-info/player-info.component';
@@ -6,7 +6,7 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { TimeService } from '@app/services/game/time.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { ActiveCombatPayload, CombatPosture, CombatRoundDetails, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({
@@ -16,6 +16,10 @@ import { GatewayEvents } from '@common/types/gateway.events';
     imports: [PlayerInfoComponent, Button],
 })
 export class RightSidebarComponent {
+    private readonly hasSubmittedCombatPosture = signal(false);
+    private lastActiveCombat: ActiveCombatPayload | null = null;
+    private lastCombatRound: CombatRoundDetails | null = null;
+
     currentTime = computed(() => this.timerService.time());
     isYourTurn = computed(() => this.gameService.activePlayer()?.id === this.gameService.clientPlayer()?.id && !this.gameService.isWaitTurn());
     actionPointsLeft = computed(() => (this.gameService.clientPlayer()?.actionsLeft ?? 0) > 0);
@@ -24,9 +28,21 @@ export class RightSidebarComponent {
     combatRound = this.gameService.currentCombatRound;
     activeCombat = this.gameService.activeCombat;
     isClientInActiveCombat = this.gameService.isClientInActiveCombat;
+    isCombatPostureSelectionDisabled = computed(() => this.hasSubmittedCombatPosture());
 
     constructor(private timerService: TimeService, private gameService: GameService,
-        private socketService: SocketClientService, private router: Router) {}
+        private socketService: SocketClientService, private router: Router) {
+        effect(() => {
+            const activeCombat = this.activeCombat();
+            const combatRound = this.combatRound();
+
+            if (activeCombat !== this.lastActiveCombat || combatRound !== this.lastCombatRound) {
+                this.hasSubmittedCombatPosture.set(false);
+                this.lastActiveCombat = activeCombat;
+                this.lastCombatRound = combatRound;
+            }
+        });
+    }
 
     @HostListener('window:beforeunload')
     onBeforeUnload(): void {
@@ -62,14 +78,21 @@ export class RightSidebarComponent {
     }
 
     onChooseOffensivePosture(): void {
-        this.socketService.send(GatewayEvents.SubmitCombatPosture, {
-            posture: CombatPosture.Offensive,
-        } as SubmitCombatPosturePayload);
+        this.submitCombatPosture(CombatPosture.Offensive);
     }
 
     onChooseDefensivePosture(): void {
+        this.submitCombatPosture(CombatPosture.Defensive);
+    }
+
+    private submitCombatPosture(posture: CombatPosture): void {
+        if (this.hasSubmittedCombatPosture()) {
+            return;
+        }
+
+        this.hasSubmittedCombatPosture.set(true);
         this.socketService.send(GatewayEvents.SubmitCombatPosture, {
-            posture: CombatPosture.Defensive,
+            posture,
         } as SubmitCombatPosturePayload);
     }
 

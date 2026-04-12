@@ -41,6 +41,17 @@ export interface BattleWonPayload {
     winnerHp: number;
     loserHp: number;
     remainingTurnSeconds?: number;
+    doubleKo?: boolean;
+    attackerRespawn?: {
+        playerId: string;
+        position: Position;
+        hp: number;
+    };
+    defenderRespawn?: {
+        playerId: string;
+        position: Position;
+        hp: number;
+    };
 }
 
 export enum TurnPhase {

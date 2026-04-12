@@ -138,6 +138,14 @@ describe('CombatResolutionService', () => {
         });
     });
 
+    it('naccepte pas quun joueur change sa posture une fois choisie', () => {
+        const game = createGame();
+
+        expect(service.submitPlayerPosture(game, 'a1', CombatPosture.Offensive)).toBeNull();
+        expect(service.submitPlayerPosture(game, 'a1', CombatPosture.Defensive)).toBeNull();
+        expect(game.activeCombat?.postures.a1).toBe(CombatPosture.Offensive);
+    });
+
     it('applique les dégâts simultanément et réinitialise les postures', () => {
         const game = createGame();
         const context = service.getCombatContext(game, 'a1');
@@ -172,6 +180,77 @@ describe('CombatResolutionService', () => {
         expect(result.isGameOver).toBe(false);
         expect(result.payload.winnerId).toBe('');
         expect(result.payload.loserId).toBe('');
+        expect(result.payload.doubleKo).toBe(true);
+        expect(result.payload.attackerRespawn).toEqual({
+            playerId: attacker.id,
+            position: { x: 0, y: 0 },
+            hp: attacker.maxHp,
+        });
+        expect(result.payload.defenderRespawn).toEqual({
+            playerId: defender.id,
+            position: { x: 3, y: 3 },
+            hp: defender.maxHp,
+        });
+        expect(attacker.position).toEqual({ x: 0, y: 0 });
+        expect(defender.position).toEqual({ x: 3, y: 3 });
+        expect(attacker.hp).toBe(attacker.maxHp);
+        expect(defender.hp).toBe(defender.maxHp);
+        expect(attacker.stats.victoryPoints).toBe(0);
+        expect(defender.stats.victoryPoints).toBe(0);
+    });
+
+    it('should resolve a double KO by respawning both players, resetting hp and returning an explicit payload', () => {
+        const game = createGame();
+        const attacker = game.players.find((player) => player.id === 'a1');
+        const defender = game.players.find((player) => player.id === 'd1');
+
+        expect(attacker).toBeDefined();
+        expect(defender).toBeDefined();
+
+        if (!attacker || !defender) {
+            throw new Error('Missing combat participants');
+        }
+
+        attacker.hp = 0;
+        defender.hp = 0;
+
+        const payload = service.createBattlePayload(makeRound(SIX, SIX));
+
+        const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
+
+        expect(result.isGameOver).toBe(false);
+        expect(result.payload.doubleKo).toBe(true);
+        expect(result.payload.winnerId).toBe('');
+        expect(result.payload.loserId).toBe('');
+
+        expect(result.payload.attackerRespawn?.playerId).toBe(attacker.id);
+        expect(result.payload.defenderRespawn?.playerId).toBe(defender.id);
+
+        expect(attacker.hp).toBe(attacker.maxHp);
+        expect(defender.hp).toBe(defender.maxHp);
+        expect(attacker.position).toEqual(result.payload.attackerRespawn?.position);
+        expect(defender.position).toEqual(result.payload.defenderRespawn?.position);
+    });
+
+    it('dépose le drapeau en double KO si un participant le transportait en mode CTF', () => {
+        const game = createGame(GameMode.CTF);
+        const attacker = game.players[0];
+        const defender = game.players[1];
+        attacker.hp = 0;
+        defender.hp = 0;
+        defender.hasFlag = true;
+        defender.position = { x: 1, y: 0 };
+
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(SIX, SIX));
+        const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
+
+        expect(result.flagPayload).toEqual({
+            playerId: defender.id,
+            flagStatus: false,
+            position: { x: 1, y: 0 },
+        });
+        expect(game._game.tiles[0][1].mapObject).toBe(MapObjectType.Flag);
+        expect(defender.hasFlag).toBe(false);
     });
 
     it('donne la victoire, soigne le perdant à son max et le replace au spawn le plus proche', () => {
@@ -224,4 +303,5 @@ describe('CombatResolutionService', () => {
         expect(result.isGameOver).toBe(true);
         expect(result.payload.winnerId).toBe(attacker.id);
     });
+
 });

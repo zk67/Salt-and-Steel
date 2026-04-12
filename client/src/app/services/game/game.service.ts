@@ -5,7 +5,7 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { DebugMovePayload, Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
+import { Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GameCombatService } from './game-combat.service';
 import { GamePlayerStateService } from './game-player-state.service';
@@ -13,7 +13,6 @@ import { GameSessionService } from './game-session.service';
 import { GameSocketEventsService } from './game-socket-events.service';
 import { GameTurnService } from './game-turn.service';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { movableTiles } from '@common/utils/map.utils';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
@@ -22,7 +21,6 @@ const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 })
 export class GameService {
     private isGameStarted = false;
-    private readonly handleClickDebugPayloadBound = this.handleClickDebugPayload.bind(this);
     private readonly mapService = inject(MapService);
     private readonly socketService = inject(SocketClientService);
     private readonly router = inject(Router);
@@ -59,8 +57,6 @@ export class GameService {
         this.socketService.on<string>(GatewayEvents.ShrineBuffOff, (playerId) => {
             this.clearShrineBuffsIfExpired(playerId);
         });
-
-        this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
     }
 
     setChatMessages(messages: ChatMessage[]): void {
@@ -137,6 +133,7 @@ export class GameService {
 
     private handleStartGame(payload: GameInfoPayload): void {
         this.isGameStarted = true;
+        this.combatService.clear();
 
         const sorted = [...payload.players].sort((a, b) => a.turnOrder - b.turnOrder);
         this.playerState.setPlayers(sorted);
@@ -213,19 +210,7 @@ export class GameService {
         this.combatService.clearCombatRound();
     }
 
-    handleClickDebugPayload(payload: DebugMovePayload): void {
-        const player = this.players().find(p => p.id === payload.playerId);
-        if (!player) return;
-        
-        const updatedPlayer: Player = { ...player, position: payload.targetPos };
-        this.updatePlayer(player.id, updatedPlayer);
-
-        if (this.clientPlayer()?.id === player.id) {
-            if (!this.canPlayerStillDoAction()) {
-                this.socketService.send(GatewayEvents.EndTurnEarly);
-            } else {
-                this.actionTile.set(movableTiles(this.mapService.getTileMap(), updatedPlayer, this.getPlayers()));
-            }
-        }
+    clearCombatState(): void {
+        this.combatService.clear();
     }
 }

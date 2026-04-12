@@ -4,6 +4,14 @@
         <button class="button" (click)="popupService.close()">Fermer</button>
     </app-popup>
 }
+@if (popupService.notificationShow()) {
+    <div class="combat-notification-container" aria-live="polite">
+        <div class="combat-notification" role="status">
+            <p>{{ popupService.notificationMessage() }}</p>
+            <button type="button" class="combat-notification__close" (click)="popupService.closeNotification()">Masquer</button>
+        </div>
+    </div>
+}
 <div class="container">
     <div class="map-game-section">
         <app-map-game></app-map-game>
