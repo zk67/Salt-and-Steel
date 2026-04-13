@@ -193,7 +193,7 @@ describe('CurrentGameCombatService', () => {
             roundTimeSeconds: ROUND_TIME_SECONDS,
         });
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledWith(
-            ['a1', 'd1'],
+            'room-1',
             { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: ROUND_TIME_SECONDS },
         );
         jest.advanceTimersByTime(ROUND_TIMEOUT_MS);
@@ -253,7 +253,7 @@ describe('CurrentGameCombatService', () => {
 
         expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalledWith(['a1', 'd1'], result.combatRound);
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledWith(
-            ['a1', 'd1'],
+            'room-1',
             { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: ROUND_TIME_SECONDS },
         );
     });
