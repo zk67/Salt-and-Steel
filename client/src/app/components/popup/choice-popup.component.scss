@@ -13,6 +13,7 @@
 }
 
 .popup {
+    position: relative;
     background-color: white;
     padding: 28px 32px;
     border-radius: 12px;
@@ -29,6 +30,23 @@
     p {
         margin: 0 0 20px;
     }
+}
+
+.close-button {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.close-button:hover {
+    color: #111827;
 }
 
 .actions {

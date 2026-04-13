@@ -40,16 +40,4 @@
         </div>
     }
 
-    @if (shrinePopupPosition()) {
-        <div class="popup-overlay" role="dialog" aria-modal="true">
-            <div class="popup">
-                <h2>Choix du sanctuaire</h2>
-                <p>Selectionnez un mode pour cette action.</p>
-                <div class="popup-actions">
-                    <button type="button" (click)="selectShrineChoice(true)">Double or nothing</button>
-                    <button type="button" (click)="selectShrineChoice(false)">Normal</button>
-                </div>
-            </div>
-        </div>
-    }
 </div>

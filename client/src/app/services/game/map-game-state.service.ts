@@ -94,6 +94,7 @@ export class MapGameStateService {
         if (!tile) return;
 
         const shrineMultiplier = payload.isDoubleOrNothing ? (payload.DoubleOrNothingSuccess ? 2 : 0) : 1;
+        let actionApplied = false;
 
         switch (tile.mapObject) {
             case MapObjectType.HealingShrine: {
@@ -102,6 +103,7 @@ export class MapGameStateService {
                     this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
                     healingShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
                     this.mapService.updateShrine(healingShrine);
+                    actionApplied = true;
                 }
                 break;
             }
@@ -118,15 +120,20 @@ export class MapGameStateService {
                             turnsLeft: SHRINE_BUFF_DURATION,
                         },
                     });
+                    actionApplied = true;
                 }
                 break;
             }
             case MapObjectType.None:
                 if (isTileDoor(tile)) {
                     this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
-                    this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
+                    actionApplied = true;
                 }
                 break;
+        }
+
+        if (actionApplied && player.actionsLeft > 0) {
+            this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
         }
     }
 

@@ -188,6 +188,7 @@ export class GameService {
     }
 
     private handleNewTurn(newTurn: NewTurnPayload) {
+        this.popupService.closeChoice();
         this.turnService.handleNewTurn(newTurn);
     }
 

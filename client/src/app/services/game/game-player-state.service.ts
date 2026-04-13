@@ -124,6 +124,10 @@ export class GamePlayerStateService {
 
         this.updatePlayer(initiator.id, { hasFlag: false });
         this.updatePlayer(target.id, { hasFlag: true });
+
+        if (initiator.actionsLeft > 0) {
+            this.updatePlayer(initiator.id, { actionsLeft: initiator.actionsLeft - 1 });
+        }
     }
 
     private handleUpdateFlag(payload: UpdateFlagPayload): void {
