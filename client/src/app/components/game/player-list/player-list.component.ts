@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { GameService } from '@app/services/game/game.service';
+import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
 @Component({
@@ -20,5 +21,9 @@ export class PlayerListComponent {
 
     isRedTeam(player: Player): boolean {
         return player.isRedTeam ?? false;
-    }   
+    }
+    
+    isCTF(): boolean {
+        return this.gameService.gameMode === GameMode.CTF;
+    }
 }

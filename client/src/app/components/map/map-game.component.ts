@@ -7,7 +7,10 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { canPassFlag, getObjectDescription } from '@app/utils/game-utils';
-import { ActionOnTilePayload, DebugMovePayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload } from '@common/interfaces/game.interface';
+import {
+    ActionOnTilePayload, DebugMovePayload, MovePlayerPayload,
+    PassFlagPayload, ToggleDebugPayload,
+} from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
@@ -39,12 +42,12 @@ interface ContextMenuContent {
     templateUrl: './map-game.component.html',
     styleUrls: ['./map.component.scss'],
 })
+
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
     private readonly router = inject(Router);
     private readonly mapGameStateService = inject(MapGameStateService);
 
-    gameMode = GameMode;
     tileType = TileType;
     mapObjectType = MapObjectType;
 
@@ -95,6 +98,21 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
         this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
+        this.socketService.on<PassFlagPayload>(GatewayEvents.PassFlagRequest, (payload) => {
+            if (this.gameService.clientPlayer()?.id === payload.targetId) {
+                const initiator = this.gameService.players().find(p => p.id === payload.initiatorId);
+
+
+                this.popupService.openChoice({
+                    title: 'Passer le drapeau',
+                    message: `Le joueur ${initiator?.name} veut vous donner le drapeau. Acceptez-vous ?`,
+                    firstOptionLabel: 'Accepter',
+                    secondOptionLabel: 'Refuser',
+                    onFirstOption: () => this.socketService.send(GatewayEvents.PassFlagResponse, { ...payload, accepted: true }),
+                    onSecondOption: () => this.socketService.send(GatewayEvents.PassFlagResponse, { ...payload, accepted: false }),
+                });
+            }
+        });
         window.addEventListener('keyup', this.globalKeyUpListener);
 
         this.readyToLoad = true;
@@ -183,7 +201,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                     targetId: player.id,
                 };
 
-                this.socketService.send(GatewayEvents.PassFlag, payload);
+                this.socketService.send(GatewayEvents.PassFlagRequest, payload);
             } else {
                 this.startCombat(player.id);
             }
@@ -210,7 +228,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                     break;
                 case MapObjectType.None:
                     if (isTileDoor(tile) && !player) {
-                        this.socketService.send(GatewayEvents.ActionOnTile, {position});
+                        this.socketService.send(GatewayEvents.ActionOnTile, { position });
                     }
                     break;
             }
@@ -283,7 +301,18 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.gameService.clearCombatState();
         this.mapGameStateService.updateVisitedTileStats();
 
-        this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
+        if (this.mapService.getGameMode() === GameMode.Classic) {
+            this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
+        } else {
+            const isRedTeam = winner.isRedTeam;
+            const winningTeamPlayers = this.gameService.getPlayers().filter(p => p.isRedTeam === isRedTeam);
+
+            const teamName = isRedTeam ? 'Rouge' : 'Bleu';
+            const playerNames = winningTeamPlayers.map(p => p.name).join(', ');
+
+            this.popupService.open(`Partie terminée ! L'équipe ${teamName} gagne ! Joueurs : ${playerNames}`);
+        }
+
         setTimeout(() => {
             this.popupService.close();
             this.router.navigate([APP_ROUTES.statistics]);

@@ -6,13 +6,14 @@ import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
+import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { GatewayEvents } from '@common/types/gateway.events';
 import { GameCombatService } from './game-combat.service';
 import { GamePlayerStateService } from './game-player-state.service';
 import { GameSessionService } from './game-session.service';
 import { GameSocketEventsService } from './game-socket-events.service';
 import { GameTurnService } from './game-turn.service';
-import { GatewayEvents } from '@common/types/gateway.events';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
 
@@ -43,6 +44,7 @@ export class GameService {
     readonly currentCombatRound = this.combatService.currentCombatRound;
     readonly activeCombat = this.combatService.activeCombat;
     readonly isClientInActiveCombat = this.combatService.isClientInActiveCombat;
+    readonly gameMode = this.mapService.getGameMode();
 
     constructor() {
         this.socketEventsService.registerHandlers({
@@ -171,18 +173,39 @@ export class GameService {
         if (!this.isGameStarted) {
             this.removePlayer(payload.playerId);
         } else {
-
             this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
-            if (this.players().filter(p => !p.hasAbandoned).length <= 1) {
-                this.popupService.open(`Le joueur ${this.clientPlayer()?.name} a quitté la partie. `
-                    + `Vous êtes le dernier joueur restant. Vous serez bientôt redirigé vers le menu principal.`);
+            const remainingPlayers = this.players().filter(p => !p.hasAbandoned);
 
-                setTimeout(() => {
-                    this.clearGameService();
-                    this.popupService.close();
-                    this.router.navigate([APP_ROUTES.home]);
-                }, DELAY_BEFORE_NAVIGATE_HOME);
+            if (this.mapService.getGameMode() === GameMode.Classic) {
+                if (remainingPlayers.length <= 1) {
+                    const winner = remainingPlayers[0];
+
+                    this.popupService.open(
+                        `Le joueur ${winner?.name} est le dernier restant. Vous serez redirigé.`,
+                    );
+
+                    setTimeout(() => {
+                        this.clearGameService();
+                        this.popupService.close();
+                        this.router.navigate([APP_ROUTES.home]);
+                    }, DELAY_BEFORE_NAVIGATE_HOME);
+                }
+            } else {
+                const teams = new Set(remainingPlayers.map(p => p.isRedTeam));
+
+                if (teams.size === 1) {
+                    const isRedTeam = remainingPlayers[0].isRedTeam;
+                    const teamName = isRedTeam ? 'Rouge' : 'Bleu';
+
+                    this.popupService.open(`L'équipe ${teamName} est la dernière restante. Vous serez redirigé.`);
+
+                    setTimeout(() => {
+                        this.clearGameService();
+                        this.popupService.close();
+                        this.router.navigate([APP_ROUTES.home]);
+                    }, DELAY_BEFORE_NAVIGATE_HOME);
+                }
             }
         }
     }
