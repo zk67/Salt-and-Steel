@@ -13,7 +13,9 @@
                         @if (player.isOrganizer) { <span class="organizer-badge">★</span> }
                         @if (player.hasFlag) { <span class="flag-indicator">🏴‍☠️</span> }
                     </span>
-                    <span class="player-stat">Combats gagnés: {{ player.stats.victoryPoints }}</span>
+                    @if (isCTF()) {
+                        <span class="player-stat">Combats gagnés: {{ player.stats.victoryPoints }}</span>
+                    }
                 </div>
             </li>
         }

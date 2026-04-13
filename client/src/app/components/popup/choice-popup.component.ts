@@ -30,6 +30,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     `,
     styleUrls: ['./choice-popup.component.scss'],
 })
+
 export class ChoicePopupComponent {
     @Input() show = false;
     @Input() title = '';

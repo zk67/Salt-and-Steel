@@ -43,6 +43,8 @@ export enum GatewayEvents {
     SubmitCombatPosture = 'submitCombatPosture',
     GetGameModes = 'getGameModes',
     PassFlag = 'passFlag',
+    PassFlagRequest = 'passFlagRequest',
+    PassFlagResponse = 'passFlagResponse',
     HandlePassFlag = 'handlePassFlag',
     UpdateFlag = 'updateFlag',
     HandleUpdateFlag = 'handleUpdateFlag',

@@ -13,7 +13,8 @@ import {
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, isValidTile, isTileDoor,  Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, equalPositions, 
+    isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { giveShrineBuff } from '@app/utils/game-utils';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -106,19 +107,25 @@ export class CurrentGamesService {
 
         const tile = game._game.tiles[newPosition.y][newPosition.x];
 
-        if (game._game.gameMode === GameMode.CTF && tile.mapObject === MapObjectType.Flag) {
-            tile.mapObject = MapObjectType.None;
+        if (game._game.gameMode === GameMode.CTF) {
+            if (tile.mapObject === MapObjectType.Flag) {
+                tile.mapObject = MapObjectType.None;
 
-            const payload: UpdateFlagPayload = {
-                playerId: player.id,
-                flagStatus: true,
-                position: newPosition,
-            };
+                const payload: UpdateFlagPayload = {
+                    playerId: player.id,
+                    flagStatus: true,
+                    position: newPosition,
+                };
 
-            this.handleUpdateFlag(roomId, payload);
-            this.broadcastService.emitUpdateFlag(roomId, payload);
+                this.handleUpdateFlag(roomId, payload);
+                this.broadcastService.emitUpdateFlag(roomId, payload);
 
-            Logger.log(`${player.name} picked up the flag in room ${roomId}.`);
+                Logger.log(`${player.name} picked up the flag in room ${roomId}.`);
+            }
+
+            if (tile.mapObject === MapObjectType.SpawnPoint && equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag) {
+                this.broadcastService.emitGameOver(roomId, player.id);
+            }
         }
 
         return true;

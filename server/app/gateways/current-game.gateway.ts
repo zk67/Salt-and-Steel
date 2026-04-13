@@ -2,8 +2,14 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { DebugMovePayload, MovePlayerPayload, ActiveCombatPayload, ActionOnTilePayload,
-        SubmitCombatPosturePayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
+import {
+    ActionOnTilePayload,
+    ActiveCombatPayload,
+    DebugMovePayload, MovePlayerPayload,
+    PassFlagPayload,
+    SubmitCombatPosturePayload,
+    ToggleDebugPayload, UpdateFlagPayload,
+} from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';
@@ -116,6 +122,22 @@ export class CurrentGameGateway implements OnGatewayInit {
     handlePassFlag(client: Socket, payload: PassFlagPayload): void {
         if (this.playService.handlePassFlag(client, payload)) {
             this.broadcastService.emitHandlePassFlag(getRoomIdFromSocket(client), payload);
+        }
+    }
+
+    @SubscribeMessage(GatewayEvents.PassFlagRequest)
+    handlePassFlagRequest(client: Socket, payload: PassFlagPayload): void {
+        this.server.sockets.sockets.get(payload.targetId)?.emit(GatewayEvents.PassFlagRequest, payload);
+    }
+
+    @SubscribeMessage(GatewayEvents.PassFlagResponse)
+    handlePassFlagResponse(client: Socket, payload: PassFlagPayload & { accepted: boolean }): void {
+        if (!payload.accepted) return;
+
+        const room = getRoomIdFromSocket(client);
+
+        if (this.playService.handlePassFlag(client, payload)) {
+            this.broadcastService.emitHandlePassFlag(room, payload);
         }
     }
 
