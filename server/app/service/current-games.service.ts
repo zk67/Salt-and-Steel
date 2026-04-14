@@ -124,7 +124,7 @@ export class CurrentGamesService {
             }
 
             if (tile.mapObject === MapObjectType.SpawnPoint && equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag) {
-                this.broadcastService.emitGameOver(roomId, player.id);
+                this.gameOver(roomId, player.id);
             }
         }
 
@@ -146,6 +146,12 @@ export class CurrentGamesService {
         }
 
         return game;
+    }
+
+    gameOver(roomId: string, winnerId: string): void {
+        this.timer.stopTimer(roomId);
+        this.removeGame(roomId);
+        this.broadcastService?.emitGameOver(roomId, winnerId);
     }
 
     allocateSpawnPoints(roomId: string): void {
