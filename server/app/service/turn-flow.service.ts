@@ -27,6 +27,13 @@ export class TurnFlowService {
         }
 
         game.currentPhase = TurnPhase.Turn;
+
+        if (typeof game.totalTurns === 'number') {
+            game.totalTurns++;
+        } else {
+            game.totalTurns = 1;
+        }
+
         const currentPlayerId = game.turnOrder[game.currentTurnIndex];
         const currentPlayer = game.players.find((p) => p.id === currentPlayerId);
         if (!currentPlayer) {
@@ -58,11 +65,12 @@ export class TurnFlowService {
         }
 
         lastPlayer.movementPoints = 0;
+
         Logger.log(`Ending turn for player ${lastPlayer.name}`);
-        if(lastPlayer.shrineBuffs) {
+        if (lastPlayer.shrineBuffs) {
             lastPlayer.shrineBuffs.turnsLeft -= 1;
             Logger.warn(`Player ${lastPlayer.name} has ${lastPlayer.shrineBuffs.turnsLeft} turns left on their shrine buff.`);
-            if(lastPlayer.shrineBuffs.turnsLeft <= 0) {
+            if (lastPlayer.shrineBuffs.turnsLeft <= 0) {
                 Logger.warn(`Player ${lastPlayer.name}'s shrine buff has expired.`);
                 lastPlayer.attack -= 1 * lastPlayer.shrineBuffs.bonusAmount;
                 lastPlayer.defense -= 1 * lastPlayer.shrineBuffs.bonusAmount;
@@ -92,6 +100,7 @@ export class TurnFlowService {
         emitTurnUpdate(game.roomId, {
             phase: game.currentPhase,
             playerId: game.turnOrder[game.currentTurnIndex],
+            totalTurns: game.totalTurns ?? 0,
         });
     }
 }

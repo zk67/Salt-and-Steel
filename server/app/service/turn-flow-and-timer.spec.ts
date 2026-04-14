@@ -3,7 +3,7 @@ import { CurrentGamesService } from '@app/service/current-games.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { DiceTarget } from '@common/enums/player.enums';
-import { Game, NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
+import { Game, TurnPhase } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
@@ -184,10 +184,13 @@ describe('TurnFlowService', () => {
         expect(game.currentPhase).toBe(TurnPhase.WaitTurn);
         expect(game.currentTurnIndex).toBe(FIRST_INDEX);
         expect(timer.startTurnTimer).toHaveBeenCalledWith(ROOM_ID, TIMER_WAIT_TURN);
-        expect(emitTurnUpdate).toHaveBeenCalledWith(ROOM_ID, {
-            phase: TurnPhase.WaitTurn,
-            playerId: FIRST_PLAYER_ID,
-        } as NewTurnPayload);
+        expect(emitTurnUpdate).toHaveBeenCalledWith(
+            ROOM_ID,
+            expect.objectContaining({
+                phase: TurnPhase.WaitTurn,
+                playerId: FIRST_PLAYER_ID,
+            }),
+        );
     });
 
     it('changeTurn passe de WaitTurn a Turn, recharge le mouvement et lance 30 secondes', () => {
@@ -199,7 +202,10 @@ describe('TurnFlowService', () => {
         expect(game.currentPhase).toBe(TurnPhase.Turn);
         expect(game.players[FIRST_INDEX].movementPoints).toBe(SEVEN_VALUE);
         expect(timer.startTurnTimer).toHaveBeenCalledWith(ROOM_ID, TIMER_TURN);
-        expect(emitTurnUpdate).toHaveBeenCalledWith(ROOM_ID, { phase: TurnPhase.Turn, playerId: FIRST_PLAYER_ID });
+        expect(emitTurnUpdate).toHaveBeenCalledWith(
+            ROOM_ID,
+            expect.objectContaining({ phase: TurnPhase.Turn, playerId: FIRST_PLAYER_ID }),
+        );
     });
 
     it('changeTurn pendant Turn delegue a nextPlayerTurn', () => {
@@ -228,6 +234,9 @@ describe('TurnFlowService', () => {
         expect(emitShrineBuffOff).toHaveBeenCalledWith(ROOM_ID, FIRST_PLAYER_ID);
         expect(game.currentTurnIndex).toBe(SECOND_INDEX);
         expect(timer.startTurnTimer).toHaveBeenCalledWith(ROOM_ID, TIMER_WAIT_TURN);
-        expect(emitTurnUpdate).toHaveBeenCalledWith(ROOM_ID, { phase: TurnPhase.WaitTurn, playerId: SECOND_PLAYER_ID });
+        expect(emitTurnUpdate).toHaveBeenCalledWith(
+            ROOM_ID,
+            expect.objectContaining({ phase: TurnPhase.WaitTurn, playerId: SECOND_PLAYER_ID }),
+        );
     });
 });

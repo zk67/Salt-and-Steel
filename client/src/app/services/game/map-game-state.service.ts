@@ -55,27 +55,29 @@ export class MapGameStateService {
 
     updateVisitedTileStats(): void {
         const tiles = this.mapService.getTileMap();
-        const terrainTypes = [0, 1, 2];
-        let totalTerrainTiles = 0;
+        let totalTiles = 0;
 
         for (const row of tiles) {
             for (const tile of row) {
-                if (terrainTypes.includes(tile.tileType)) totalTerrainTiles++;
+                if (this.gameService.isSpecialTile(tile)) {
+                    totalTiles++;
+                }
             }
         }
 
         this.gameService.getPlayers().forEach((player) => {
             const visited: string[] = player.visitedTiles ? [...player.visitedTiles] : [];
-            let visitedTerrain = 0;
+            let visitedTiles = 0;
 
             for (const key of visited) {
                 const [x, y] = key.split(',').map(Number);
-                if (terrainTypes.includes(tiles[y][x].tileType)) {
-                    visitedTerrain++;
+                const tile = tiles[y][x];
+                if (tile && this.gameService.isSpecialTile(tile)) {
+                    visitedTiles++;
                 }
             }
 
-            const percentVisited = totalTerrainTiles > 0 ? Math.round((visitedTerrain / totalTerrainTiles) * PERCENTAGE) : 0;
+            const percentVisited = totalTiles > 0 ? Math.round((visitedTiles / totalTiles) * PERCENTAGE) : 0;
 
             this.gameService.updatePlayer(player.id, {
                 stats: {
@@ -102,7 +104,7 @@ export class MapGameStateService {
                 if (healingShrine) {
                     this.gameService.updatePlayer(player.id, { hp: Math.min(player.maxHp, player.hp + 2 * shrineMultiplier) });
                     healingShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
-                    this.mapService.updateShrine(healingShrine);
+                    this.mapService.updateShrine(healingShrine, payload);
                     actionApplied = true;
                 }
                 break;
@@ -111,7 +113,7 @@ export class MapGameStateService {
                 const combatShrine = this.mapService.getShrineAtPosition(payload.position);
                 if (combatShrine) {
                     combatShrine.turnLeftDeactivated = SHRINE_TURN_LEFT;
-                    this.mapService.updateShrine(combatShrine);
+                    this.mapService.updateShrine(combatShrine, payload);
                     this.gameService.updatePlayer(player.id, {
                         attack: player.attack + shrineMultiplier,
                         defense: player.defense + shrineMultiplier,
@@ -127,6 +129,7 @@ export class MapGameStateService {
             case MapObjectType.None:
                 if (isTileDoor(tile)) {
                     this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
+                    this.mapService.addManipulatedDoor(payload.position);
                     actionApplied = true;
                 }
                 break;

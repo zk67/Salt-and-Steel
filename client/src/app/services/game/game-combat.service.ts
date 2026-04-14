@@ -23,6 +23,7 @@ export class GameCombatService {
     private readonly socketService = inject(SocketClientService);
     private readonly playerState = inject(GamePlayerStateService);
     private readonly turnService = inject(GameTurnService);
+    private lastGameDurationSeconds: number | null = null;
 
     readonly currentCombatRound = computed(() => this.combatRoundState());
     readonly activeCombat = computed(() => this.activeCombatState());
@@ -77,6 +78,28 @@ export class GameCombatService {
                 hp: Math.max(0, (defender.hp ?? 0) - (payload.defender.damageTaken ?? 0)),
             });
         }
+
+        this.updateCombatStatsIfBothPresent(attacker, defender, payload);
+    }
+
+    private updateCombatStatsIfBothPresent(attacker: Player | undefined, defender: Player | undefined, payload: CombatRoundDetails): void {
+        if (attacker && defender) {
+            if (payload.attacker.damageTaken > attacker.hp) {
+                this.playerState.addTotalLifeLost(attacker.id, attacker.hp ?? 0);
+                this.playerState.addTotalDamageDealt(defender.id, attacker.hp ?? 0);
+            } else {
+                this.playerState.addTotalLifeLost(attacker.id, payload.attacker.damageTaken ?? 0);
+                this.playerState.addTotalDamageDealt(defender.id, payload.defender.damageDealt ?? 0);
+            }
+
+            if (payload.defender.damageTaken > defender.hp) {
+                this.playerState.addTotalLifeLost(defender.id, defender.hp ?? 0);
+                this.playerState.addTotalDamageDealt(attacker.id, defender.hp ?? 0);
+            } else {
+                this.playerState.addTotalLifeLost(defender.id, payload.defender.damageTaken ?? 0);
+                this.playerState.addTotalDamageDealt(attacker.id, payload.attacker.damageDealt ?? 0);
+            }
+        }
     }
 
     clearCombatRound(): void {
@@ -84,6 +107,10 @@ export class GameCombatService {
     }
 
     handleBattleWon(payload: BattleWonPayload): void {
+        if (payload.gameDurationSeconds !== undefined) {
+            this.lastGameDurationSeconds = payload.gameDurationSeconds;
+        }
+
         const clientId = this.playerState.clientPlayer()?.id;
         const wasClientInCombat = this.isClientInActiveCombat();
 
@@ -129,21 +156,10 @@ export class GameCombatService {
     }
 
     private applyBattleOutcomeUpdates(payload: BattleWonPayload, winner: Player, loser: Player): void {
-        const winnerStartHp = this.combatStartHp.get(winner.id) ?? winner.hp ?? 0;
-        const loserStartHp = this.combatStartHp.get(loser.id) ?? loser.hp ?? 0;
-
-        const winnerLifeLost = Math.max(0, winnerStartHp - (payload.winnerHp ?? winner.hp ?? 0));
-        const loserLifeLost = Math.max(0, loserStartHp);
-
         this.playerState.addVictoryPoint(winner.id);
         this.playerState.addDefeatPoint(loser.id);
         this.playerState.addCombatPoint(winner.id);
         this.playerState.addCombatPoint(loser.id);
-
-        this.playerState.addTotalLifeLost(winner.id, winnerLifeLost);
-        this.playerState.addTotalLifeLost(loser.id, loserLifeLost);
-        this.playerState.addTotalDamageDealt(winner.id, loserLifeLost);
-        this.playerState.addTotalDamageDealt(loser.id, winnerLifeLost);
 
         this.playerState.updatePlayer(winner.id, {
             hp: payload.winnerHp ?? winner.hp,
@@ -197,23 +213,11 @@ export class GameCombatService {
             return;
         }
 
-        const attackerStartHp = this.combatStartHp.get(attacker.id) ?? attacker.hp ?? 0;
-        const defenderStartHp = this.combatStartHp.get(defender.id) ?? defender.hp ?? 0;
-
-        const attackerLifeLost = Math.max(0, attackerStartHp);
-        const defenderLifeLost = Math.max(0, defenderStartHp);
-
         this.playerState.addCombatPoint(attacker.id);
         this.playerState.addCombatPoint(defender.id);
 
         this.playerState.addDefeatPoint(attacker.id);
         this.playerState.addDefeatPoint(defender.id);
-
-        this.playerState.addTotalLifeLost(attacker.id, attackerLifeLost);
-        this.playerState.addTotalLifeLost(defender.id, defenderLifeLost);
-
-        this.playerState.addTotalDamageDealt(attacker.id, defenderLifeLost);
-        this.playerState.addTotalDamageDealt(defender.id, attackerLifeLost);
 
         this.playerState.updatePlayer(attacker.id, {
             position: attackerRespawn.position,
@@ -274,5 +278,9 @@ export class GameCombatService {
 
         this.combatRoundState.set(null);
         this.activeCombatState.set(null);
+    }
+
+    getGameDurationSeconds(): number | null {
+        return this.lastGameDurationSeconds;
     }
 }

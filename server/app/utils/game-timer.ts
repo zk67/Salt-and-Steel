@@ -30,6 +30,24 @@ export class Timer {
         this.intervals.set(gameId, interval);
     }
 
+    startTimer(gameId: string): void {
+        if (this.intervals.has(gameId)) return;
+
+        this.timers.set(gameId, 0);
+
+        const interval = setInterval(() => {
+            const current = this.timers.get(gameId);
+            if (current === undefined) {
+                this.stopTimer(gameId);
+                return;
+            }
+
+            this.timers.set(gameId, current + 1);
+        }, this.tick);
+
+        this.intervals.set(gameId, interval);
+    }
+
     getCurrentTime(gameId: string): number {
         return this.timers.get(gameId) ?? 0;
     }

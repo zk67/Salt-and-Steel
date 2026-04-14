@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile } from '@app/utils/tile';
-import { Game } from '@common/interfaces/game.interface';
+import { ActionOnTilePayload, Game } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
 import { Position } from '@common/utils/map.utils';
 @Injectable({
@@ -159,7 +159,10 @@ export class MapService {
         return game?.shrine.find((s) => s.position.some((p) => p.x === position.x && p.y === position.y)) ?? null;
     }
 
-    updateShrine(shrine: Shrine): void {
+    updateShrine(shrine: Shrine, payload?: ActionOnTilePayload | null): void {
+        if (payload) {
+            this.addUsedShrine(payload.position);
+        }
         this.gameSignal.update(game => {
             if (!game) return null;
             return {
@@ -167,5 +170,49 @@ export class MapService {
                 shrine: game.shrine.map(s => s === shrine ? shrine : s),
             };
         });
+    }
+
+    addManipulatedDoor(position: Position): void {
+        this.gameSignal.update(game => {
+            if (!game) return null;
+            const posStr = `${position.x},${position.y}`;
+            const manipulated = new Set(game.manipulatedDoors ?? []);
+            manipulated.add(posStr);
+            return { ...game, manipulatedDoors: Array.from(manipulated) };
+        });
+    }
+
+    getManipulatedDoors(): string[] {
+        const game = this.gameSignal();
+        return game?.manipulatedDoors ?? [];
+    }
+
+    getTotalDoors(): number {
+        return this.getTileMap()
+            .flat()
+            .filter((tile) => tile.tileType === TileType.CloseDoor || tile.tileType === TileType.OpenDoor)
+            .length;
+    }
+
+    addUsedShrine(position: Position): void {
+        this.gameSignal.update(game => {
+            if (!game) return null;
+            const shrines = game.shrine ?? [];
+            const index = shrines.findIndex(s => s.position.some(p => p.x === position.x && p.y === position.y));
+            if (index === -1) return game;
+            const used = new Set(game.usedShrines ?? []);
+            used.add(index.toString());
+            return { ...game, usedShrines: Array.from(used) };
+        });
+    }
+
+    getUsedShrines(): string[] {
+        const game = this.gameSignal();
+        return game?.usedShrines ?? [];
+    }
+
+    getTotalShrines(): number {
+        const shrines = this.gameSignal()?.shrine ?? [];
+        return shrines.length;
     }
 }
