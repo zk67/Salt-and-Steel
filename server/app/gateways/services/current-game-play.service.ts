@@ -63,8 +63,8 @@ export class CurrentGamePlayService {
         const gameInfoPayload: GameInfoPayload = {
             players: game.players,
             game: game._game,
+            totalTurns: game.totalTurns ?? 0,
         };
-
         this.broadcastService.emitGameStartInfo(room, gameInfoPayload);
     }
 

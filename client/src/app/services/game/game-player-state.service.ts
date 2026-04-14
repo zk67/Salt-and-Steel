@@ -1,10 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { MapService } from '@app/services/map/map.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { PassFlagPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { MapService } from '@app/services/map/map.service';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { SocketClientService } from '@app/services/socket/socket-client.service';
 
 @Injectable({
     providedIn: 'root',
@@ -16,6 +16,7 @@ export class GamePlayerStateService {
     private readonly socketService = inject(SocketClientService);
 
     private clientPlayerId = '';
+    private flagHolderIds = new Set<string>();
 
     readonly activePlayer = computed(() => this.players().find((player) => player.id === this.activePlayerId()) ?? null);
     readonly clientPlayer = computed(() => this.players().find((player) => player.id === this.clientPlayerId) ?? null);
@@ -116,7 +117,7 @@ export class GamePlayerStateService {
         this.activePlayerId.set(null);
         this.clientPlayerId = '';
     }
-    
+
     private handlePassFlag(payload: PassFlagPayload): void {
         const initiator = this.players().find(p => p.id === payload.initiatorId);
         const target = this.players().find(p => p.id === payload.targetId);
@@ -124,6 +125,7 @@ export class GamePlayerStateService {
 
         this.updatePlayer(initiator.id, { hasFlag: false });
         this.updatePlayer(target.id, { hasFlag: true });
+        this.flagHolderIds.add(target.id);
 
         if (initiator.actionsLeft > 0) {
             this.updatePlayer(initiator.id, { actionsLeft: initiator.actionsLeft - 1 });
@@ -134,6 +136,14 @@ export class GamePlayerStateService {
         const player = this.players().find(p => p.id === payload.playerId);
         if (!player) return;
         this.updatePlayer(player.id, { hasFlag: payload.flagStatus });
+        if (payload.flagStatus) {
+            this.flagHolderIds.add(player.id);
+        }
         this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
+
+    }
+
+    getFlagHolderCount(): number {
+        return this.flagHolderIds.size;
     }
 }

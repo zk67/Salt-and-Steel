@@ -68,7 +68,7 @@ export class GameTurnService {
             shrines.forEach(s => {
                 if (s.turnLeftDeactivated > 0) {
                     s.turnLeftDeactivated -= 1;
-                    this.mapService.updateShrine(s);
+                    this.mapService.updateShrine(s, null);
                 }
             });
             this.actionTile.set([]);
@@ -77,7 +77,7 @@ export class GameTurnService {
             if (newTurn.playerId === player.id) {
                 this.isClientPlayerTurn.set(true);
 
-                if(player.shrineBuffs){
+                if (player.shrineBuffs) {
                     player.shrineBuffs.turnsLeft -= 1;
                 }
 

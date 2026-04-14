@@ -6,7 +6,7 @@ import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
-import { GameMode } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { GameCombatService } from './game-combat.service';
@@ -16,6 +16,8 @@ import { GameSocketEventsService } from './game-socket-events.service';
 import { GameTurnService } from './game-turn.service';
 
 const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
+const PERCENTAGE = 100;
+const WALL = 3;
 
 @Injectable({
     providedIn: 'root',
@@ -139,8 +141,8 @@ export class GameService {
 
         const sorted = [...payload.players].sort((a, b) => a.turnOrder - b.turnOrder);
         this.playerState.setPlayers(sorted);
-
-        this.mapService.loadFromDB(payload.game);
+        const gameWithTurns = { ...payload.game, totalTurns: payload.totalTurns ?? 0 };
+        this.mapService.loadFromDB(gameWithTurns);
     }
 
     setSelectedHostGame(game: Game): void {
@@ -212,6 +214,12 @@ export class GameService {
 
     private handleNewTurn(newTurn: NewTurnPayload) {
         this.popupService.closeChoice();
+        if (newTurn.totalTurns) {
+            const game = this.mapService.getGameData();
+            if (game) {
+                (game as Game & { totalTurns?: number }).totalTurns = newTurn.totalTurns;
+            }
+        }
         this.turnService.handleNewTurn(newTurn);
     }
 
@@ -236,5 +244,82 @@ export class GameService {
 
     clearCombatState(): void {
         this.combatService.clear();
+    }
+
+    getTotalTurns(): number {
+        const game = this.mapService.getGameData() as Game & { totalTurns?: number };
+        return game && typeof game.totalTurns === 'number' ? game.totalTurns : 0;
+    }
+
+    getGameDurationSeconds(): number | null {
+        return this.combatService.getGameDurationSeconds();
+    }
+
+    isSpecialTile(tile: { tileType: number; mapObject: number }): boolean {
+        return (tile.tileType !== WALL || tile.mapObject === MapObjectType.SpawnPoint || tile.mapObject === MapObjectType.Flag);
+    }
+
+    getAllVisitedPositions(players: Player[]): Set<string> {
+        return new Set(
+            players.flatMap((player) => player.visitedTiles ?? []),
+        );
+    }
+
+    countSpecialTiles(tiles: { tileType: number; mapObject: number }[][]): number {
+        return tiles
+            .flat()
+            .filter((tile) => tile && this.isSpecialTile(tile))
+            .length;
+    }
+
+    countVisitedSpecialTiles(visited: Set<string>, tiles: { tileType: number; mapObject: number }[][]): number {
+        let count = 0;
+        const sizeY = tiles.length;
+        const sizeX = tiles[0].length;
+        for (const posStr of visited) {
+            const [x, y] = posStr.split(',').map(Number);
+            if (y >= 0 && y < sizeY && x >= 0 && x < sizeX) {
+                const tile = tiles[y][x];
+                if (tile && this.isSpecialTile(tile)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    getGlobalVisitedTilesPercentage(): number {
+        const players = this.getPlayers();
+        const tiles = this.mapService.getTileMap();
+        if (!tiles.length || !players.length) return 0;
+        const visited = this.getAllVisitedPositions(players);
+        const totalTiles = this.countSpecialTiles(tiles);
+        const visitedTiles = this.countVisitedSpecialTiles(visited, tiles);
+        if (totalTiles === 0) return 0;
+        return Math.round((visitedTiles / totalTiles) * PERCENTAGE);
+    }
+
+    getFlagHolderCount(): number {
+        return this.playerState.getFlagHolderCount();
+    }
+
+    getTotalDoors(): number {
+        return this.mapService.getTotalDoors();
+    }
+
+    getManipulatedDoors(): string[] {
+        return this.mapService.getManipulatedDoors();
+    }
+
+    getTotalShrines(): number {
+        return this.mapService.getTotalShrines();
+    }
+
+    getUsedShrines(): string[] {
+        return this.mapService.getUsedShrines();
+    }
+
+    getGameMode(): string {
+        return this.mapService.getGameMode();
     }
 }

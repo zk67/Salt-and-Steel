@@ -6,6 +6,7 @@ import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
+import { giveShrineBuff } from '@app/utils/game-utils';
 import {
     ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
     Game, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
@@ -13,9 +14,10 @@ import {
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, equalPositions, 
-    isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
-import { giveShrineBuff } from '@app/utils/game-utils';
+import {
+    addPositions, arePositionAdjacent, equalPositions,
+    isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST,
+} from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 export type SubmitCombatPostureResult = {
@@ -30,6 +32,7 @@ export type SubmitCombatPostureResult = {
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
+    private stopWatch: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
     private roomPlayerStateService = new RoomPlayerStateService();
     private combatRoundService = new CombatRoundService();
@@ -145,6 +148,7 @@ export class CurrentGamesService {
             this.gameLifecycleService.createTeams(game);
         }
 
+        this.stopWatch.startTimer(roomId);
         return game;
     }
 
@@ -288,7 +292,7 @@ export class CurrentGamesService {
         const tile = game._game.tiles[payload.position.y][payload.position.x];
         giveShrineBuff(game._game, player, payload);
 
-        if(isTileDoor(tile)) {
+        if (isTileDoor(tile)) {
             tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
         }
 
@@ -338,7 +342,7 @@ export class CurrentGamesService {
         const roundPostures = this.combatResolutionService.submitPlayerPosture(combatContext.game, playerId, posture);
         if (!roundPostures) return { roundResolved: false, isGameOver: false };
 
-        const combatRound = this.combatResolutionService.resolveCombatRound( 
+        const combatRound = this.combatResolutionService.resolveCombatRound(
             combatContext, roundPostures.attackerPosture, roundPostures.defenderPosture,
         );
 
@@ -373,6 +377,16 @@ export class CurrentGamesService {
         if (result.flagPayload) {
             this.handleUpdateFlag(roomId, result.flagPayload);
             this.broadcastService.emitUpdateFlag(roomId, result.flagPayload);
+        }
+
+        let duration;
+        if (this.stopWatch) {
+            duration = this.stopWatch.getCurrentTime(roomId);
+        }
+        result.payload.gameDurationSeconds = duration;
+
+        if (result.isGameOver) {
+            this.stopWatch.stopTimer(roomId);
         }
 
         return {

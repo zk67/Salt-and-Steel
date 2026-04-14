@@ -4,8 +4,12 @@ import { ChatComponent } from '@app/components/chat/chat.component';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
+import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
+
+const PERCENTAGE = 100;
+const TIME_CONVERSION = 60;
 
 @Component({
     selector: 'app-statistics-page',
@@ -104,6 +108,55 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
 
     sendMessage(content: string): void {
         this.socketService.sendMessage(content);
+    }
+
+    get totalTurns(): number {
+        return this.gameService.getTotalTurns();
+    }
+
+    get manipulatedDoorsPercentage(): number {
+        const totalDoors = this.gameService.getTotalDoors();
+        const manipulated = this.gameService.getManipulatedDoors().length;
+        if (!this.hasDoors) return 0;
+        return Math.round((manipulated / totalDoors) * PERCENTAGE);
+    }
+
+    get hasDoors(): boolean {
+        const totalDoors = this.gameService.getTotalDoors();
+        return totalDoors > 0;
+    }
+
+    get usedShrinesPercentage(): number {
+        const totalShrines = this.gameService.getTotalShrines();
+        const used = this.gameService.getUsedShrines().length;
+        if (!this.hasShrines) return 0;
+        return Math.round((used / totalShrines) * PERCENTAGE);
+    }
+
+    get hasShrines(): boolean {
+        const totalShrines = this.gameService.getTotalShrines();
+        return totalShrines > 0;
+    }
+
+    get gameDurationMMSS(): string {
+        const seconds = this.gameService.getGameDurationSeconds();
+        if (seconds == null) return '--:--';
+        const mm = Math.floor(seconds / TIME_CONVERSION).toString().padStart(2, '0');
+        const ss = Math.floor(seconds % TIME_CONVERSION).toString().padStart(2, '0');
+        return `${mm}:${ss}`;
+    }
+
+    get globalVisitedTilesPercentage(): number {
+        return this.gameService.getGlobalVisitedTilesPercentage();
+    }
+
+    get flagHolderCount(): number {
+        return this.gameService.getFlagHolderCount();
+    }
+
+    get hasFlag(): boolean {
+        const mode = this.gameService.getGameMode();
+        return mode === GameMode.CTF;
     }
 }
 

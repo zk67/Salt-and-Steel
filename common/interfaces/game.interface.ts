@@ -15,6 +15,8 @@ export interface Game {
     gameMode: GameMode;
     tiles: TileData[][];
     shrine: Shrine[];
+    manipulatedDoors?: string[];
+    usedShrines?: string[];
 }
 
 export interface MovePlayerPayload {
@@ -25,12 +27,14 @@ export interface MovePlayerPayload {
 export interface GameInfoPayload {
     players: Player[];
     game: Game;
+    totalTurns?: number;
 }
 
 export interface NewTurnPayload {
     playerId: string;
     phase: TurnPhase;
     remainingSeconds?: number;
+    totalTurns?: number;
 }
 
 export interface BattleWonPayload {
@@ -41,6 +45,7 @@ export interface BattleWonPayload {
     winnerHp: number;
     loserHp: number;
     remainingTurnSeconds?: number;
+    gameDurationSeconds?: number;
     doubleKo?: boolean;
     attackerRespawn?: {
         playerId: string;

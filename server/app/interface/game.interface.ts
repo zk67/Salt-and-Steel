@@ -1,4 +1,4 @@
-import { Game, TurnPhase, CombatPosture } from '@common/interfaces/game.interface';
+import { CombatPosture, Game, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { Position } from '@common/utils/map.utils';
 
@@ -19,6 +19,7 @@ export interface PlayableGame {
         pausedTurnRemainingSeconds: number;
         postures: Record<string, CombatPosture>;
     } | null;
+    totalTurns?: number;
 }
 
 export interface JoinableGameSummary {

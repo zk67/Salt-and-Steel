@@ -75,6 +75,38 @@
 
 		<section class="global-statistics">
 			<h2>Statistiques globales</h2>
+			<ul class="global-statistics-list">
+			<li>
+				<strong>Durée de la partie :</strong>
+				<span> {{ gameDurationMMSS }}</span>
+			</li>
+			<li>
+				<strong>Nombre de tours de jeu (somme des tours de tous les joueurs) :</strong>
+				<span> {{ totalTurns }}</span>
+			</li>
+			@if (hasShrines) {
+				<li>
+					<strong>Pourcentage des sanctuaires utilisés au moins une fois :</strong>
+					<span> {{ usedShrinesPercentage }}%</span>
+				</li>
+			}
+			<li>
+				<strong>Pourcentage des tuiles de terrain visitées par au moins un joueur :</strong>
+				<span> {{ globalVisitedTilesPercentage }}%</span>
+			</li>
+			@if (hasDoors) {
+				<li>
+					<strong>Pourcentage des portes manipulées au moins une fois :</strong>
+					<span> {{ manipulatedDoorsPercentage }}%</span>
+				</li>
+			}
+			@if (hasFlag) {
+				<li>
+					<strong>Nombre de joueurs différents ayant détenu le drapeau :</strong>
+					<span> {{ flagHolderCount }}</span>
+				</li>
+			}
+			</ul>
 		</section>
 
 		<button class="back-button" routerLink="/home">Retour au menu</button>

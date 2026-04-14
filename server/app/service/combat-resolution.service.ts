@@ -207,6 +207,7 @@ export class CombatResolutionService {
             combatRound,
             winnerHp: 0,
             loserHp: 0,
+            gameDurationSeconds: undefined,
         };
     }
 }
