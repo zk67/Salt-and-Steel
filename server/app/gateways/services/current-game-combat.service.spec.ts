@@ -39,6 +39,7 @@ describe('CurrentGameCombatService', () => {
             getGameByRoomId: jest.fn(),
             submitCombatPosture: jest.fn(),
             resolveCombatRoundOnTimeout: jest.fn(),
+            gameOver: jest.fn(),
             nextPlayerTurn: jest.fn(),
             resumeTurnTimer: jest.fn(),
         } as unknown as jest.Mocked<CurrentGamesService>;
@@ -348,7 +349,7 @@ describe('CurrentGameCombatService', () => {
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
-        expect(broadcastService.emitGameOver).toHaveBeenCalledWith('room-1', 'a1');
+        expect(currentGamesService.gameOver).toHaveBeenCalledWith('room-1', 'a1');
         expect(currentGamesService.nextPlayerTurn).not.toHaveBeenCalled();
     });
 
