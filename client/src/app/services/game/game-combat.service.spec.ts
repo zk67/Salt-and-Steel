@@ -50,15 +50,17 @@ describe('GameCombatService', () => {
     let service: GameCombatService;
     let playerState: GamePlayerStateServiceMock;
     let popupService: PopupServiceMock;
+    let turnService: GameTurnServiceMock;
 
     beforeEach(() => {
         playerState = createGamePlayerStateServiceMock();
+        turnService = createGameTurnServiceMock();
 
         TestBed.configureTestingModule({
             providers: [
                 GameCombatService,
                 { provide: GamePlayerStateService, useValue: playerState },
-                { provide: GameTurnService, useValue: createGameTurnServiceMock() },
+                { provide: GameTurnService, useValue: turnService },
                 { provide: MapService, useValue: createMapServiceMock() },
                 { provide: SocketClientService, useValue: createSocketClientServiceMock() },
                 { provide: PopupService, useValue: createPopupServiceMock() },
@@ -127,6 +129,37 @@ describe('GameCombatService', () => {
             'Double KO ! Vous réapparaissez après le combat.',
             NOTIFICATION_DURATION_MS,
         );
+    });
+
+    it('arrete le timer de combat apres un double KO pour un participant', () => {
+        const clientPlayer = createPlayer('c1', 'Client');
+        const rival = createPlayer('p2', 'Rival');
+
+        playerState.players.set([clientPlayer, rival]);
+        playerState.clientPlayer.set(clientPlayer);
+
+        service.handleCombatStarted(createActiveCombatPayload(clientPlayer.id, rival.id));
+        service.handleBattleWon({
+            winnerId: '',
+            loserId: '',
+            loserPos: { x: 0, y: 0 },
+            winnerHp: 0,
+            loserHp: 0,
+            doubleKo: true,
+            attackerRespawn: {
+                playerId: clientPlayer.id,
+                position: { x: 1, y: 1 },
+                hp: clientPlayer.maxHp,
+            },
+            defenderRespawn: {
+                playerId: rival.id,
+                position: { x: 2, y: 2 },
+                hp: rival.maxHp,
+            },
+        });
+
+        expect(turnService.stopCombatTimerOnly).toHaveBeenCalledTimes(1);
+        expect(turnService.resumeAfterCombat).not.toHaveBeenCalled();
     });
 });
 

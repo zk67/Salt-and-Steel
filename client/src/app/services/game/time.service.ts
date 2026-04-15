@@ -25,5 +25,6 @@ export class TimeService {
     stopTimer() {
         clearInterval(this.interval);
         this.interval = undefined;
+        this.counter.set(0);
     }
 }

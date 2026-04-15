@@ -28,7 +28,7 @@ export class CurrentGameCombatService {
 
         this.scheduleCombatRoundTimeout(room);
         this.broadcastService.emitCombatStarted(
-            [client.id, payload.defenderId],
+            room,
             {
                 attackerId: client.id,
                 defenderId: payload.defenderId,
@@ -174,7 +174,7 @@ export class CurrentGameCombatService {
 
         if (result.roundResolved && game?.activeCombat) {
             this.broadcastService.emitCombatStarted(
-                [game.activeCombat.attackerId, game.activeCombat.defenderId],
+                roomId,
                 {
                     attackerId: game.activeCombat.attackerId,
                     defenderId: game.activeCombat.defenderId,

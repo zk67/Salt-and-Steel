@@ -78,12 +78,8 @@ export class CurrentGameBroadcastService {
         this.server?.to(roomId).emit(GatewayEvents.ActionOnTile, payload);
     }
 
-    emitCombatStarted(playerIds: string[], payload: ActiveCombatPayload): void {
-        const uniquePlayerIds = [...new Set(playerIds)];
-
-        for (const playerId of uniquePlayerIds) {
-            this.server?.to(playerId).emit(GatewayEvents.CombatStarted, payload);
-        }
+    emitCombatStarted(roomId: string, payload: ActiveCombatPayload): void {
+        this.server?.to(roomId).emit(GatewayEvents.CombatStarted, payload);
     }
 
     emitShrineBuffOff(roomId: string, playerId: string): void {
