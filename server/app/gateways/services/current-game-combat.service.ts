@@ -164,7 +164,8 @@ export class CurrentGameCombatService {
             this.broadcastService.emitBattleWon(roomId, payloadWithoutRound);
 
             if (result.isGameOver) {
-                this.currentGamesService.gameOver(roomId, result.battlePayload.winnerId);
+                this.currentGamesService.gameOver(roomId, {winnerId: result.battlePayload.winnerId,
+                    gameDurationSeconds: 0, endedByAbandon: false});
                 return;
             }
 
