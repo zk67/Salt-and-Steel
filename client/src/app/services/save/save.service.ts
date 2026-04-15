@@ -119,19 +119,16 @@ export class SaveService {
     }
 
     private areShrinesInteractable(game: Game, visited: boolean[][]): boolean {
-        const shrines = game.shrine;
-        for (const shrine of shrines) {
-            let isShrineAccessible = false;
-            for (const position of shrine.position) {
-                if (isValidTile(game.tiles, position) && visited[position.y][position.x]) {
-                    isShrineAccessible = true;
-                    break;
-                }
-            }
+        const { tiles, shrine: shrines } = game;
 
-            if (!isShrineAccessible) {
-                return false;
-            }
+        for (const shrine of shrines) {
+            const hasReachableAdjacentTile = shrine.position.some((shrineTilePosition) =>
+                getNeighborPositions(shrineTilePosition).some((adjacentPosition) =>
+                    isValidTile(tiles, adjacentPosition) && visited[adjacentPosition.y][adjacentPosition.x],
+                ),
+            );
+
+            if (!hasReachableAdjacentTile) return false;
         }
 
         return true;
