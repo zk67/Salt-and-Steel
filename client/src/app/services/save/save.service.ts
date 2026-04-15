@@ -7,7 +7,7 @@ import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interf
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { createBooleanGrid, isValidTile, getNeighborPositions, Position, isTileDoor } from '@common/utils/map.utils';
+import { createBooleanGrid, isValidTile, getNeighborPositions, Position, isTileDoor, isShrine } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -31,7 +31,7 @@ export class SaveService {
             errors.push('Le nombre de tuiles de terrain doit couvrir plus de la moitié de la zone de jeu.');
         }
 
-        if (!this.isMapAccessible(game.tiles)) {
+        if (!this.isMapAccessible(game)) {
             errors.push('Certaines tuiles sur le jeu sont inaccessibles.');
         }
 
@@ -64,14 +64,18 @@ export class SaveService {
         return numberTiles >= (size * size) / 2;
     }
 
-    private isMapAccessible(tiles: TileData[][]): boolean {
+    private isMapAccessible(game: Game): boolean {
+        const { tiles } = game;
         const visited = createBooleanGrid(tiles);
         const startPosition = this.findFirstAccessibleTile(tiles);
 
         if (!startPosition) return false;
 
         this.floodFillAccessibleTiles(tiles, visited, startPosition);
-        return !this.hasUnvisitedAccessibleTile(tiles, visited);
+
+        if (this.hasUnvisitedAccessibleTile(tiles, visited)) return false;
+
+        return this.areShrinesInteractable(game, visited);
     }
 
     private findFirstAccessibleTile(tiles: TileData[][]): Position | null {
@@ -107,11 +111,30 @@ export class SaveService {
     }
 
     private isTileAccessible(tile: TileData): boolean {
-        return tile.tileType !== TileType.Wall;
+        return tile.tileType !== TileType.Wall && !isShrine(tile.mapObject);
     }
 
     private hasUnvisitedAccessibleTile(tiles: TileData[][], visited: boolean[][]): boolean {
         return tiles.some((row, y) => row.some((tile, x) => this.isTileAccessible(tile) && !visited[y][x]));
+    }
+
+    private areShrinesInteractable(game: Game, visited: boolean[][]): boolean {
+        const shrines = game.shrine;
+        for (const shrine of shrines) {
+            let isShrineAccessible = false;
+            for (const position of shrine.position) {
+                if (isValidTile(game.tiles, position) && visited[position.y][position.x]) {
+                    isShrineAccessible = true;
+                    break;
+                }
+            }
+
+            if (!isShrineAccessible) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private hasCorrectSpawnPoints(): boolean {

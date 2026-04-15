@@ -130,6 +130,7 @@ export class MapGameStateService {
                 if (isTileDoor(tile)) {
                     this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
                     this.mapService.addManipulatedDoor(payload.position);
+                    this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
                     actionApplied = true;
                 }
                 break;
