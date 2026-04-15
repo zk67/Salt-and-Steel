@@ -1,6 +1,7 @@
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
+import { GameSessionService } from '@app/services/game/game-session.service';
 import { GameService } from '@app/services/game/game.service';
 import { MapGameStateService } from '@app/services/game/map-game-state.service';
 import { MapService } from '@app/services/map/map.service';
@@ -46,6 +47,7 @@ interface ContextMenuContent {
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
     private readonly router = inject(Router);
+    private readonly gameSessionService = inject(GameSessionService);
     private readonly mapGameStateService = inject(MapGameStateService);
 
     tileType = TileType;
@@ -297,7 +299,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleGameOver(payload: GameOverPayload): void {
         this.gameService.clearCombatState();
         this.mapGameStateService.updateVisitedTileStats();
-
+        this.gameSessionService.setGameTimer(payload.gameDurationSeconds);
         if (payload.endedByAbandon || !payload.winnerId) {
             this.popupService.open('Partie terminée sans gagnant. Tous les autres joueurs ont abandonné.');
         } else if (this.mapService.getGameMode() === GameMode.Classic) {

@@ -23,7 +23,6 @@ export class GameCombatService {
     private readonly socketService = inject(SocketClientService);
     private readonly playerState = inject(GamePlayerStateService);
     private readonly turnService = inject(GameTurnService);
-    private lastGameDurationSeconds: number | null = null;
 
     readonly currentCombatRound = computed(() => this.combatRoundState());
     readonly activeCombat = computed(() => this.activeCombatState());
@@ -107,10 +106,6 @@ export class GameCombatService {
     }
 
     handleBattleWon(payload: BattleWonPayload): void {
-        if (payload.gameDurationSeconds !== undefined) {
-            this.lastGameDurationSeconds = payload.gameDurationSeconds;
-        }
-
         const clientId = this.playerState.clientPlayer()?.id;
         const wasClientInCombat = this.isClientInActiveCombat();
 
@@ -278,9 +273,5 @@ export class GameCombatService {
 
         this.combatRoundState.set(null);
         this.activeCombatState.set(null);
-    }
-
-    getGameDurationSeconds(): number | null {
-        return this.lastGameDurationSeconds;
     }
 }

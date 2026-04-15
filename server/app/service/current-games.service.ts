@@ -8,18 +8,17 @@ import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { giveShrineBuff } from '@app/utils/game-utils';
 import {
-    ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails,
-    Game, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
+    ActionOnTilePayload, BattleWonPayload, CombatPosture, CombatRoundDetails, Game,
+    GameOverPayload, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import {
-    addPositions, arePositionAdjacent, equalPositions,
-    isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST,
+    addPositions, arePositionAdjacent, equalPositions, isTileDoor,
+    isValidTile, Position, TILE_MOVEMENT_COST,
 } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
-
 export type SubmitCombatPostureResult = {
     roundResolved: boolean;
     combatRound?: CombatRoundDetails;
@@ -113,12 +112,7 @@ export class CurrentGamesService {
         if (game._game.gameMode === GameMode.CTF) {
             if (tile.mapObject === MapObjectType.Flag) {
                 tile.mapObject = MapObjectType.None;
-
-                const payload: UpdateFlagPayload = {
-                    playerId: player.id,
-                    flagStatus: true,
-                    position: newPosition,
-                };
+                const payload: UpdateFlagPayload = { playerId: player.id, flagStatus: true, position: newPosition };
 
                 this.handleUpdateFlag(roomId, payload);
                 this.broadcastService.emitUpdateFlag(roomId, payload);
@@ -127,7 +121,7 @@ export class CurrentGamesService {
             }
 
             if (tile.mapObject === MapObjectType.SpawnPoint && equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag) {
-                this.gameOver(roomId, player.id);
+                this.gameOver(roomId, { winnerId: player.id, gameDurationSeconds: 0, endedByAbandon: false });
             }
         }
 
@@ -152,10 +146,15 @@ export class CurrentGamesService {
         return game;
     }
 
-    gameOver(roomId: string, winnerId: string): void {
+    gameOver(roomId: string, payload: GameOverPayload): void {
         this.timer.stopTimer(roomId);
+
+        const gameDurationSeconds = this.stopWatch.getCurrentTime(roomId);
+        const updatedPayload: GameOverPayload = { ...payload, gameDurationSeconds };
+
+        this.stopWatch.stopTimer(roomId);
         this.removeGame(roomId);
-        this.broadcastService?.emitGameOver(roomId, winnerId);
+        this.broadcastService?.emitGameOver(roomId, updatedPayload);
     }
 
     allocateSpawnPoints(roomId: string): void {
@@ -407,21 +406,8 @@ export class CurrentGamesService {
             this.broadcastService.emitUpdateFlag(roomId, result.flagPayload);
         }
 
-        let duration;
-        if (this.stopWatch) {
-            duration = this.stopWatch.getCurrentTime(roomId);
-        }
-        result.payload.gameDurationSeconds = duration;
-
-        if (result.isGameOver) {
-            this.stopWatch.stopTimer(roomId);
-        }
-
         return {
-            roundResolved: true,
-            combatRound,
-            battlePayload: result.payload,
-            isGameOver: result.isGameOver,
+            roundResolved: true, combatRound, battlePayload: result.payload, isGameOver: result.isGameOver,
             shouldAdvanceTurn: !result.isGameOver && !shouldResumeAttackerTurn,
         };
     }
@@ -444,17 +430,14 @@ export class CurrentGamesService {
         );
 
         if (!this.combatResolutionService.isCombatFinished(combatContext.attacker, combatContext.defender)) {
-            return {
-                roundResolved: true, combatRound, isGameOver: false,
-            };
+            return { roundResolved: true, combatRound, isGameOver: false };
         }
 
         return this.finishCombat(roomId, combatContext, combatRound);
     }
 
     handleUpdateFlag(roomId: string, payload: UpdateFlagPayload): boolean {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
+        const game = this.getGameByRoomId(roomId); if (!game) return false;
 
         const player = game.players.find(p => p.id === payload.playerId);
         if (!player) return false;

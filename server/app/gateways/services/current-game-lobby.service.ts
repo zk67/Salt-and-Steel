@@ -212,7 +212,7 @@ export class CurrentGameLobbyService {
 
         const remainingPlayers = this.currentGamesService.getPlayersToGame(roomId).filter((player) => !player.hasAbandoned);
         if (remainingPlayers.length <= 1) {
-            this.broadcastService.emitGameOver(roomId, { endedByAbandon: true });
+            this.currentGamesService.gameOver(roomId, { winnerId: null, gameDurationSeconds: 0, endedByAbandon: true });
         }
     }
 }

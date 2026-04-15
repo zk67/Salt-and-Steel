@@ -349,7 +349,11 @@ describe('CurrentGameCombatService', () => {
         service.handleSubmitCombatPosture(createSocket('a1'), {
             posture: CombatPosture.Offensive,
         });
-        expect(currentGamesService.gameOver).toHaveBeenCalledWith('room-1', 'a1');
+        expect(currentGamesService.gameOver).toHaveBeenCalledWith('room-1', {
+            winnerId: 'a1',
+            gameDurationSeconds: 0,
+            endedByAbandon: false,
+        });
         expect(currentGamesService.nextPlayerTurn).not.toHaveBeenCalled();
     });
 

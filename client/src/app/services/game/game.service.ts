@@ -243,10 +243,6 @@ export class GameService {
         return game && typeof game.totalTurns === 'number' ? game.totalTurns : 0;
     }
 
-    getGameDurationSeconds(): number | null {
-        return this.combatService.getGameDurationSeconds();
-    }
-
     isSpecialTile(tile: { tileType: number; mapObject: number }): boolean {
         return (tile.tileType !== WALL || tile.mapObject === MapObjectType.SpawnPoint || tile.mapObject === MapObjectType.Flag);
     }

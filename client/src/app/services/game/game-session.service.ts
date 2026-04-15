@@ -12,6 +12,7 @@ export class GameSessionService {
     private selectedJoinRoomId: string | null = null;
     private selectedHostGame: Game | null = null;
     private chatMessages: ChatMessage[] = [];
+    private gameTimer: number | null = null;
 
     setChatMessages(messages: ChatMessage[]): void {
         this.chatMessages = [...messages];
@@ -59,6 +60,14 @@ export class GameSessionService {
 
     clearSelectedHostGame(): void {
         this.selectedHostGame = null;
+    }
+
+    setGameTimer(timer: number): void {
+        this.gameTimer = timer;
+    }
+
+    getGameTimer(): number | null {
+        return this.gameTimer;
     }
 
     clear(): void {

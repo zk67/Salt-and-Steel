@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
+import { GameSessionService } from '@app/services/game/game-session.service';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
@@ -30,7 +31,9 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     sortColumn: PlayerColumn = PlayerColumn.Victory;
     sortDirection: 'asc' | 'desc' = 'desc';
 
-    constructor(private gameService: GameService, private socketService: SocketClientService) {}
+    constructor(private gameService: GameService,
+         private socketService: SocketClientService,
+        private gameSessionService: GameSessionService) {}
 
     ngOnInit(): void {
         this.messages = this.gameService.getChatMessages();
@@ -139,7 +142,7 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     }
 
     get gameDurationMMSS(): string {
-        const seconds = this.gameService.getGameDurationSeconds();
+        const seconds = this.gameSessionService.getGameTimer();
         if (seconds == null) return '--:--';
         const mm = Math.floor(seconds / TIME_CONVERSION).toString().padStart(2, '0');
         const ss = Math.floor(seconds % TIME_CONVERSION).toString().padStart(2, '0');

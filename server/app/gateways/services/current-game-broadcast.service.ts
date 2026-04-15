@@ -51,8 +51,7 @@ export class CurrentGameBroadcastService {
     }
 
     emitGameOver(roomId: string, payload: GameOverPayload | string): void {
-        const gameOverPayload = typeof payload === 'string' ? { winnerId: payload } : payload;
-        this.server?.to(roomId).emit(GatewayEvents.GameOver, gameOverPayload);
+        this.server?.to(roomId).emit(GatewayEvents.GameOver, payload);
     }
 
     emitGameClosed(roomId: string): void {
