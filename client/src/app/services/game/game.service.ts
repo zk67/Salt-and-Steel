@@ -177,6 +177,10 @@ export class GameService {
 
         this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
+        if (!this.activeCombat()) {
+            this.turnService.refreshActionTiles();
+        }
+
         if (this.mapService.getGameMode() === GameMode.Classic) {
             return;
         }

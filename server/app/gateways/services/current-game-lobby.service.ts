@@ -204,7 +204,8 @@ export class CurrentGameLobbyService {
         this.broadcastService.emitUnavailableAvatars(roomId, avatars);
     }
 
-    private emitGameOverIfAllButOnePlayerLeft(game: { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined, roomId: string): void {
+    private emitGameOverIfAllButOnePlayerLeft(game:
+        { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined, roomId: string): void {
         if (!game || game.currentPhase === undefined || game._game?.gameMode !== GameMode.Classic) {
             return;
         }

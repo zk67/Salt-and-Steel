@@ -156,6 +156,27 @@ export class GameTurnService {
         return false;
     }
 
+    refreshActionTiles(): void {
+        const player = this.playerState.clientPlayer();
+        const gameData = this.mapService.getGameData();
+        const tiles = this.mapService.getTileMap();
+
+        if (!player || !gameData || tiles.length === 0 || !this.isClientPlayerTurn() || this.isWaitTurn()) {
+            return;
+        }
+
+        if (!this.canPlayerStillDoAction()) {
+            this.actionTile.set([]);
+            return;
+        }
+
+        if (this.actionMode) {
+            this.actionTile.set(getActionableTiles(gameData, player, this.playerState.getPlayers()));
+        } else {
+            this.actionTile.set(movableTiles(tiles, player, this.playerState.getPlayers()));
+        }
+    }
+
     clear(): void {
         this.actionTile.set([]);
         this.isClientPlayerTurn.set(false);
