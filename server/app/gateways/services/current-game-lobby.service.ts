@@ -3,6 +3,7 @@ import { JoinableGameSummary } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
@@ -116,6 +117,7 @@ export class CurrentGameLobbyService {
             this.broadcastService.emitRemovePlayer(room, client.id);
             this.broadcastPlayers(room);
             this.emitUnavailableAvatars(room);
+            this.emitGameOverIfAllButOnePlayerLeft(game, room);
             this.emitJoinableGames();
 
         }
@@ -200,5 +202,16 @@ export class CurrentGameLobbyService {
     private emitUnavailableAvatars(roomId: string): void {
         const avatars = this.currentGamesService.getUnavailableAvatars(roomId);
         this.broadcastService.emitUnavailableAvatars(roomId, avatars);
+    }
+
+    private emitGameOverIfAllButOnePlayerLeft(game: { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined, roomId: string): void {
+        if (!game || game.currentPhase === undefined || game._game?.gameMode !== GameMode.Classic) {
+            return;
+        }
+
+        const remainingPlayers = this.currentGamesService.getPlayersToGame(roomId).filter((player) => !player.hasAbandoned);
+        if (remainingPlayers.length <= 1) {
+            this.broadcastService.emitGameOver(roomId, { endedByAbandon: true });
+        }
     }
 }

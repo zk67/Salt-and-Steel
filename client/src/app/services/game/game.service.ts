@@ -172,41 +172,29 @@ export class GameService {
     private handlePlayerLeaving(payload: { playerId: string }): void {
         if (!this.isGameStarted) {
             this.removePlayer(payload.playerId);
-        } else {
-            this.updatePlayer(payload.playerId, { hasAbandoned: true });
+            return;
+        }
 
-            const remainingPlayers = this.players().filter(p => !p.hasAbandoned);
+        this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
-            if (this.mapService.getGameMode() === GameMode.Classic) {
-                if (remainingPlayers.length <= 1) {
-                    const winner = remainingPlayers[0];
+        if (this.mapService.getGameMode() === GameMode.Classic) {
+            return;
+        }
 
-                    this.popupService.open(
-                        `Le joueur ${winner?.name} est le dernier restant. Vous serez redirigé.`,
-                    );
+        const remainingPlayers = this.players().filter((player) => !player.hasAbandoned);
+        const teams = new Set(remainingPlayers.map((player) => player.isRedTeam));
 
-                    setTimeout(() => {
-                        this.clearGameService();
-                        this.popupService.close();
-                        this.router.navigate([APP_ROUTES.home]);
-                    }, DELAY_BEFORE_NAVIGATE_HOME);
-                }
-            } else {
-                const teams = new Set(remainingPlayers.map(p => p.isRedTeam));
+        if (teams.size === 1 && remainingPlayers.length > 0) {
+            const isRedTeam = remainingPlayers[0].isRedTeam;
+            const teamName = isRedTeam ? 'Rouge' : 'Bleu';
 
-                if (teams.size === 1) {
-                    const isRedTeam = remainingPlayers[0].isRedTeam;
-                    const teamName = isRedTeam ? 'Rouge' : 'Bleu';
+            this.popupService.open(`L'equipe ${teamName} est la derniere restante. Vous serez redirige.`);
 
-                    this.popupService.open(`L'équipe ${teamName} est la dernière restante. Vous serez redirigé.`);
-
-                    setTimeout(() => {
-                        this.clearGameService();
-                        this.popupService.close();
-                        this.router.navigate([APP_ROUTES.home]);
-                    }, DELAY_BEFORE_NAVIGATE_HOME);
-                }
-            }
+            setTimeout(() => {
+                this.clearGameService();
+                this.popupService.close();
+                this.router.navigate([APP_ROUTES.home]);
+            }, DELAY_BEFORE_NAVIGATE_HOME);
         }
     }
 

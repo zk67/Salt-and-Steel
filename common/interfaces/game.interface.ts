@@ -54,6 +54,11 @@ export interface BattleWonPayload {
     };
 }
 
+export interface GameOverPayload {
+    winnerId?: string;
+    endedByAbandon?: boolean;
+}
+
 export enum TurnPhase {
     WaitTurn,
     Turn,
