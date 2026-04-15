@@ -81,12 +81,15 @@ export class CurrentGameCombatService {
 
         if (winner.id === attackerId && pausedTurnRemainingSeconds > 0) {
             payload.remainingTurnSeconds = pausedTurnRemainingSeconds;
+        }
+
+        this.broadcastService.emitBattleWon(roomId, payload);
+
+        if (payload.remainingTurnSeconds !== undefined) {
             this.currentGamesService.resumeTurnTimer(roomId, pausedTurnRemainingSeconds);
         } else {
             this.currentGamesService.nextPlayerTurn(roomId);
         }
-
-        this.broadcastService.emitBattleWon(roomId, payload);
         return payload;
     }
 

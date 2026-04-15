@@ -37,7 +37,7 @@ export const TILE_MOVEMENT_COST: Record<TileType, number> = {
 
 export function getPlayerAt(players: Player[] | undefined, position: Position): Player | null {
     if (!players) return null;
-    return players.find(p => equalPositions(p.position, position)) || null;
+    return players.find(p => !p.hasAbandoned && equalPositions(p.position, position)) || null;
 }
 
 export function createBooleanGrid(tiles: TileData[][]): boolean[][] {

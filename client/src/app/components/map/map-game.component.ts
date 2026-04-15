@@ -8,7 +8,7 @@ import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { canPassFlag, getObjectDescription } from '@app/utils/game-utils';
 import {
-    ActionOnTilePayload, DebugMovePayload, MovePlayerPayload,
+    ActionOnTilePayload, DebugMovePayload, GameOverPayload, MovePlayerPayload,
     PassFlagPayload, ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
@@ -95,7 +95,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     async ngOnInit(): Promise<void> {
         this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
         this.socketService.on<DebugMovePayload>(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
-        this.socketService.on<{ winnerId: string }>(GatewayEvents.GameOver, this.handleGameOverBound);
+        this.socketService.on<GameOverPayload>(GatewayEvents.GameOver, this.handleGameOverBound);
         this.socketService.on<ToggleDebugPayload>(GatewayEvents.HandleToggleDebugMode, this.handleToggleDebugModeBound);
         this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         this.socketService.on<PassFlagPayload>(GatewayEvents.PassFlagRequest, (payload) => {
@@ -294,16 +294,25 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    private handleGameOver(payload: { winnerId: string }): void {
-        const winner = this.gameService.players().find(p => p.id === payload.winnerId);
-        if (!winner) return;
-
+    private handleGameOver(payload: GameOverPayload): void {
         this.gameService.clearCombatState();
         this.mapGameStateService.updateVisitedTileStats();
 
-        if (this.mapService.getGameMode() === GameMode.Classic) {
-            this.popupService.open(`Partie terminée ! Le gagnant est ${winner.name} !`);
+        if (payload.endedByAbandon || !payload.winnerId) {
+            this.popupService.open('Partie terminée sans gagnant. Tous les autres joueurs ont abandonné.');
+        } else if (this.mapService.getGameMode() === GameMode.Classic) {
+            const winner = this.gameService.players().find((player) => player.id === payload.winnerId);
+            this.popupService.open(`Partie terminee ! Le gagnant est ${winner?.name ?? 'inconnu'} !`);
         } else {
+            const winner = this.gameService.players().find((player) => player.id === payload.winnerId);
+            if (!winner) {
+                this.popupService.open('Partie terminée !');
+                setTimeout(() => {
+                    this.popupService.close();
+                    this.router.navigate([APP_ROUTES.statistics]);
+                }, DELAY_BEFORE_NAVIGATE_HOME);
+                return;
+            }
             const isRedTeam = winner.isRedTeam;
             const winningTeamPlayers = this.gameService.getPlayers().filter(p => p.isRedTeam === isRedTeam);
 

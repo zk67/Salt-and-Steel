@@ -1,6 +1,6 @@
 import {
     ActionOnTilePayload, ActiveCombatPayload, BattleWonPayload, CombatRoundDetails, DebugMovePayload, GameInfoPayload,
-    MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
+    GameOverPayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { GameMode } from '@common/interfaces/map.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';
@@ -50,8 +50,9 @@ export class CurrentGameBroadcastService {
         }
     }
 
-    emitGameOver(roomId: string, winnerId: string): void {
-        this.server?.to(roomId).emit(GatewayEvents.GameOver, { winnerId });
+    emitGameOver(roomId: string, payload: GameOverPayload | string): void {
+        const gameOverPayload = typeof payload === 'string' ? { winnerId: payload } : payload;
+        this.server?.to(roomId).emit(GatewayEvents.GameOver, gameOverPayload);
     }
 
     emitGameClosed(roomId: string): void {

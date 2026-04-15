@@ -219,12 +219,27 @@ export class CurrentGamesService {
         if (playerIndex === -1) return false;
 
         if (game.turnOrder) {
+            const removedTurnOrderIndex = game.turnOrder.indexOf(playerId);
+
             if (game.turnOrder[game.currentTurnIndex] === playerId) {
                 this.nextPlayerTurn(roomId);
             }
 
             game.players.splice(playerIndex, 1);
             game.turnOrder = game.turnOrder.filter((id) => id !== playerId);
+
+            if (game.turnOrder.length === 0) {
+                game.currentTurnIndex = 0;
+                return true;
+            }
+
+            if (removedTurnOrderIndex !== -1 && removedTurnOrderIndex < game.currentTurnIndex) {
+                game.currentTurnIndex -= 1;
+            }
+
+            if (game.currentTurnIndex >= game.turnOrder.length) {
+                game.currentTurnIndex = 0;
+            }
         } else {
             game.players.splice(playerIndex, 1);
         }
@@ -324,6 +339,12 @@ export class CurrentGamesService {
             return false;
         }
 
+        if (attacker.actionsLeft <= 0) {
+            Logger.warn(`Le joueur (${attacker.name}) n'a plus d'action restante.
+                Actions restantes: ${attacker.actionsLeft}`);
+            return false;
+        }
+
         const pausedTurnRemainingSeconds = this.timer.getCurrentTime(roomId);
         this.timer.stopTimer(roomId);
         game.activeCombat = {
@@ -336,6 +357,7 @@ export class CurrentGamesService {
                 [defenderId]: CombatPosture.None,
             },
         };
+        attacker.actionsLeft--;
 
         return true;
     }
