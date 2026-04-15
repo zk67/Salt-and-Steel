@@ -299,14 +299,14 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.mapGameStateService.updateVisitedTileStats();
 
         if (payload.endedByAbandon || !payload.winnerId) {
-            this.popupService.open('Partie terminee sans gagnant. Tous les autres joueurs ont abandonne.');
+            this.popupService.open('Partie terminée sans gagnant. Tous les autres joueurs ont abandonné.');
         } else if (this.mapService.getGameMode() === GameMode.Classic) {
             const winner = this.gameService.players().find((player) => player.id === payload.winnerId);
             this.popupService.open(`Partie terminee ! Le gagnant est ${winner?.name ?? 'inconnu'} !`);
         } else {
             const winner = this.gameService.players().find((player) => player.id === payload.winnerId);
             if (!winner) {
-                this.popupService.open('Partie terminee !');
+                this.popupService.open('Partie terminée !');
                 setTimeout(() => {
                     this.popupService.close();
                     this.router.navigate([APP_ROUTES.statistics]);
@@ -314,12 +314,12 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 return;
             }
             const isRedTeam = winner.isRedTeam;
-            const winningTeamPlayers = this.gameService.getPlayers().filter((player) => player.isRedTeam === isRedTeam);
+            const winningTeamPlayers = this.gameService.getPlayers().filter(p => p.isRedTeam === isRedTeam);
 
             const teamName = isRedTeam ? 'Rouge' : 'Bleu';
-            const playerNames = winningTeamPlayers.map((player) => player.name).join(', ');
+            const playerNames = winningTeamPlayers.map(p => p.name).join(', ');
 
-            this.popupService.open(`Partie terminee ! L'equipe ${teamName} gagne ! Joueurs : ${playerNames}`);
+            this.popupService.open(`Partie terminée ! L'équipe ${teamName} gagne ! Joueurs : ${playerNames}`);
         }
 
         setTimeout(() => {
