@@ -13,36 +13,28 @@
     position: relative;
     aspect-ratio: 1;
     background-color: white;
+    --tile-image: none;
+    background-image: var(--tile-image);
+    background-size: cover;
+    background-position: center;
 
     &[data-tile-type="Basic"] {
-        background-image: url("../../../assets/tiles/basic.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/basic.png");
     }
     &[data-tile-type="Water"] {
-        background-image: url("../../../assets/tiles/water.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/water.png");
     }
     &[data-tile-type="Ice"] {
-        background-image: url("../../../assets/tiles/ice.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/ice.png");
     }
     &[data-tile-type="Wall"] {
-        background-image: url("../../../assets/tiles/wall.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/wall.png");
     }
     &[data-tile-type="CloseDoor"] {
-        background-image: url("../../../assets/tiles/CloseDoor.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/CloseDoor.png");
     }
     &[data-tile-type="OpenDoor"] {
-        background-image: url("../../../assets/tiles/OpenDoor.png");
-        background-size: cover;
-        background-position: center;
+        --tile-image: url("../../../assets/tiles/OpenDoor.png");
     }
 
     &[data-object="SpawnPoint"] {
@@ -100,8 +92,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 80%;
-    height: 80%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     z-index: 10;
     pointer-events: none;
@@ -130,17 +122,17 @@
     opacity: 1;
 }
 
-.tile.red-team-tile { 
-    border: 2px solid red; 
+.tile.red-team-tile {
+    border: 2px solid red;
 }
 
-.tile.blue-team-tile { 
-    border: 2px solid rgb(94, 108, 255); 
+.tile.blue-team-tile {
+    border: 2px solid rgb(94, 108, 255);
 }
 
-.tile.has-flag { 
-    box-shadow: inset 0 0 0 2px black; 
-} 
+.tile.has-flag {
+    box-shadow: inset 0 0 0 2px black;
+}
 
 .context-overlay {
     position: fixed;

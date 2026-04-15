@@ -11,6 +11,8 @@ import { Player } from '@common/interfaces/player.interface';
 import { SHRINE_BUFF_DURATION, SHRINE_TURN_LEFT } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, isTileDoor, movableTiles, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GatewayEvents } from '@common/types/gateway.events';
 
 const PERCENTAGE = 100;
 
@@ -21,6 +23,7 @@ export class MapGameStateService {
     constructor(
         private readonly gameService: GameService,
         private readonly mapService: MapService,
+        private readonly socketService: SocketClientService,
     ) {}
 
     handlePlayerMovePayload(payload: MovePlayerPayload): void {
@@ -130,7 +133,6 @@ export class MapGameStateService {
                 if (isTileDoor(tile)) {
                     this.mapService.setTile(payload.position, tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor);
                     this.mapService.addManipulatedDoor(payload.position);
-                    this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
                     actionApplied = true;
                 }
                 break;
@@ -138,6 +140,13 @@ export class MapGameStateService {
 
         if (actionApplied && player.actionsLeft > 0) {
             this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
+        }
+
+        if(this.gameService.canPlayerStillDoAction()) {
+            this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
+        } else {
+            this.gameService.actionTile.set([]);
+            this.socketService.send(GatewayEvents.EndTurnEarly);
         }
     }
 
