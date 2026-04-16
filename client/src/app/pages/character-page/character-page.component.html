@@ -198,17 +198,19 @@
     </main>
 
     <footer class="actions">
+      <button type="button" class="btn btn--random" (click)="goBack()">Retour</button>
       <button type="button" class="btn btn--random" (click)="randomizeStats()">
         🎲 Générer un personnage aléatoire
       </button>
-
       <button
         type="button"
         class="btn btn--primary"
+        [disabled]="isSubmitting"
         (click)="submitCharacter()"
       >
         ⚓ Créer personnage
       </button>
+      <button type="button" class="btn btn--random" (click)="goHome()">Accueil</button>
 
     </footer>
     @if (showInvalidFormMessage) {

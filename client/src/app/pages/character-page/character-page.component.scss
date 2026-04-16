@@ -14,10 +14,12 @@
 .pirate-scene {
   position: relative;
   min-height: 100vh;
-  padding: 22px 18px 26px;
-  font-size: 12px;
+  padding: 12px 20px 22px;
+  font-size: 13px;
   overflow: hidden;
   background: url(../../../assets/character-page/ship-deck.webp);
+  background-size: cover;
+  background-position: center;
 }
 
 .pirate-scene * {
@@ -26,34 +28,37 @@
 
 .hud {
   position: relative;
-  max-width: 1320px;
+  width: min(1720px, calc(100vw - 40px));
   margin: 0 auto;
 }
 
 .hud__header {
-  padding: 10px 8px 110px;
+  padding: 18px 10px 48px;
   text-shadow: 1px 1px 0 var(--ink);
+  text-align: center;
 }
 
 .title {
-  font-size: 20px;
+  font-size: clamp(26px, 2vw, 34px);
+  margin: 0 0 8px;
 }
 
 .subtitle {
-  font-size: 15px;
+  margin: 0;
+  font-size: clamp(16px, 1.2vw, 20px);
   color: color-mix(in srgb, var(--paper) 80%, transparent);
 }
 
 .layout-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.12fr;
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: minmax(380px, 1.02fr) minmax(410px, 1.08fr) minmax(460px, 1.22fr);
+  gap: 24px;
+  align-items: stretch;
 }
 
 .panel {
   position: relative;
-  padding: 14px 14px 16px;
+  padding: 18px 18px 20px;
 }
 
 .panel-wood {
@@ -88,19 +93,19 @@
 }
 
 .panel-title {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin: 0 0 10px;
+  font-size: 18px;
   text-shadow: 1px 1px 0 var(--ink);
 }
 
 .panel-subtitle {
-  margin: 12px 0 8px;
-  font-size: 12px;
+  margin: 16px 0 10px;
+  font-size: 15px;
   text-shadow: 1px 1px 0 var(--ink);
 }
 
 .panel-hint {
-  font-size: 10px;
+  font-size: 12px;
   opacity: 0.85;
 }
 
@@ -115,12 +120,13 @@
 
 .input-engraved {
   width: 100%;
-  padding: 10px 12px;
+  padding: 14px 16px;
   border: 2px solid rgba(0, 0, 0, 0.65);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.25)),
     linear-gradient(90deg, var(--paper-dark), var(--paper));
   color: var(--ink);
+  font-size: 15px;
   outline: none;
   box-shadow:
     inset 0 2px 0 rgba(0, 0, 0, 0.25),
@@ -133,14 +139,15 @@
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .avatar-medallion {
   position: relative;
   display: grid;
   place-items: center;
-  padding: 6px;
+  min-height: 94px;
+  padding: 10px;
   border: 0;
   background:
     radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.25)),
@@ -155,8 +162,8 @@
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.6);
   background: rgba(0, 0, 0, 0.25);
@@ -169,7 +176,7 @@
   left: 50%;
   transform: translateX(-50%) rotate(-6deg);
   padding: 2px 6px;
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.2px;
   color: #fff;
   background: var(--blood);
@@ -182,9 +189,9 @@
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
-  margin-top: 10px;
+  gap: 14px;
+  padding: 14px;
+  margin-top: 14px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.03)),
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 12px, rgba(0, 0, 0, 0) 12px 22px);
@@ -207,24 +214,25 @@
 }
 
 .stat-desc {
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.45;
   opacity: 0.88;
   color: color-mix(in srgb, var(--paper) 78%, transparent);
 }
 
 .stat-value {
   position: relative;
-  min-width: 86px;
+  min-width: 94px;
   text-align: right;
   padding: 2px 0;
+  font-size: 18px;
   color: var(--paper);
   text-shadow: 1px 1px 0 var(--ink);
 }
 
 .stat-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(0, 0, 0, 0.45);
   background: rgba(0, 0, 0, 0.25);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -339,7 +347,7 @@
 
 .showcase__frame {
   position: relative;
-  height: 260px;
+  height: 340px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.05)),
     radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 55%),
@@ -356,8 +364,8 @@
   left: 50%;
   bottom: 10px;
   transform: translateX(-50%);
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 220px;
   image-rendering: pixelated;
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.35));
   animation: idle-breathe 1.8s steps(6) infinite;
@@ -365,7 +373,7 @@
 
 .sheet {
   position: relative;
-  padding: 12px 12px 14px;
+  padding: 16px 16px 18px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.25)),
     linear-gradient(90deg, var(--paper-dark), var(--paper));
@@ -381,7 +389,7 @@
 
 .sheet-row {
   display: grid;
-  grid-template-columns: 70px 1fr;
+  grid-template-columns: 86px 1fr;
   gap: 10px;
   padding: 6px 0;
   border-bottom: 2px dashed rgba(0, 0, 0, 0.25);
@@ -400,10 +408,10 @@
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   justify-content: center;
   align-items: center;
-  padding: 18px 8px 0;
+  padding: 24px 8px 0;
   flex-wrap: wrap;
 }
 
@@ -463,4 +471,78 @@
     p {
         margin: 8px 0;
     }
+}
+
+@media (max-width: 1480px) {
+  .hud {
+    width: min(1500px, calc(100vw - 28px));
+  }
+
+  .layout-3 {
+    grid-template-columns: minmax(330px, 1fr) minmax(360px, 1fr) minmax(400px, 1.1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 1220px) {
+  .pirate-scene {
+    padding: 12px 14px 20px;
+  }
+
+  .hud__header {
+    padding-bottom: 28px;
+  }
+
+  .layout-3 {
+    grid-template-columns: 1fr;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .showcase__frame {
+    height: 300px;
+  }
+}
+
+@media (max-width: 760px) {
+  .pirate-scene {
+    font-size: 12px;
+    padding: 10px 10px 18px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .avatar-medallion {
+    min-height: 82px;
+    padding: 8px;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .stat {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    text-align: left;
+    min-width: 0;
+  }
+
+  .showcase__frame {
+    height: 250px;
+  }
+
+  .pirate-sprite {
+    width: 180px;
+    height: 180px;
+  }
 }
