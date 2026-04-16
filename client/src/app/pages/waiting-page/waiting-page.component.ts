@@ -52,9 +52,9 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         }, TIME_BEFORE_NAVIGATING_HOME);
     };
 
-    private onPlayersToGame = (p: Player[]) => {
+    private onPlayersToGame = (player: Player[]) => {
         this.ngZone.run(() => {
-            this.playersSignal.set(p);
+            this.playersSignal.set(player);
         });
     };
 

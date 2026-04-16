@@ -1,3 +1,3 @@
-<button class="game-btn" [class]="variant" [disabled]="disabled" (click)="!disabled && clicked.emit()">
+<button class="game-btn" [ngClass]="variant" [disabled]="disabled" (click)="!disabled && clicked.emit()">
     {{ label }}
 </button>

@@ -38,6 +38,12 @@ interface ContextMenuContent {
     cost?: number;
 }
 
+interface ContextMenuState {
+    posX: number;
+    posY: number;
+    content: ContextMenuContent;
+}
+
 @Component({
     selector: 'app-map-game',
     templateUrl: './map-game.component.html',
@@ -61,7 +67,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     tileType = TileType;
     mapObjectType = MapObjectType;
 
-    contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
+    contextMenu = signal<ContextMenuState | null>(null);
     isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
 
     private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);

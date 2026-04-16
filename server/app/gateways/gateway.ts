@@ -1,9 +1,9 @@
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CurrentGamesService } from '@app/service/current-games.service';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -20,7 +20,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     handleConnection(socket: Socket): void {
-        this.logger.log(`Connexion par l'utilisateur avec id : ${socket.id}`);
+        this.logger.log(`Connection from user ID : ${socket.id}`);
     }
 
     handleDisconnect(socket: Socket): void {
@@ -29,7 +29,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
             const avatars = this.currentGamesService.getUnavailableAvatars(room);
             this.server.to(room).emit(GatewayEvents.UnavailableAvatars, avatars);
         }
-        this.logger.log(`Déconnexion par l'utilisateur avec id : ${socket.id}`);
+        this.logger.log(`Disconnection from user ID: ${socket.id}`);
     }
 
     @SubscribeMessage(GatewayEvents.JoinRoom)

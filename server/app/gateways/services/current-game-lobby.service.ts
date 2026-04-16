@@ -62,13 +62,13 @@ export class CurrentGameLobbyService {
         const room = getRoomIdFromSocket(client);
 
         if (!room) {
-            this.logger.warn(`Impossible d'ajouter un joueur: aucune room pour le client ${client.id}`);
+            this.logger.warn(`Unable to add player ${player.name}: no room for client ${client.id}`);
             client.emit(GatewayEvents.JoinCurrentGameResult, { success: false });
             return;
         }
 
         if (!this.currentGamesService.canJoinGame(room)) {
-            this.logger.warn(`Impossible d'ajouter le joueur ${player.name}: salle verrouillee ou pleine (${room})`);
+            this.logger.warn(`Unable to add player ${player.name}: room locked or full (${room})`);
             client.emit(GatewayEvents.JoinCurrentGameResult, { success: false });
             return;
         }
