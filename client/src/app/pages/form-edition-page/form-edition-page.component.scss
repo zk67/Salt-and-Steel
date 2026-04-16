@@ -1,6 +1,7 @@
 .config-page {
     min-height: 100vh;
     padding: 32px 24px 120px;
+    background: url("../../../assets/admin-page/adminbackground4.webp");
 }
 
 .title {
@@ -11,9 +12,10 @@
 .panel {
     max-width: 1000px;
     margin: 0 auto;
-    border: 1px solid #e6e6e6;
+    border: 3px solid #482929;
     border-radius: 10px;
     padding: 24px;
+    background-color: #c8bfb427;
 }
 
 .section {
@@ -35,7 +37,7 @@
 }
 
 .option-card {
-    border: 2px solid #dedede;
+    border: 2px solid #331d1d;
     border-radius: 10px;
     padding: 18px;
     text-align: center;
@@ -44,7 +46,7 @@
 
 .form-radio input[type='radio']:checked + .option-card {
     border-color:  #71563a;
-    background: #eff6ff;
+    background: #84727265;
 }
 
 .option-card.disabled {
