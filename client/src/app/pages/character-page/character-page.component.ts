@@ -266,6 +266,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    window.addEventListener('beforeunload', this.onBeforeUnload);
+
     const selectedRoomId = this.gameService.getSelectedJoinRoomId();
     if (!selectedRoomId) {
       return;
@@ -278,7 +280,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.socketService.joinRoom(selectedRoomId);
     this.socketService.on<string[]>(GatewayEvents.UnavailableAvatars, this.onUnavailableAvatars);
     this.socketService.send(GatewayEvents.GetUnavailableAvatars);
-    window.addEventListener('beforeunload', this.onBeforeUnload);
   }
 
   ngOnDestroy(): void {
