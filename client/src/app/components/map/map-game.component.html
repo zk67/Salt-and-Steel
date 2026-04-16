@@ -13,7 +13,7 @@
                         [attr.data-movable]="getMovableTilesAt({ x: colIndex, y: rowIndex }) && isClientPlayerTurn() ? 'true' : null"
                         [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                         [style.--shrine-image]="mapService.getShrineBackgroundImage({ x: colIndex, y: rowIndex })"
-                        [style.--tile-image]="'url(../../../assets/tiles/' + tileType[tile.tileType].toLowerCase() + '.png)'">
+                        [style.--tile-image]="getTileImage(tile.tileType)">
                         @if (getPlayerAt({ x: colIndex, y: rowIndex }); as player) {
                             @if (!player.hasAbandoned) {
                                 <img class="player-avatar"

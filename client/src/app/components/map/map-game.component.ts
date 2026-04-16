@@ -49,6 +49,14 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private readonly router = inject(Router);
     private readonly gameSessionService = inject(GameSessionService);
     private readonly mapGameStateService = inject(MapGameStateService);
+    private readonly tileAssetNameByType: Record<TileType, string> = {
+        [TileType.Basic]: 'basic',
+        [TileType.Water]: 'water',
+        [TileType.Ice]: 'ice',
+        [TileType.Wall]: 'wall',
+        [TileType.CloseDoor]: 'close-door',
+        [TileType.OpenDoor]: 'open-door',
+    };
 
     tileType = TileType;
     mapObjectType = MapObjectType;
@@ -156,6 +164,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     getObjectDescription(objectType: number): string {
         return getObjectDescription(objectType);
+    }
+
+    getTileImage(tileType: TileType): string {
+        return `url(../../../assets/tiles/${this.tileAssetNameByType[tileType]}.png)`;
     }
 
     private handleMovePlayer(player: Player, direction: string): void {

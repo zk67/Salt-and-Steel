@@ -75,9 +75,8 @@ export class ToolService {
             }
         }
 
-        if (isTileDoor(tile)) {
-            if (!this.isDoorPlacementValid(position))
-                return;
+        if (this.tileType === TileType.CloseDoor) {
+            if (!this.isDoorPlacementValid(position)) return;
 
             if (tile.tileType === TileType.CloseDoor) {
                 this.mapService.setTile(position, TileType.OpenDoor);
