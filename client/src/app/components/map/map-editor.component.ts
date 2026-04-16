@@ -9,11 +9,25 @@ import { GameMode, MapObjectType, MapSize, TileType } from '@common/interfaces/m
 import { Position } from '@common/utils/map.utils';
 import { firstValueFrom } from 'rxjs';
 
+export enum MouseEventType {
+    MouseUp = 'mouseup',
+    MouseDown = 'mousedown',
+    DragStart = 'dragstart',
+    ContextMenu = 'contextmenu',
+}
+
+export enum MouseButton {
+    None = 0,
+    Middle = 1,
+    Right = 2,
+}
+
 @Component({
     selector: 'app-map-editor',
     templateUrl: './map-editor.component.html',
     styleUrls: ['./map.component.scss'],
 })
+
 export class MapEditorComponent implements OnInit, OnDestroy {
     _gridSize: MapSize = MapSize.Small;
     readyToLoad = false;
@@ -39,7 +53,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
         event.preventDefault();
     };
 
-    private mouseButton = 0;
+    private mouseButton = MouseButton.None;
 
     constructor(
         private route: ActivatedRoute,
@@ -58,7 +72,7 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     onMouseEnter(event: MouseEvent, position: Position): void {
         if (this.isMouseDown) {
             const isObjectTool = this.toolService.getToolType() === ToolType.Object;
-            const canDrag = !isObjectTool || this.mouseButton === 2;
+            const canDrag = !isObjectTool || this.mouseButton === MouseButton.Right;
 
             if (canDrag) {
                 this.toolService.useTool(this.mouseButton, event.shiftKey, position);
@@ -73,10 +87,10 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     async ngOnInit(): Promise<void> {
         const id = this.route.snapshot.queryParams.id;
 
-        window.addEventListener('mouseup', this.globalMouseUpListener);
-        window.addEventListener('mousedown', this.globalMouseDownListener);
-        window.addEventListener('dragstart', this.globalDragStartListener);
-        window.addEventListener('contextmenu', this.globalContextMenuListener);
+        window.addEventListener(MouseEventType.MouseUp, this.globalMouseUpListener);
+        window.addEventListener(MouseEventType.MouseDown, this.globalMouseDownListener);
+        window.addEventListener(MouseEventType.DragStart, this.globalDragStartListener);
+        window.addEventListener(MouseEventType.ContextMenu, this.globalContextMenuListener);
 
         if (id) {
             const game = await firstValueFrom(this.saveService.getGame(id));
@@ -109,9 +123,9 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        window.removeEventListener('mouseup', this.globalMouseUpListener);
-        window.removeEventListener('mousedown', this.globalMouseDownListener);
-        window.removeEventListener('dragstart', this.globalDragStartListener);
-        window.removeEventListener('contextmenu', this.globalContextMenuListener);
+        window.removeEventListener(MouseEventType.MouseUp, this.globalMouseUpListener);
+        window.removeEventListener(MouseEventType.MouseDown, this.globalMouseDownListener);
+        window.removeEventListener(MouseEventType.DragStart, this.globalDragStartListener);
+        window.removeEventListener(MouseEventType.ContextMenu, this.globalContextMenuListener);
     }
 }

@@ -82,7 +82,7 @@ describe('Gateway', () => {
 
     it('handleConnection devrait afficher l’id du socket lorsqu’il se connecte', () => {
         gateway.handleConnection(mockSocket);
-        expect(logger.log).toHaveBeenCalledWith(`Connexion par l'utilisateur avec id : ${mockSocket.id}`);
+        expect(logger.log).toHaveBeenCalledWith(`Connection from user ID : ${mockSocket.id}`);
     });
 
     it('handleDisconnect devrait libérer les avatars réservés et diffuser les mises à jour', () => {
@@ -95,7 +95,7 @@ describe('Gateway', () => {
         expect(mockServer.to).toHaveBeenCalledWith('room-1');
         expect(mockServer.to).toHaveBeenCalledWith('room-2');
         expect(roomEmitter.emit).toHaveBeenCalledWith('unavailableAvatars', ['avatar-2']);
-        expect(logger.log).toHaveBeenCalledWith(`Déconnexion par l'utilisateur avec id : ${mockSocket.id}`);
+        expect(logger.log).toHaveBeenCalledWith(`Disconnection from user ID: ${mockSocket.id}`);
     });
 
     it('handleJoinRoom devrait joindre la room demandée', () => {

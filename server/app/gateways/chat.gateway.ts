@@ -19,10 +19,10 @@ export class ChatGateway implements OnGatewayInit {
 
     formatTime(): string {
         const date = new Date();
-        const h = date.getHours().toString().padStart(2, '0');
-        const m = date.getMinutes().toString().padStart(2, '0');
-        const s = date.getSeconds().toString().padStart(2, '0');
-        return `${h}:${m}:${s}`;
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
     }
 
     @SubscribeMessage(GatewayEvents.SendMessage)
