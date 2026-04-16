@@ -39,11 +39,7 @@ interface ContextMenuContent {
     cost?: number;
 }
 
-interface ContextMenuState {
-    posX: number;
-    posY: number;
-    content: ContextMenuContent;
-}
+interface ContextMenuState { posX: number; posY: number; content: ContextMenuContent; }
 
 @Component({
     selector: 'app-map-game',
@@ -323,16 +319,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     debugClick(position: Position): void {
         if (!this.gameService.isDebugMode()) return;
-
         if (this.gameService.getActionMode()) return;
-
         if (this.gameService.isWaitTurn()) return;
-
         if (this.gameService.activeCombat()) return;
-
         const player = this.gameService.clientPlayer();
         if (!player) return;
-
         const tile = this.mapService.getTile(position);
         if (!tile || tile.tileType === TileType.Wall || this.getPlayerAt(position) || tile.mapObject !== MapObjectType.None)
             return;
