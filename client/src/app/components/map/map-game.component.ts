@@ -87,7 +87,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         if (this.gameService.activeCombat()) return;
 
         const direction = PLAYER_DIRECTION[event.key.toLowerCase()];
-        if (direction) {
+        if (direction && !this.popupService.isPopupOpen()) {
             const player = this.gameService.clientPlayer();
             if (!player) return;
             this.handleMovePlayer(player, direction);

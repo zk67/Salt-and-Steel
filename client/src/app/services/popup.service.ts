@@ -104,4 +104,8 @@ export class PopupService {
     clearTimeout(this.notificationTimeout);
     this.notificationTimeout = null;
   }
+
+  isPopupOpen(): boolean {
+    return this.show() || this.choiceShow();
+  }
 }
