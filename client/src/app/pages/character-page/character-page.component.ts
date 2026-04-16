@@ -243,8 +243,12 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.socketService.send(GatewayEvents.GetPlayerId, player);
   }
 
-  goHome(): void { this.router.navigate([APP_ROUTES.home]); }
-  goBack(): void { this.router.navigate([this.gameService.getSelectedHostGame() ? APP_ROUTES.gameCreation : APP_ROUTES.joinGame]); }
+  goHome(): void {
+    this.router.navigate([APP_ROUTES.home]);
+  }
+  goBack(): void {
+    this.router.navigate([this.gameService.getSelectedHostGame() ? APP_ROUTES.gameCreation : APP_ROUTES.joinGame]);
+  }
 
   isAvatarUnavailable(avatar: string): boolean {
     if (this.avatar.value === avatar) {
