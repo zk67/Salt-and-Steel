@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
+import { JournalDeJeuComponent } from '@app/components/journal-de-jeu/journal-de-jeu.component';
 import { GameSessionService } from '@app/services/game/game-session.service';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -16,7 +17,7 @@ const TIME_CONVERSION = 60;
     selector: 'app-statistics-page',
     templateUrl: './statistics-page.component.html',
     styleUrls: ['./statistics-page.component.scss'],
-    imports: [RouterLink, ChatComponent],
+    imports: [RouterLink, ChatComponent, JournalDeJeuComponent],
 })
 
 export class StatisticsPageComponent implements OnInit, OnDestroy {
@@ -32,7 +33,7 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     sortDirection: 'asc' | 'desc' = 'desc';
 
     constructor(private gameService: GameService,
-         private socketService: SocketClientService,
+        private socketService: SocketClientService,
         private gameSessionService: GameSessionService) {}
 
     ngOnInit(): void {

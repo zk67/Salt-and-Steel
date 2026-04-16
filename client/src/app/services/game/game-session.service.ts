@@ -12,6 +12,7 @@ export class GameSessionService {
     private selectedJoinRoomId: string | null = null;
     private selectedHostGame: Game | null = null;
     private chatMessages: ChatMessage[] = [];
+    private gameLogMessages: ChatMessage[] = [];
     private gameTimer: number | null = null;
 
     setChatMessages(messages: ChatMessage[]): void {
@@ -24,6 +25,18 @@ export class GameSessionService {
 
     clearChatMessages(): void {
         this.chatMessages = [];
+    }
+
+    setGameLogMessages(messages: ChatMessage[]): void {
+        this.gameLogMessages = [...messages];
+    }
+
+    getGameLogMessages(): ChatMessage[] {
+        return [...this.gameLogMessages];
+    }
+
+    clearGameLogMessages(): void {
+        this.gameLogMessages = [];
     }
 
     setHostId(hostId: string): void {
@@ -72,6 +85,7 @@ export class GameSessionService {
 
     clear(): void {
         this.clearChatMessages();
+        this.clearGameLogMessages();
         this.clearSelectedJoinRoomId();
         this.clearSelectedHostGame();
         this.isDebugMode.set(false);

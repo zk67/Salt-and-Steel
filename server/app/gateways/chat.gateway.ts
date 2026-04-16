@@ -11,10 +11,7 @@ import { Server, Socket } from 'socket.io';
 export class ChatGateway implements OnGatewayInit {
     @WebSocketServer() server: Server;
 
-    constructor(
-        private readonly logger: Logger,
-        private currentGamesService: CurrentGamesService,
-    ) {}
+    constructor(private readonly logger: Logger, private currentGamesService: CurrentGamesService) {}
 
     afterInit() {
         this.logger.log('WebSocket Gateway initialized');
@@ -31,14 +28,17 @@ export class ChatGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.SendMessage)
     handleMessage(socket: Socket, payload: { content: string }) {
         const roomId = getRoomIdFromSocket(socket);
-        const author = this.currentGamesService.getGameByRoomId(roomId).players.find((p) => p.id === socket.id);
+        const content = payload?.content?.trim();
+
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+        const author = game?.players.find((p) => p.id === socket.id);
 
         const message: ChatMessage = {
-            author: author.name,
-            content: payload.content,
+            author: author?.name ?? 'Joueur',
+            content,
             time: this.formatTime(),
             roomId,
-            playerId: author.id,
+            playerId: author?.id ?? socket.id,
         };
 
         this.server.to(roomId).emit(GatewayEvents.Message, message);

@@ -12,6 +12,7 @@ export class SocketClientService {
     }
 
     connect(): void {
+        //à changer pour le vrai url du socket
         this.socket = io(environment.socketUrl, { transports: ['websocket'], upgrade: false });
     }
 
@@ -42,4 +43,6 @@ export class SocketClientService {
     sendMessage(content: string): void {
         this.socket.emit(GatewayEvents.SendMessage, { content });
     }
+
+
 }

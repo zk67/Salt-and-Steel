@@ -129,9 +129,7 @@ export class CurrentGameCombatService {
 
         const game = this.currentGamesService.getGameByRoomId(roomId);
         const activeCombat = game?.activeCombat;
-        if (!activeCombat) {
-            return;
-        }
+        if (!activeCombat) return;
 
         const timeout = setTimeout(() => {
             const result = this.currentGamesService.resolveCombatRoundOnTimeout(roomId);
@@ -161,8 +159,10 @@ export class CurrentGameCombatService {
             this.broadcastService.emitBattleWon(roomId, payloadWithoutRound);
 
             if (result.isGameOver) {
-                this.currentGamesService.gameOver(roomId, {winnerId: result.battlePayload.winnerId,
-                    gameDurationSeconds: 0, endedByAbandon: false});
+                this.currentGamesService.gameOver(roomId, {
+                    winnerId: result.battlePayload.winnerId,
+                    gameDurationSeconds: 0, endedByAbandon: false,
+                });
                 return;
             }
 

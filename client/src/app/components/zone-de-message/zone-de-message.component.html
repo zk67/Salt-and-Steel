@@ -1,0 +1,22 @@
+<div class="tabs-container">
+  <div class="tabs">
+    <button
+      (click)="setTab('journal')"
+      [class.active]="activeTab === 'journal'"
+    >
+      Journal de jeu
+    </button>
+
+    <button
+      (click)="setTab('chat')"
+      [class.active]="activeTab === 'chat'"
+    >
+      Chat
+    </button>
+  </div>
+
+  <div class="content">
+    <app-journal-de-jeu [class.hidden]="activeTab !== 'journal'"></app-journal-de-jeu>
+    <app-chat [class.hidden]="activeTab !== 'chat'"></app-chat>
+  </div>
+</div>

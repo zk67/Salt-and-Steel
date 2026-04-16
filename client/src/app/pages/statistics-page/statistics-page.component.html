@@ -1,11 +1,6 @@
 <div class="statistics-container">
 	<div class="left">
-		<app-chat
-            [messages]="messages"
-            [playerName]="currentPlayerName"
-            [currentPlayerId]="currentPlayerId"
-            (messageSent)="sendMessage($event)">
-        </app-chat> 
+		<app-chat></app-chat> 
 	</div>
 	<div class="right">
 			<section class="players-list">
@@ -108,7 +103,8 @@
 			}
 			</ul>
 		</section>
-
+		<app-journal-de-jeu></app-journal-de-jeu>
+		
 		<button class="back-button" routerLink="/home">Retour au menu</button>
 	</div>
 </div>

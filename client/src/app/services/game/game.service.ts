@@ -75,6 +75,18 @@ export class GameService {
         this.sessionService.clearChatMessages();
     }
 
+    setGameLogMessages(messages: ChatMessage[]): void {
+        this.sessionService.setGameLogMessages(messages);
+    }
+
+    getGameLogMessages(): ChatMessage[] {
+        return this.sessionService.getGameLogMessages();
+    }
+
+    clearGameLogMessages(): void {
+        this.sessionService.clearGameLogMessages();
+    }
+
     setHostId(hostId: string): void {
         this.sessionService.setHostId(hostId);
     }
