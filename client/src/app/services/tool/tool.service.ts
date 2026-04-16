@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { getShrineImageUrl } from '@app/utils/tile';
-import { MapObjectType, MapSize, Shrine, TileType, GameMode } from '@common/interfaces/map.interface';
-import { isShrine, Position } from '@common/utils/map.utils';
+import { GameMode, MapObjectType, MapSize, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
+import { isShrine, isTileDoor, Position } from '@common/utils/map.utils';
 
 const OBJECT_QUANTITY_SMALL = 2;
 const OBJECT_QUANTITY_MEDIUM = 4;
@@ -59,48 +59,60 @@ export class ToolService {
         if (!tile) return;
 
         if (this.toolType === ToolType.Tile) {
-            if (this.tileType === TileType.Wall) {
+            this.placeTile(position, tile);
+        } else if (this.mapObjectType !== MapObjectType.None) {
+            this.placeObject(position, tile);
+        }
+    }
+
+    placeTile(position: Position, tile: TileData): void {
+        if (this.tileType === TileType.Wall) {
+            if (isShrine(tile.mapObject)) {
+                this.deleteShrine(position);
+            } else {
                 this.setNumberObject(tile.mapObject, false);
                 this.mapService.setMapObject(position, MapObjectType.None);
             }
+        }
 
-            if (this.tileType === TileType.CloseDoor) {
-                if (!this.isDoorPlacementValid(position))
-                    return;
+        if (isTileDoor(tile)) {
+            if (!this.isDoorPlacementValid(position))
+                return;
 
-                if (tile.tileType === TileType.CloseDoor) {
-                    this.mapService.setTile(position, TileType.OpenDoor);
-                    return;
-                } else if (tile.tileType === TileType.OpenDoor) {
-                    this.mapService.setTile(position, TileType.CloseDoor);
-                    return;
-                }
+            if (tile.tileType === TileType.CloseDoor) {
+                this.mapService.setTile(position, TileType.OpenDoor);
+                return;
+            } else if (tile.tileType === TileType.OpenDoor) {
+                this.mapService.setTile(position, TileType.CloseDoor);
+                return;
+            }
+        }
+
+        this.mapService.setTile(position, this.tileType);
+    }
+
+    placeObject(position: Position, tile: TileData): void {
+        if (tile.tileType !== TileType.Wall && !isTileDoor(tile) && this.getNumberObject(this.mapObjectType) > 0) {
+            if (isShrine(this.mapObjectType)) {
+                this.placeShrine(position);
+                return;
             }
 
-            this.mapService.setTile(position, this.tileType);
-        } else if (this.mapObjectType !== MapObjectType.None) {
-            if (tile.tileType !== TileType.Wall && this.getNumberObject(this.mapObjectType) > 0) {
-                if(isShrine(this.mapObjectType)){
-                    this.placeShrine(position);
-                    return;
-                }
-
-                if(isShrine(tile.mapObject)){
-                    this.deleteShrine(position);
-                } else if (tile.mapObject !== MapObjectType.None){
-                    this.setNumberObject(tile.mapObject, false);
-                }
-
-                this.mapService.setMapObject(position, this.mapObjectType);
-                this.setNumberObject(this.mapObjectType);
+            if (isShrine(tile.mapObject)) {
+                this.deleteShrine(position);
+            } else if (tile.mapObject !== MapObjectType.None) {
+                this.setNumberObject(tile.mapObject, false);
             }
+
+            this.mapService.setMapObject(position, this.mapObjectType);
+            this.setNumberObject(this.mapObjectType);
         }
     }
 
     delete(position: Position, shiftKeyPressed: boolean = false): void {
         if (shiftKeyPressed) {
             const mapObject = this.mapService.getMapObject(position);
-            if(isShrine(mapObject)){
+            if (isShrine(mapObject)) {
                 this.deleteShrine(position);
                 return;
             }
@@ -188,9 +200,10 @@ export class ToolService {
 
         for (let i = 0; i < positions.length; i++) {
             const pos = positions[i];
+            this.mapService.setTile(pos, TileType.Basic);
             this.delete(pos, true);
             this.mapService.setMapObject(pos, this.mapObjectType);
-            shrine.imageUrl.push(getShrineImageUrl(this.mapObjectType, i));
+            shrine.imageUrl.push(getShrineImageUrl(this.mapObjectType, i + 1));
         }
 
         this.mapService.addShrine(shrine);

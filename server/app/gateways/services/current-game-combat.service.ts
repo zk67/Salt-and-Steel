@@ -149,10 +149,7 @@ export class CurrentGameCombatService {
         const game = this.currentGamesService.getGameByRoomId(roomId);
 
         if (result.roundResolved && result.combatRound) {
-            this.broadcastService.emitCombatRoundDetails(
-                [result.combatRound.attacker.playerId, result.combatRound.defender.playerId],
-                result.combatRound,
-            );
+            this.broadcastService.emitCombatRoundDetailsToRoom(roomId, result.combatRound);
         }
 
         if (result.battlePayload) {

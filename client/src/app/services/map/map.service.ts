@@ -1,9 +1,9 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
-import { createTile } from '@app/utils/tile';
+import { createTile, getShrineImageUrl } from '@app/utils/tile';
 import { ActionOnTilePayload, Game } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
-import { Position } from '@common/utils/map.utils';
+import { isShrine, Position } from '@common/utils/map.utils';
 @Injectable({
     providedIn: 'root',
 })
@@ -214,5 +214,29 @@ export class MapService {
     getTotalShrines(): number {
         const shrines = this.gameSignal()?.shrine ?? [];
         return shrines.length;
+    }
+
+    getShrineBackgroundImage(position: Position): string | null {
+        const tile = this.getTile(position);
+        if (!tile || !isShrine(tile.mapObject)) {
+            return null;
+        }
+
+        const shrine = this.getShrineAtPosition(position);
+        if (!shrine) {
+            return null;
+        }
+
+        const index = shrine.position.findIndex((pos) => Number(pos.x) === position.x && Number(pos.y) === position.y);
+        if (index === -1) {
+            return null;
+        }
+
+        const shrineImage = shrine.imageUrl?.[index] ?? getShrineImageUrl(shrine.objectType, index + 1);
+        if (!shrineImage) {
+            return null;
+        }
+
+        return `url(${shrineImage})`;
     }
 }

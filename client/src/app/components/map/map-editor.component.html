@@ -6,6 +6,7 @@
                     [attr.data-tile-type]="tileType[tile.tileType]"
                     [attr.data-object]="mapObjectType[tile.mapObject]"
                     [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
+                    [style.--shrine-image]="mapService.getShrineBackgroundImage({ x: colIndex, y: rowIndex })"
                     (mousedown)="onMouseDown($event, {x: colIndex, y: rowIndex}); $event.preventDefault()"
                     (mouseenter)="onMouseEnter($event, {x: colIndex, y: rowIndex})">
                 </div>
