@@ -1,3 +1,4 @@
+import { PlatformLocation } from '@angular/common';
 import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile, getShrineImageUrl } from '@app/utils/tile';
@@ -10,6 +11,7 @@ import { isShrine, Position } from '@common/utils/map.utils';
 export class MapService {
     private gameSignal = signal<Game | null>(null);
     private originalGame: Game | null = null;
+    private readonly baseHref: string;
 
     // Signals pour les propriétés du jeu
     private tiles = computed(() => this.gameSignal()?.tiles ?? []);
@@ -18,6 +20,11 @@ export class MapService {
     private size = computed(() => this.gameSignal()?.size ?? 0);
     private visible = computed(() => this.gameSignal()?.visible ?? false);
     private gameMode = computed(() => this.gameSignal()?.gameMode ?? GameMode.Classic);
+
+    constructor(platformLocation: PlatformLocation) {
+        const rawBaseHref = platformLocation.getBaseHrefFromDOM() || '/';
+        this.baseHref = rawBaseHref.endsWith('/') ? rawBaseHref : `${rawBaseHref}/`;
+    }
 
     initializeMap(size: number, gameMode: GameMode = GameMode.Classic): void {
         this.gameSignal.set({
@@ -237,6 +244,27 @@ export class MapService {
             return null;
         }
 
-        return `url(${shrineImage})`;
+        return `url(${this.normalizeShrineImageUrl(shrineImage)})`;
+    }
+
+    private normalizeShrineImageUrl(imageUrl: string): string {
+        const trimmedImageUrl = imageUrl.trim();
+        const urlMatch = trimmedImageUrl.match(/^url\((.*)\)$/i);
+        const rawPath = urlMatch ? urlMatch[1].trim().replace(/^['"]|['"]$/g, '') : trimmedImageUrl;
+
+        if (rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
+            return rawPath;
+        }
+
+        const assetsPath = rawPath
+            .replace(/^\.\//, '')
+            .replace(/^\/+/, '')
+            .replace(/^(\.\.\/)+assets\//, 'assets/');
+
+        if (!assetsPath.startsWith('assets/')) {
+            return rawPath;
+        }
+
+        return `${this.baseHref}${assetsPath}`;
     }
 }
