@@ -190,14 +190,11 @@ export class GameTurnService {
         this.actionTile.set([]);
     }
 
-    pauseForCombat(roundTimeSeconds: number, shouldShowCombatTimer: boolean): void {
+    pauseForCombat(roundTimeSeconds: number): void {
         this.pausedTurnTime = this.timeService.time();
         this.timeService.stopTimer();
         this.cancelActionMode();
-
-        if (shouldShowCombatTimer) {
-            this.timeService.startTimer(roundTimeSeconds);
-        }
+        this.timeService.startTimer(roundTimeSeconds);
     }
 
     resumeAfterCombat(remainingTurnSeconds?: number): void {

@@ -1,4 +1,4 @@
-import { Position } from '@common//utils/map.utils';
+import { Position } from '../utils/map.utils';
 
 export const DIRECTION_STRING: Record<string, Position> = {
     up: { x: 0, y: -1 },

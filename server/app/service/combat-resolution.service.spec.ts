@@ -77,6 +77,7 @@ describe('CombatResolutionService', () => {
                 totalDamageDealt: 0,
                 percentageOfTileVisited: 0,
             },
+            isVirtual: false,
             ...overrides,
         };
     }

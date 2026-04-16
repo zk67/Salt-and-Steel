@@ -1,6 +1,6 @@
-import { Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
-import { Player } from '@common/interfaces/player.interface';
+import { Game } from '../interfaces/game.interface';
+import { GameMode, MapObjectType, TileData, TileType } from '../interfaces/map.interface';
+import { Player } from '../interfaces/player.interface';
 
 export type Position = { x: number; y: number };
 type MovementState = Position & { movementPoints: number };

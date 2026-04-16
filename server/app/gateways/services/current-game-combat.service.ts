@@ -1,10 +1,11 @@
-import { CurrentGamesService, SubmitCombatPostureResult } from '@app/service/current-games.service';
+import { SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { ActiveCombatPayload, BattleWonPayload, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { getVPTurnDelayMs } from '@common/types/player.constants';
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
-
 
 const TIME_ROUND = 10;
 const TIME_POSTURE = 1000;
@@ -22,23 +23,28 @@ export class CurrentGameCombatService {
         const room = getRoomIdFromSocket(client);
         const combatStarted = this.currentGamesService.startCombat(room, client.id, payload.defenderId);
 
-        if (!combatStarted) {
-            return;
-        }
+        if (!combatStarted) return;
+
+        this.broadcastService.emitCombatStarted(room, {
+            attackerId: client.id,
+            defenderId: payload.defenderId,
+            roundTimeSeconds: TIME_ROUND,
+        });
 
         this.scheduleCombatRoundTimeout(room);
-        this.broadcastService.emitCombatStarted(
-            room,
-            {
-                attackerId: client.id,
-                defenderId: payload.defenderId,
-                roundTimeSeconds: TIME_ROUND,
-            },
-        );
+
+        const delay = getVPTurnDelayMs();
+        setTimeout(() => {
+            this.currentGamesService.submitVirtualPlayerPostures(room);
+        }, delay);
     }
 
     handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
         const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game?.activeCombat) {
+            return;
+        }
         const result = this.currentGamesService.submitCombatPosture(room, client.id, payload.posture);
 
         if (!result) {
@@ -91,6 +97,10 @@ export class CurrentGameCombatService {
             this.currentGamesService.nextPlayerTurn(roomId);
         }
         return payload;
+    }
+
+    startCombatRoundTimer(roomId: string): void {
+        this.scheduleCombatRoundTimeout(roomId);
     }
 
     private createSurrenderPayload(
@@ -174,16 +184,36 @@ export class CurrentGameCombatService {
         }
 
         if (result.roundResolved && game?.activeCombat) {
-            this.broadcastService.emitCombatStarted(
-                roomId,
-                {
-                    attackerId: game.activeCombat.attackerId,
-                    defenderId: game.activeCombat.defenderId,
-                    roundTimeSeconds: game.activeCombat.roundTimeSeconds,
-                },
-            );
+            this.broadcastService.emitCombatStarted(roomId, {
+                attackerId: game.activeCombat.attackerId,
+                defenderId: game.activeCombat.defenderId,
+                roundTimeSeconds: game.activeCombat.roundTimeSeconds,
+            });
 
             this.scheduleCombatRoundTimeout(roomId);
+
+            const delay = getVPTurnDelayMs();
+            setTimeout(() => {
+                this.currentGamesService.submitVirtualPlayerPostures(roomId);
+            }, delay);
         }
+    }
+
+    handleVirtualPlayerStartCombat(roomId: string, attackerId: string, defenderId: string): void {
+        const combatStarted = this.currentGamesService.startCombat(roomId, attackerId, defenderId);
+        if (!combatStarted) return;
+
+        this.broadcastService.emitCombatStarted(roomId, {
+            attackerId,
+            defenderId,
+            roundTimeSeconds: TIME_ROUND,
+        });
+
+        const delay = getVPTurnDelayMs();
+
+        setTimeout(() => {
+            this.currentGamesService.submitVirtualPlayerPostures(roomId);
+            this.scheduleCombatRoundTimeout(roomId);
+        }, delay);
     }
 }

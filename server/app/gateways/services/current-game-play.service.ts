@@ -229,4 +229,8 @@ export class CurrentGamePlayService {
 
         return true;
     }
+
+    getGameByRoomId(roomId: string) {
+        return this.currentGamesService.getGameByRoomId(roomId);
+    }
 }

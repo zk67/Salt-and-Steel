@@ -133,6 +133,7 @@ describe('TurnFlowService', () => {
                 totalDamageDealt: NO_VALUE,
                 percentageOfTileVisited: NO_VALUE,
             },
+            isVirtual: false,
             ...overrides,
         };
     }
@@ -197,7 +198,7 @@ describe('TurnFlowService', () => {
         const game = createGame();
         game.currentPhase = TurnPhase.WaitTurn;
 
-        service.changeTurn(game, timer, emitTurnUpdate);
+        service.changeTurn(game, timer, emitTurnUpdate, jest.fn());
 
         expect(game.currentPhase).toBe(TurnPhase.Turn);
         expect(game.players[FIRST_INDEX].movementPoints).toBe(SEVEN_VALUE);
@@ -213,7 +214,7 @@ describe('TurnFlowService', () => {
         game.currentPhase = TurnPhase.Turn;
         const spy = jest.spyOn(service, 'nextPlayerTurn');
 
-        service.changeTurn(game, timer, emitTurnUpdate);
+        service.changeTurn(game, timer, emitTurnUpdate, jest.fn());
 
         expect(spy).toHaveBeenCalled();
     });

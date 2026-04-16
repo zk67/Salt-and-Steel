@@ -1,6 +1,7 @@
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { CurrentGameLobbyService } from '@app/gateways/services/current-game-lobby.service';
 import { CurrentGamePlayService } from '@app/gateways/services/current-game-play.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import {
     ActionOnTilePayload,
@@ -10,22 +11,29 @@ import {
     SubmitCombatPosturePayload,
     ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { Player } from '@common/interfaces/player.interface';
+import { Player, Profile } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CurrentGameCombatService } from './services/current-game-combat.service';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
-export class CurrentGameGateway implements OnGatewayInit {
+export class CurrentGameGateway implements OnGatewayInit, OnModuleInit {
     @WebSocketServer() private server: Server;
 
     constructor(
+        private readonly currentGamesService: CurrentGamesService,
+        private readonly combatService: CurrentGameCombatService,
         private readonly broadcastService: CurrentGameBroadcastService,
         private readonly lobbyService: CurrentGameLobbyService,
         private readonly playService: CurrentGamePlayService,
     ) {}
+
+    onModuleInit(): void {
+        this.currentGamesService.setCombatGatewayService(this.combatService);
+    }
 
     afterInit(): void {
         this.broadcastService.setServer(this.server);
@@ -116,6 +124,20 @@ export class CurrentGameGateway implements OnGatewayInit {
     @SubscribeMessage(GatewayEvents.SubmitCombatPosture)
     handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
         this.playService.handleSubmitCombatPosture(client, payload);
+    }
+
+    @SubscribeMessage(GatewayEvents.AddVirtualPlayer)
+    handleAddVirtualPlayer(client: Socket, payload: { profile: Profile.Aggressive | Profile.Defensive }): void {
+        const mappedProfile: Profile =
+            payload.profile === Profile.Aggressive
+                ? Profile.Aggressive
+                : Profile.Defensive;
+        this.lobbyService.handleAddVirtualPlayer(client, { profile: mappedProfile });
+    }
+
+    @SubscribeMessage(GatewayEvents.RemoveVirtualPlayer)
+    removeVirtualPlayer(client: Socket): void {
+        this.lobbyService.handleRemoveVirtualPlayer(client);
     }
 
     @SubscribeMessage(GatewayEvents.PassFlag)

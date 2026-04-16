@@ -4,7 +4,7 @@ import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { GameMode } from '@common/interfaces/map.interface';
-import { Player } from '@common/interfaces/player.interface';
+import { Player, Profile } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
@@ -198,6 +198,37 @@ export class CurrentGameLobbyService {
 
         this.currentGamesService.clearSelectedAvatar(room, client.id);
         this.emitUnavailableAvatars(room);
+    }
+
+    handleAddVirtualPlayer(client: Socket, payload: { profile: Profile }): void {
+        const room = getRoomIdFromSocket(client);
+        if (!room) return;
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
+        const isOrganizer = game.players.find(p => p.id === client.id)?.isOrganizer;
+        if (!isOrganizer) return;
+
+        const profile = payload?.profile === Profile.Aggressive ? Profile.Aggressive : Profile.Defensive;
+        const player = this.currentGamesService.addVirtualPlayer(room, profile);
+        if (player) {
+            this.broadcastPlayers(room);
+        }
+    }
+
+    handleRemoveVirtualPlayer(client: Socket): void {
+        const room = getRoomIdFromSocket(client);
+        if (!room) return;
+        const game = this.currentGamesService.getGameByRoomId(room);
+        if (!game) return;
+        const isOrganizer = game.players.find(p => p.id === client.id)?.isOrganizer;
+        if (!isOrganizer) return;
+        const virtualPlayer = game.players.find(p => p.isVirtual);
+        if (!virtualPlayer) return;
+        const removed = this.currentGamesService.removePlayerFromGame(room, virtualPlayer.id);
+        if (removed) {
+            this.broadcastPlayers(room);
+            this.emitJoinableGames();
+        }
     }
 
     private broadcastPlayers(roomId: string): void {

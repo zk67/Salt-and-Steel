@@ -39,6 +39,8 @@ export enum GatewayEvents {
     ActionOnTile = 'actionOnTile',
     ActionOnTileFailed = 'actionOnTileFailed',
     HandleCombatRound = 'handleCombatRound',
+    AddVirtualPlayer = 'addVirtualPlayer',
+    RemoveVirtualPlayer = 'removeVirtualPlayer',
     StartCombat = 'startCombat',
     CombatStarted = 'combatStarted',
     //added

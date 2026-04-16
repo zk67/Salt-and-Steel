@@ -57,7 +57,7 @@ export class GameCombatService {
             this.combatStartHp.set(defender.id, defender.hp ?? 0);
         }
 
-        this.turnService.pauseForCombat(payload.roundTimeSeconds, this.isClientInActiveCombat());
+        this.turnService.pauseForCombat(payload.roundTimeSeconds);
     }
 
     handleCombatRound(payload: CombatRoundDetails): void {
