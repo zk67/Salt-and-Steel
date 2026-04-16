@@ -72,9 +72,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     constructor(
         public mapService: MapService,
-        public gameService: GameService,
+        private readonly gameService: GameService,
         private readonly socketService: SocketClientService,
-        public popupService: PopupService,
+        private readonly popupService: PopupService,
     ) {}
 
     @HostListener('window:keydown', ['$event'])

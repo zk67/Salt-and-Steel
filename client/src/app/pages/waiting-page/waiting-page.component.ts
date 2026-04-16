@@ -4,7 +4,6 @@ import { ChatComponent } from '@app/components/chat/chat.component';
 import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
-import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { GameMode } from '@common/interfaces/map.interface';
@@ -97,7 +96,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         private ngZone: NgZone,
         private router: Router,
         private gameService: GameService,
-        protected mapService: MapService,
     ) {}
 
     get isOrganizer(): boolean {
@@ -181,4 +179,3 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         this.socketService.send(GatewayEvents.KickPlayer, { playerId });
     }
 };
-
