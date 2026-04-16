@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
@@ -38,11 +39,7 @@ interface ContextMenuContent {
     cost?: number;
 }
 
-interface ContextMenuState {
-    posX: number;
-    posY: number;
-    content: ContextMenuContent;
-}
+interface ContextMenuState { posX: number; posY: number; content: ContextMenuContent; }
 
 @Component({
     selector: 'app-map-game',
@@ -52,6 +49,7 @@ interface ContextMenuState {
 
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
+    private readonly document = inject(DOCUMENT);
     private readonly router = inject(Router);
     private readonly gameSessionService = inject(GameSessionService);
     private readonly mapGameStateService = inject(MapGameStateService);
@@ -78,15 +76,14 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     constructor(
         public mapService: MapService,
-        public gameService: GameService,
+        private readonly gameService: GameService,
         private readonly socketService: SocketClientService,
-        public popupService: PopupService,
+        private readonly popupService: PopupService,
     ) {}
 
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+        if (this.isTextInputFocused()) {
             return;
         }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
@@ -94,9 +91,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    private globalKeyUpListener = (event: KeyboardEvent) => {
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) return;
+    @HostListener('window:keyup', ['$event'])
+    handleKeyUp(event: KeyboardEvent): void {
+        if (this.isTextInputFocused()) return;
 
         if (this.gameService.activeCombat()) return;
 
@@ -106,7 +103,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             if (!player) return;
             this.handleMovePlayer(player, direction);
         }
-    };
+    }
 
     async ngOnInit(): Promise<void> {
         this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
@@ -145,13 +142,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 });
             }
         });
-        window.addEventListener('keyup', this.globalKeyUpListener);
-
         this.readyToLoad = true;
     }
 
     ngOnDestroy(): void {
-        window.removeEventListener('keyup', this.globalKeyUpListener);
         this.socketService.off(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
         this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
@@ -175,7 +169,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     getTileImage(tileType: TileType): string {
         return `url(../../../assets/tiles/${this.tileAssetNameByType[tileType]}.png)`;
     }
-    
+
     hasCombatShrineBuff(player: Player): boolean {
         return (player.shrineBuffs?.bonusAmount ?? 0) >= 1 && (player.shrineBuffs?.turnsLeft ?? 0) > 0;
     }
@@ -325,16 +319,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     debugClick(position: Position): void {
         if (!this.gameService.isDebugMode()) return;
-
         if (this.gameService.getActionMode()) return;
-
         if (this.gameService.isWaitTurn()) return;
-
         if (this.gameService.activeCombat()) return;
-
         const player = this.gameService.clientPlayer();
         if (!player) return;
-
         const tile = this.mapService.getTile(position);
         if (!tile || tile.tileType === TileType.Wall || this.getPlayerAt(position) || tile.mapObject !== MapObjectType.None)
             return;
@@ -343,13 +332,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
             playerId: player.id,
             targetPos: position,
         };
-
         this.socketService.send(GatewayEvents.DebugMove, debugPayload);
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
         this.mapGameStateService.handleClickDebugPayload(payload);
-
         if (this.gameService.clientPlayer()?.id === payload.playerId && !this.gameService.canPlayerStillDoAction()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
@@ -376,10 +363,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
             }
             const isRedTeam = winner.isRedTeam;
             const winningTeamPlayers = this.gameService.getPlayers().filter(p => p.isRedTeam === isRedTeam);
-
             const teamName = isRedTeam ? 'Rouge' : 'Bleu';
             const playerNames = winningTeamPlayers.map(p => p.name).join(', ');
-
             this.popupService.open(`Partie terminée ! L'équipe ${teamName} gagne ! Joueurs : ${playerNames}`);
         }
 
@@ -413,5 +398,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
         this.gameService.setDebugMode(payload.debugMode);
         this.gameService.setHostId(payload.hostId);
+    }
+
+    private isTextInputFocused(): boolean {
+        const activeElement = this.document.activeElement;
+        return !!activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT');
     }
 }

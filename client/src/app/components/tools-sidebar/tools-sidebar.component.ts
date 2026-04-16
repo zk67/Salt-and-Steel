@@ -114,8 +114,9 @@ export class ToolsSidebarComponent implements OnInit {
 
             this.router.navigate([APP_ROUTES.admin]);
         } catch (err) {
-            const action = game._id ? 'modification' : 'création';
-            this.popupMessage = `Erreur lors de la ${action} : ` + JSON.stringify(err);
+            this.popupMessage = err instanceof Error
+                ? err.message
+                : 'Une erreur est survenue lors de la communication avec le serveur. Veuillez réessayer.';
             this.showPopup = true;
         }
     }

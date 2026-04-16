@@ -14,6 +14,15 @@ import { environment } from 'src/environments/environment';
 })
 export class SaveService {
     private readonly baseUrl: string = environment.serverUrl;
+    private readonly httpErrorMessages: Record<string, string> = {
+        getAllGames: 'Impossible de charger la liste des jeux. Vérifiez que le serveur est accessible, puis réessayez.',
+        getVisibleGames: 'Impossible de charger les jeux disponibles. Vérifiez la connexion au serveur, puis réessayez.',
+        getGame: 'Impossible de charger ce jeu. Il a peut-être été supprimé ou le serveur est inaccessible.',
+        addGame: 'Impossible de créer le jeu. Vérifiez la connexion au serveur, puis réessayez.',
+        replaceGame: 'Impossible d’enregistrer les modifications du jeu. Vérifiez la connexion au serveur, puis réessayez.',
+        deleteGame: 'Impossible de supprimer le jeu. Vérifiez la connexion au serveur, puis réessayez.',
+        patchGame: 'Impossible de mettre à jour la visibilité du jeu. Vérifiez la connexion au serveur, puis réessayez.',
+    };
     constructor(private toolService: ToolService, private readonly http: HttpClient) {}
 
     async validateBeforeSave(game: Game): Promise<string[]> {
@@ -174,7 +183,10 @@ export class SaveService {
 
     private handleError<T>(request: string): (error: Error) => Observable<T> {
         return (error: Error) => {
-            throw new Error(`Erreur lors de la requête ${request}: ${error.message}`);
+            void error;
+            const message = this.httpErrorMessages[request] ??
+                'Une erreur est survenue lors de la communication avec le serveur. Veuillez réessayer.';
+            throw new Error(message);
         };
     }
 

@@ -1,10 +1,9 @@
-import { Component, computed, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
 import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
-import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { GameMode } from '@common/interfaces/map.interface';
@@ -45,12 +44,13 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         }
     });
 
-    private onPopState = () => {
+    @HostListener('window:popstate')
+    onPopState(): void {
         this.goHome();
         setTimeout(() => {
             this.router.navigate([APP_ROUTES.home]);
         }, TIME_BEFORE_NAVIGATING_HOME);
-    };
+    }
 
     private onPlayersToGame = (player: Player[]) => {
         this.ngZone.run(() => {
@@ -97,7 +97,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         private ngZone: NgZone,
         private router: Router,
         private gameService: GameService,
-        protected mapService: MapService,
     ) {}
 
     get isOrganizer(): boolean {
@@ -117,10 +116,13 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         this.socketService.send(GatewayEvents.StartGame);
     }
 
-    private onBeforeUnload = (): void => {
+    @HostListener('window:beforeunload')
+    @HostListener('window:unload')
+    @HostListener('window:pagehide')
+    onBeforeUnload(): void {
         sessionStorage.setItem(WAITING_PAGE_REFRESH_FLAG, '1');
         this.goHome();
-    };
+    }
 
     goHome(): void {
         const roomId = this.gameService.getSelectedJoinRoomId();
@@ -146,11 +148,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.currentPlayerId = currentPlayer.id;
         }
 
-        window.addEventListener('beforeunload', this.onBeforeUnload);
-        window.addEventListener('unload', this.onBeforeUnload);
-        window.addEventListener('pagehide', this.onBeforeUnload);
-        window.addEventListener('popstate', this.onPopState);
-
         this.socketService.on<{ gameMode: GameMode }>(GatewayEvents.GetGameModes, (payload) => {
             this.currentGameMode.set(payload.gameMode);
         });
@@ -163,11 +160,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        window.removeEventListener('beforeunload', this.onBeforeUnload);
-        window.removeEventListener('unload', this.onBeforeUnload);
-        window.removeEventListener('pagehide', this.onBeforeUnload);
-        window.removeEventListener('popstate', this.onPopState);
-
         this.socketService.off(GatewayEvents.PlayersToGame, this.onPlayersToGame);
         this.socketService.off(GatewayEvents.GameClosed, this.onGameClosed);
         this.socketService.off(GatewayEvents.GameStartInfo, this.onGameStarted);
@@ -181,4 +173,3 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         this.socketService.send(GatewayEvents.KickPlayer, { playerId });
     }
 };
-

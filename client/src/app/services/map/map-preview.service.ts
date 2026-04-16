@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { inject, Injectable } from '@angular/core';
 import { Game } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Position } from '@common/utils/map.utils';
@@ -11,6 +12,7 @@ type PreviewCanvas = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D;
     providedIn: 'root',
 })
 export class MapPreviewService {
+    private readonly document = inject(DOCUMENT);
 
     private readonly tilePaths = new Map<TileType, string>([
         [TileType.Basic, 'assets/tiles/basic.png'],
@@ -65,7 +67,7 @@ export class MapPreviewService {
         const cellSize = Math.floor(pixelSize / size);
         const finalSize = cellSize * size;
 
-        const canvas = document.createElement('canvas');
+        const canvas = this.document.createElement('canvas');
         canvas.width = finalSize;
         canvas.height = finalSize;
 

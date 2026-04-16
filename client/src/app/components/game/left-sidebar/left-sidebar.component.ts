@@ -16,7 +16,7 @@ export class LeftSidebarComponent {
     isDebugMode = computed(() => this.gameService.isDebugMode());
 
     constructor(
-        public mapService: MapService,
-        public gameService: GameService,
+        private readonly mapService: MapService,
+        private readonly gameService: GameService,
     ) {}
 }
