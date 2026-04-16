@@ -31,10 +31,10 @@
         --tile-image: url("../../../assets/tiles/wall.png");
     }
     &[data-tile-type="CloseDoor"] {
-        --tile-image: url("../../../assets/tiles/CloseDoor.png");
+        --tile-image: url("../../../assets/tiles/close-door.png");
     }
     &[data-tile-type="OpenDoor"] {
-        --tile-image: url("../../../assets/tiles/OpenDoor.png");
+        --tile-image: url("../../../assets/tiles/open-door.png");
     }
 
     &[data-object="SpawnPoint"] {
