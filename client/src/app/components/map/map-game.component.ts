@@ -169,6 +169,24 @@ export class MapGameComponent implements OnInit, OnDestroy {
     getTileImage(tileType: TileType): string {
         return `url(../../../assets/tiles/${this.tileAssetNameByType[tileType]}.png)`;
     }
+    
+    hasCombatShrineBuff(player: Player): boolean {
+        return (player.shrineBuffs?.bonusAmount ?? 0) >= 1 && (player.shrineBuffs?.turnsLeft ?? 0) > 0;
+    }
+
+    getCombatShrineBuffAmount(player: Player): number {
+        return player.shrineBuffs?.bonusAmount ?? 0;
+    }
+
+    isShrineDeactivated(position: Position): boolean {
+        const tile = this.mapService.getTile(position);
+        if (!tile || (tile.mapObject !== MapObjectType.HealingShrine && tile.mapObject !== MapObjectType.CombatShrine)) {
+            return false;
+        }
+
+        const shrine = this.mapService.getShrineAtPosition(position);
+        return shrine ? shrine.turnLeftDeactivated > 0 : false;
+    }
 
     private handleMovePlayer(player: Player, direction: string): void {
         if (this.gameService.activeCombat()) return;
