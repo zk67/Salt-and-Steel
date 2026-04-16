@@ -182,7 +182,8 @@ export class SaveService {
     }
 
     private handleError<T>(request: string): (error: Error) => Observable<T> {
-        return (_error: Error) => {
+        return (error: Error) => {
+            void error;
             const message = this.httpErrorMessages[request] ??
                 'Une erreur est survenue lors de la communication avec le serveur. Veuillez réessayer.';
             throw new Error(message);

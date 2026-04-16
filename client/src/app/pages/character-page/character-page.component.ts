@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
@@ -266,8 +266,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    window.addEventListener('beforeunload', this.onBeforeUnload);
-
     const selectedRoomId = this.gameService.getSelectedJoinRoomId();
     if (!selectedRoomId) {
       return;
@@ -290,7 +288,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     this.socketService.off(GatewayEvents.UnavailableAvatars, this.onUnavailableAvatars);
-    window.removeEventListener('beforeunload', this.onBeforeUnload);
   }
 
   private updateStatsHpSpeed(): void {
@@ -340,9 +337,10 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  private onBeforeUnload = (): void => {
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
     sessionStorage.setItem(CHARACTER_PAGE_REFRESH_FLAG, '1');
     this.gameService.clearSelectedJoinRoomId();
     this.router.navigate([APP_ROUTES.home]);
-  };
+  }
 }

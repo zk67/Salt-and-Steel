@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { MapService } from '@app/services/map/map.service';
@@ -14,7 +14,7 @@ import { firstValueFrom } from 'rxjs';
     templateUrl: './map-editor.component.html',
     styleUrls: ['./map.component.scss'],
 })
-export class MapEditorComponent implements OnInit, OnDestroy {
+export class MapEditorComponent implements OnInit {
     _gridSize: MapSize = MapSize.Small;
     readyToLoad = false;
 
@@ -23,21 +23,25 @@ export class MapEditorComponent implements OnInit, OnDestroy {
 
     private isMouseDown = false;
 
-    private globalMouseUpListener = () => {
+    @HostListener('window:mouseup')
+    onWindowMouseUp(): void {
         this.isMouseDown = false;
-    };
+    }
 
-    private globalMouseDownListener = () => {
+    @HostListener('window:mousedown')
+    onWindowMouseDown(): void {
         this.isMouseDown = true;
-    };
+    }
 
-    private globalDragStartListener = (event: Event) => {
+    @HostListener('window:dragstart', ['$event'])
+    onWindowDragStart(event: Event): void {
         event.preventDefault();
-    };
+    }
 
-    private globalContextMenuListener = (event: Event) => {
+    @HostListener('window:contextmenu', ['$event'])
+    onWindowContextMenu(event: Event): void {
         event.preventDefault();
-    };
+    }
 
     private mouseButton = 0;
 
@@ -73,11 +77,6 @@ export class MapEditorComponent implements OnInit, OnDestroy {
     async ngOnInit(): Promise<void> {
         const id = this.route.snapshot.queryParams.id;
 
-        window.addEventListener('mouseup', this.globalMouseUpListener);
-        window.addEventListener('mousedown', this.globalMouseDownListener);
-        window.addEventListener('dragstart', this.globalDragStartListener);
-        window.addEventListener('contextmenu', this.globalContextMenuListener);
-
         if (id) {
             const game = await firstValueFrom(this.saveService.getGame(id));
             if (!game) {
@@ -106,12 +105,5 @@ export class MapEditorComponent implements OnInit, OnDestroy {
 
         this.toolService.defaultNumbers();
         this.readyToLoad = true;
-    }
-
-    ngOnDestroy(): void {
-        window.removeEventListener('mouseup', this.globalMouseUpListener);
-        window.removeEventListener('mousedown', this.globalMouseDownListener);
-        window.removeEventListener('dragstart', this.globalDragStartListener);
-        window.removeEventListener('contextmenu', this.globalContextMenuListener);
     }
 }

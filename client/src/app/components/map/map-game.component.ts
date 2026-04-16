@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
@@ -46,6 +47,7 @@ interface ContextMenuContent {
 
 export class MapGameComponent implements OnInit, OnDestroy {
     readyToLoad = false;
+    private readonly document = inject(DOCUMENT);
     private readonly router = inject(Router);
     private readonly gameSessionService = inject(GameSessionService);
     private readonly mapGameStateService = inject(MapGameStateService);
@@ -79,8 +81,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent): void {
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+        if (this.isTextInputFocused()) {
             return;
         }
         if (event.key.toLowerCase() === 'm' && this.gameService.clientPlayer()?.isOrganizer) {
@@ -88,9 +89,9 @@ export class MapGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    private globalKeyUpListener = (event: KeyboardEvent) => {
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) return;
+    @HostListener('window:keyup', ['$event'])
+    handleKeyUp(event: KeyboardEvent): void {
+        if (this.isTextInputFocused()) return;
 
         if (this.gameService.activeCombat()) return;
 
@@ -100,7 +101,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
             if (!player) return;
             this.handleMovePlayer(player, direction);
         }
-    };
+    }
 
     async ngOnInit(): Promise<void> {
         this.socketService.on<MovePlayerPayload>(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
@@ -139,13 +140,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 });
             }
         });
-        window.addEventListener('keyup', this.globalKeyUpListener);
-
         this.readyToLoad = true;
     }
 
     ngOnDestroy(): void {
-        window.removeEventListener('keyup', this.globalKeyUpListener);
         this.socketService.off(GatewayEvents.PlayerMoved, this.handlePlayerMovePayloadBound);
         this.socketService.off(GatewayEvents.HandleClickDebug, this.handleClickDebugPayloadBound);
         this.socketService.off(GatewayEvents.GameOver, this.handleGameOverBound);
@@ -389,5 +387,10 @@ export class MapGameComponent implements OnInit, OnDestroy {
     private handleToggleDebugMode(payload: ToggleDebugPayload): void {
         this.gameService.setDebugMode(payload.debugMode);
         this.gameService.setHostId(payload.hostId);
+    }
+
+    private isTextInputFocused(): boolean {
+        const activeElement = this.document.activeElement;
+        return !!activeElement && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT');
     }
 }
