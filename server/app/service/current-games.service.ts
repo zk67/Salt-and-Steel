@@ -9,13 +9,7 @@ import { VirtualPlayerService } from '@app/service/virtual-player/virtual-player
 import { Timer } from '@app/utils/game-timer';
 import { giveShrineBuff } from '@app/utils/game-utils';
 import {
-    ActionOnTilePayload,
-    CombatPosture,
-    Game,
-    GameOverPayload,
-    NewTurnPayload,
-    ToggleDebugPayload,
-    UpdateFlagPayload,
+    ActionOnTilePayload, CombatPosture, Game, GameOverPayload, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player, Profile } from '@common/interfaces/player.interface';
@@ -54,7 +48,6 @@ export class CurrentGamesService {
         );
     }
 
-    // Setup
     setEmitCallback(callback: (roomId: string, payload: NewTurnPayload) => void): void {
         this.emitCallback = callback;
     }
@@ -77,7 +70,6 @@ export class CurrentGamesService {
         return true;
     }
 
-    // Player
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
 
@@ -114,7 +106,6 @@ export class CurrentGamesService {
         } else {
             game.players.splice(playerIndex, 1);
         }
-
         return true;
     }
 
@@ -157,8 +148,7 @@ export class CurrentGamesService {
         if (result.moved) {
             this.handleVirtualPlayerFlagPickup(roomId, vp);
             this.broadcastService?.emitDebugMove(roomId, {
-                playerId: vp.id,
-                targetPos: vp.position,
+                playerId: vp.id, targetPos: vp.position,
             });
         }
 
@@ -206,11 +196,7 @@ export class CurrentGamesService {
 
         if (!result.startedCombat || !result.attackerId || !result.defenderId) return false;
 
-        this.combatGatewayService?.handleVirtualPlayerStartCombat(
-            roomId,
-            result.attackerId,
-            result.defenderId,
-        );
+        this.combatGatewayService?.handleVirtualPlayerStartCombat(roomId, result.attackerId, result.defenderId);
 
         return true;
     }
@@ -237,11 +223,7 @@ export class CurrentGamesService {
             tile.mapObject = MapObjectType.None;
             vp.hasFlag = true;
 
-            const payload: UpdateFlagPayload = {
-                playerId: vp.id,
-                flagStatus: true,
-                position: vp.position,
-            };
+            const payload: UpdateFlagPayload = { playerId: vp.id, flagStatus: true, position: vp.position };
 
             this.broadcastService?.emitUpdateFlag(roomId, payload);
         }
@@ -324,7 +306,6 @@ export class CurrentGamesService {
         return true;
     }
 
-    // Movement & Action
     movePlayer(roomId: string, playerId: string, direction: string): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game || game.activeCombat) return false;
@@ -338,8 +319,7 @@ export class CurrentGamesService {
         const newPosition = addPositions(player.position, directionVector);
         if (!isValidTile(game._game.tiles, newPosition)) return false;
 
-        const movementCost =
-            TILE_MOVEMENT_COST[game._game.tiles[newPosition.y][newPosition.x].tileType];
+        const movementCost = TILE_MOVEMENT_COST[game._game.tiles[newPosition.y][newPosition.x].tileType];
 
         if (player.movementPoints < movementCost) return false;
 
@@ -352,11 +332,7 @@ export class CurrentGamesService {
             if (tile.mapObject === MapObjectType.Flag) {
                 tile.mapObject = MapObjectType.None;
 
-                const payload: UpdateFlagPayload = {
-                    playerId: player.id,
-                    flagStatus: true,
-                    position: newPosition,
-                };
+                const payload: UpdateFlagPayload = { playerId: player.id, flagStatus: true, position: newPosition };
 
                 this.handleUpdateFlag(roomId, payload);
                 this.broadcastService.emitUpdateFlag(roomId, payload);
@@ -366,8 +342,7 @@ export class CurrentGamesService {
 
             if (
                 tile.mapObject === MapObjectType.SpawnPoint &&
-                equalPositions(game.spawnPoints?.get(player.id), newPosition) &&
-                player.hasFlag
+                equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag
             ) {
                 this.broadcastService.emitGameOver(roomId, player.id);
             }
@@ -450,17 +425,13 @@ export class CurrentGamesService {
         giveShrineBuff(game._game, player, payload);
 
         if (isTileDoor(tile)) {
-            tile.tileType =
-                tile.tileType === TileType.CloseDoor
-                    ? TileType.OpenDoor
-                    : TileType.CloseDoor;
+            tile.tileType = tile.tileType === TileType.CloseDoor ? TileType.OpenDoor : TileType.CloseDoor;
         }
 
         player.actionsLeft--;
         return true;
     }
 
-    // Combat
     startCombat(roomId: string, attackerId: string, defenderId: string): boolean {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;

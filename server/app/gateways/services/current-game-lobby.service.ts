@@ -246,15 +246,29 @@ export class CurrentGameLobbyService {
         this.broadcastService.emitUnavailableAvatars(roomId, avatars);
     }
 
-    private emitGameOverIfAllButOnePlayerLeft(game:
-        { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined, roomId: string): void {
+    private emitGameOverIfAllButOnePlayerLeft(
+        game: { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined,
+        roomId: string,
+    ): void {
         if (!game || game.currentPhase === undefined || game._game?.gameMode !== GameMode.Classic) {
             return;
         }
 
-        const remainingPlayers = this.currentGamesService.getPlayersToGame(roomId).filter((player) => !player.hasAbandoned);
-        if (remainingPlayers.length <= 1) {
-            this.currentGamesService.gameOver(roomId, { winnerId: null, gameDurationSeconds: 0, endedByAbandon: true });
+        const remainingPlayers = this.currentGamesService
+            .getPlayersToGame(roomId)
+            .filter((player) => !player.hasAbandoned);
+
+        if (remainingPlayers.length === 1) {
+            this.currentGamesService.gameOver(roomId, {
+                winnerId: remainingPlayers[0].id,
+                gameDurationSeconds: 0,
+                endedByAbandon: true,
+            });
+        } else if (remainingPlayers.length === 0) {
+            this.currentGamesService.gameOver(roomId, {
+                gameDurationSeconds: 0,
+                endedByAbandon: true,
+            });
         }
     }
 }
