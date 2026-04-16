@@ -8,14 +8,10 @@ import { generateUUID, isStringValid } from '@app/utils/validation';
 import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-const BASE_HP = 6;
-const BASE_SPEED = 6;
-const BASE_ATTACK = 4;
-const BASE_DEFENSE = 4;
-const NUMBER_OF_AVATARS = 12;
-const HALF_RANDOM = 0.5;
-const MESSAGE_SHOW_TIME = 1000;
-const CHARACTER_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
+import {
+  BASE_ATTACK, BASE_DEFENSE, BASE_HP, BASE_SPEED, CHARACTER_PAGE_AVATARS,
+  CHARACTER_PAGE_REFRESH_FLAG, CHARACTER_STAT_DESCRIPTIONS, HALF_RANDOM, MESSAGE_SHOW_TIME, PIRATE_NAMES,
+} from './character-page.constants';
 
 @Component({
   selector: 'app-character-page',
@@ -24,7 +20,6 @@ const CHARACTER_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
   imports: [ReactiveFormsModule],
 })
 export class CharacterPageComponent implements OnInit, OnDestroy {
-
   constructor(
     private router: Router,
     private socketService: SocketClientService,
@@ -33,7 +28,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
   characterName = new FormControl('');
   avatar = new FormControl<string | null>(null);
-
   bonusTarget = new FormControl<BonusTarget | null>(null);
   d6Target = new FormControl<DiceTarget | null>(null);
 
@@ -48,70 +42,12 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
 
   showInvalidFormMessage = false;
   showInvalidNameMessage = false;
+  isSubmitting = false;
 
   unavailableAvatars: string[] = [];
-
-  statDescriptions: Record<StatKey, string> = {
-    [StatKey.Hp]: 'Points de vie. À 0, ton personnage est vaincu.',
-    [StatKey.Speed]: 'Détermine qui agit en premier et aide à esquiver les coups.',
-    [StatKey.Attack]: 'Ta force offensive. En combat, tu lances le dé assigné à Attaque.',
-    [StatKey.Defense]: 'Ta résistance. En combat, tu lances le dé assigné à Défense.',
-  };
-
-  pirateNames: string[] = [
-    'Barbe-Noire',
-    'Anne la Rouge',
-    'Jack le Borgne',
-    'Capitaine Flint',
-    "Mary l'Écarlate",
-    "Le Crochet d'Argent",
-    'Barbe-de-Fer',
-    'Samuel Tempête',
-    'Ragnar le Cruel',
-    'Isabella la Furie',
-    "Morgan l'Ombre",
-    'Le Loup des Mers',
-    'Edward le Sanguinaire',
-    'Nina Vents-Noirs',
-    'Capitaine Corbeau',
-    'Le Kraken Fou',
-    'Hector Brise-Lames',
-    'Bartholomew le Rusé',
-    'La Veuve Noire',
-    'Jonas Trois-Doigts',
-    'Pedro Lame-Rapide',
-    'Viktor Barbe-Blanche',
-    'Le Requin Rouge',
-    'Thomas Coupe-Gorge',
-    "Elena l'Ouragan",
-    'Capitaine Mistral',
-    'Le Fantôme des Flots',
-    'Ivan le Marteau',
-    "Sofia Dents-d'Or",
-    'Le Serpent de Mer',
-    'William Long-Sabre',
-    'Carmen Feu-Vert',
-    'Le Balafré',
-    'Nathaniel Brume',
-    'La Tigresse des Îles',
-    'Marco Tempête-de-Sable',
-    'Le Chacal Noir',
-    'Rosa Poignard',
-    'Capitaine Tonnerre',
-    'Le Corsaire Écarlate',
-    'Boris Coupe-Ancre',
-    'Luna Vague-Sombre',
-    'Le Vautour des Mers',
-    "Gabriel Croc-d'Acier",
-    'Mila Brise-Os',
-    'Le Baron des Flots',
-    'Élias Vent-du-Nord',
-  ];
-
-  avatars: string[] = Array.from(
-    { length: NUMBER_OF_AVATARS },
-    (_, i) => `assets/avatars/avatar-${i + 1}.png`,
-  );
+  statDescriptions: Record<StatKey, string> = CHARACTER_STAT_DESCRIPTIONS;
+  pirateNames: string[] = PIRATE_NAMES;
+  avatars: string[] = CHARACTER_PAGE_AVATARS;
 
   private readonly onUnavailableAvatars = (avatars: string[]) => {
     this.unavailableAvatars = avatars;
@@ -166,7 +102,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     lines.push(
       chosen
         ? 'Son regard vaut une menace, et sa lame parle plus vite que les canons.'
-        : 'Choisis un visage… et la mer te reconnaîtra.',
+        : 'Choisis un visage¦ et la mer te reconnaitra.',
     );
 
     return lines.join('\n');
@@ -193,27 +129,13 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.d6Target.setValue(target);
   }
 
-  private updateStatsHpSpeed(): void {
-    const target = this.bonusTarget.value;
-    const nextHp = BASE_HP + (target === BonusTarget.Hp ? 2 : 0);
-    const nextSpeed = BASE_SPEED + (target === BonusTarget.Speed ? 2 : 0);
-
-    this.hp.setValue(nextHp);
-    this.speed.setValue(nextSpeed);
-  }
-
   randomizeStats(): void {
-    this.characterName.setValue(
-      this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)],
-    );
+    this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
 
-    const availableAvatars = this.avatars.filter(
-      (avatar) => !this.isAvatarUnavailable(avatar),
-    );
+    const availableAvatars = this.avatars.filter((avatar) => !this.isAvatarUnavailable(avatar));
 
     if (availableAvatars.length > 0) {
-      const randomAvatar =
-        availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+      const randomAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
       this.avatar.setValue(randomAvatar);
 
       if (this.gameService.getSelectedJoinRoomId()) {
@@ -230,34 +152,20 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   }
 
   submitCharacter(): void {
-    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget.value || !this.d6Target.value) {
-      this.showInvalidFormMessage = true;
-      setTimeout(() => {
-        this.showInvalidFormMessage = false;
-      }, MESSAGE_SHOW_TIME);
+    if (this.isSubmitting || !this.isCharacterFormValid()) {
       return;
     }
 
-    if (!isStringValid(this.characterName.value)) {
-      this.showInvalidNameMessage = true;
-      setTimeout(() => {
-        this.showInvalidNameMessage = false;
-      }, MESSAGE_SHOW_TIME);
-      return;
-    }
-
+    this.isSubmitting = true;
+    const characterName = this.characterName.value ?? '';
+    const avatar = this.avatar.value ?? '';
     const d6 = this.d6Target.value;
-    let d4target: DiceTarget | null = null;
-    if (d6 === DiceTarget.Attack) {
-      d4target = DiceTarget.Defense;
-    } else if (d6 === DiceTarget.Defense) {
-      d4target = DiceTarget.Attack;
-    }
-
+    const d4target =
+      d6 === DiceTarget.Attack ? DiceTarget.Defense : d6 === DiceTarget.Defense ? DiceTarget.Attack : null;
     const player: Player = {
       id: '',
-      name: this.characterName.value,
-      imageUrl: this.avatar.value,
+      name: characterName,
+      imageUrl: avatar,
       position: { x: 0, y: 0 },
       speed: this.speed.value ?? BASE_SPEED,
       hp: this.hp.value ?? BASE_HP,
@@ -282,21 +190,13 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       visitedTiles: [],
     };
 
-    const tryJoinCurrentGame = () => {
-      if (!selectedJoinRoomId) {
-        return;
-      }
-      this.socketService.joinRoom(selectedJoinRoomId);
-      this.socketService.send(GatewayEvents.AddPlayerToCurrentGame, player);
-    };
-
     if (!this.socketService.isSocketAlive()) {
       this.socketService.connect();
     }
 
     const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
     const selectedHostGame = this.gameService.getSelectedHostGame();
-
+    const tryJoinCurrentGame = () => this.tryJoinCurrentGame(selectedJoinRoomId, player);
     const onJoinCurrentGameResult = (result: { success: boolean }) => {
       this.socketService.off(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
 
@@ -324,39 +224,30 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.socketService.off(GatewayEvents.PlayerId, onPlayerId);
       player.id = p.id;
       this.gameService.setClientPlayer(player);
-
       this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
 
-      // rejoindre une partie existante
       if (selectedJoinRoomId) {
         tryJoinCurrentGame();
         return;
       }
 
-      // créer une partie
-      if (selectedHostGame) {
-        player.isOrganizer = true;
-        const roomId = generateUUID();
-        this.gameService.setSelectedJoinRoomId(roomId);
-
-        this.socketService.joinRoom(roomId);
-
-        this.socketService.send(
-          GatewayEvents.CreateGame,
-          {
-            gameDbId: selectedHostGame._id,
-            gameId: roomId,
-          },
-          () => {
-            this.socketService.send(GatewayEvents.AddPlayerToCurrentGame, player);
-          },
-        );
+      if (selectedHostGame?._id) {
+        this.createHostedGame(selectedHostGame._id, player);
         return;
       }
+
       this.router.navigate([APP_ROUTES.waiting]);
     };
+
     this.socketService.on(GatewayEvents.PlayerId, onPlayerId);
     this.socketService.send(GatewayEvents.GetPlayerId, player);
+  }
+
+  goHome(): void {
+    this.router.navigate([APP_ROUTES.home]);
+  }
+  goBack(): void {
+    this.router.navigate([this.gameService.getSelectedHostGame() ? APP_ROUTES.gameCreation : APP_ROUTES.joinGame]);
   }
 
   isAvatarUnavailable(avatar: string): boolean {
@@ -367,12 +258,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     return this.unavailableAvatars.includes(avatar);
   }
 
-  private onBeforeUnload = (): void => {
-    sessionStorage.setItem(CHARACTER_PAGE_REFRESH_FLAG, '1');
-    this.gameService.clearSelectedJoinRoomId();
-    this.router.navigate([APP_ROUTES.home]);
-  };
-
   ngOnInit(): void {
     const wasRefreshing = sessionStorage.getItem(CHARACTER_PAGE_REFRESH_FLAG);
     if (wasRefreshing) {
@@ -380,8 +265,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       this.router.navigate([APP_ROUTES.home]);
       return;
     }
-    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
 
+    const selectedRoomId = this.gameService.getSelectedJoinRoomId();
     if (!selectedRoomId) {
       return;
     }
@@ -391,10 +276,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     this.socketService.joinRoom(selectedRoomId);
-    this.socketService.on<string[]>(
-      GatewayEvents.UnavailableAvatars,
-      this.onUnavailableAvatars,
-    );
+    this.socketService.on<string[]>(GatewayEvents.UnavailableAvatars, this.onUnavailableAvatars);
     this.socketService.send(GatewayEvents.GetUnavailableAvatars);
     window.addEventListener('beforeunload', this.onBeforeUnload);
   }
@@ -409,4 +291,57 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     this.socketService.off(GatewayEvents.UnavailableAvatars, this.onUnavailableAvatars);
     window.removeEventListener('beforeunload', this.onBeforeUnload);
   }
+
+  private updateStatsHpSpeed(): void {
+    const target = this.bonusTarget.value;
+    this.hp.setValue(BASE_HP + (target === BonusTarget.Hp ? 2 : 0));
+    this.speed.setValue(BASE_SPEED + (target === BonusTarget.Speed ? 2 : 0));
+  }
+
+  private tryJoinCurrentGame(selectedJoinRoomId: string | null, player: Player): void {
+    if (!selectedJoinRoomId) {
+      return;
+    }
+
+    this.socketService.joinRoom(selectedJoinRoomId);
+    this.socketService.send(GatewayEvents.AddPlayerToCurrentGame, player);
+  }
+
+  private createHostedGame(gameDbId: string, player: Player): void {
+    player.isOrganizer = true;
+    const roomId = generateUUID();
+    this.gameService.setSelectedJoinRoomId(roomId);
+    this.socketService.joinRoom(roomId);
+    this.socketService.send(
+      GatewayEvents.CreateGame,
+      { gameDbId, gameId: roomId },
+      () => this.socketService.send(GatewayEvents.AddPlayerToCurrentGame, player),
+    );
+  }
+
+  private isCharacterFormValid(): boolean {
+    if (!this.characterName.value || !this.avatar.value || !this.bonusTarget.value || !this.d6Target.value) {
+      this.showInvalidFormMessage = true;
+      setTimeout(() => {
+        this.showInvalidFormMessage = false;
+      }, MESSAGE_SHOW_TIME);
+      return false;
+    }
+
+    if (!isStringValid(this.characterName.value)) {
+      this.showInvalidNameMessage = true;
+      setTimeout(() => {
+        this.showInvalidNameMessage = false;
+      }, MESSAGE_SHOW_TIME);
+      return false;
+    }
+
+    return true;
+  }
+
+  private onBeforeUnload = (): void => {
+    sessionStorage.setItem(CHARACTER_PAGE_REFRESH_FLAG, '1');
+    this.gameService.clearSelectedJoinRoomId();
+    this.router.navigate([APP_ROUTES.home]);
+  };
 }

@@ -3,6 +3,7 @@
     <header class="hud__header">
       <h1 class="title">Création de personnage</h1>
       <p class="subtitle">Choisis ton visage, ajuste tes attributs… et hisse les voiles.</p>
+      <button type="button" class="btn btn--random action_edge" (click)="goHome()">Accueil</button>     
     </header>
 
     <main class="layout-3">
@@ -108,24 +109,28 @@
 
           <div class="stat-value">
             {{ attack.value }}
-            <span
-              class="die-badge"
-              [class.die-badge--d6]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D6"
-              [class.die-badge--d4]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D4"
-              [class.die-badge--none]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.None"
-            >
-              {{ getDieLabel(diceTargetEnum.Attack) }}
-            </span>
           </div>
 
-          <button
-            type="button"
-            class="btn btn--brass btn--toggle"
-            [class.selected]="d6Target.value === diceTargetEnum.Attack"
-            (click)="toggleDiceBonus(diceTargetEnum.Attack)"
-          >
-            D6
-          </button>
+          <div class="dice-toggle">
+            <button
+              type="button"
+              class="btn btn--brass btn--toggle dice-toggle__btn"
+              [class.selected]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D4"
+              [class.shrunk]="getDieFor(diceTargetEnum.Attack) !== dieKindEnum.D4"
+              (click)="toggleDiceBonus(diceTargetEnum.Defense)"
+            >
+              D4
+            </button>
+            <button
+              type="button"
+              class="btn btn--brass btn--toggle dice-toggle__btn"
+              [class.selected]="getDieFor(diceTargetEnum.Attack) === dieKindEnum.D6"
+              [class.shrunk]="getDieFor(diceTargetEnum.Attack) !== dieKindEnum.D6"
+              (click)="toggleDiceBonus(diceTargetEnum.Attack)"
+            >
+              D6
+            </button>
+          </div>
         </div>
 
         <div class="stat">
@@ -139,24 +144,28 @@
 
           <div class="stat-value">
             {{ defense.value }}
-            <span
-              class="die-badge"
-              [class.die-badge--d6]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D6"
-              [class.die-badge--d4]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D4"
-              [class.die-badge--none]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.None"
-            >
-              {{ getDieLabel(diceTargetEnum.Defense) }}
-            </span>
           </div>
 
-          <button
-            type="button"
-            class="btn btn--brass btn--toggle"
-            [class.selected]="d6Target.value === diceTargetEnum.Defense"
-            (click)="toggleDiceBonus(diceTargetEnum.Defense)"
-          >
-            D6
-          </button>
+          <div class="dice-toggle">
+            <button
+              type="button"
+              class="btn btn--brass btn--toggle dice-toggle__btn"
+              [class.selected]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D4"
+              [class.shrunk]="getDieFor(diceTargetEnum.Defense) !== dieKindEnum.D4"
+              (click)="toggleDiceBonus(diceTargetEnum.Attack)"
+            >
+              D4
+            </button>
+            <button
+              type="button"
+              class="btn btn--brass btn--toggle dice-toggle__btn"
+              [class.selected]="getDieFor(diceTargetEnum.Defense) === dieKindEnum.D6"
+              [class.shrunk]="getDieFor(diceTargetEnum.Defense) !== dieKindEnum.D6"
+              (click)="toggleDiceBonus(diceTargetEnum.Defense)"
+            >
+              D6
+            </button>
+          </div>
         </div>
 
       </section>
@@ -201,16 +210,20 @@
       <button type="button" class="btn btn--random" (click)="randomizeStats()">
         🎲 Générer un personnage aléatoire
       </button>
-
       <button
         type="button"
         class="btn btn--primary"
+        [disabled]="isSubmitting"
         (click)="submitCharacter()"
       >
         ⚓ Créer personnage
       </button>
 
     </footer>
+
+
+
+
     @if (showInvalidFormMessage) {
       <div class="popup-overlay">
         <div class="popup">
