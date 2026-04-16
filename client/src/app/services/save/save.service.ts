@@ -4,10 +4,10 @@ import { ToolService } from '@app/services/tool/tool.service';
 import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@app/utils/validation';
 import { Game } from '@common/interfaces/game.interface';
 import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { createBooleanGrid, getNeighborPositions, isShrine, isTileDoor, isValidTile, Position } from '@common/utils/map.utils';
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { createBooleanGrid, isValidTile, getNeighborPositions, Position, isTileDoor, isShrine } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -44,7 +44,8 @@ export class SaveService {
         }
 
         if (!this.areDoorBetweenWalls(game.tiles)) {
-            errors.push('Les portes doivent avoir des murs entre eux.');
+            errors.push('Une porte doit être entourée de deux murs et deux tuiles de terrain,' +
+                ' disposés verticalement ou horizontalement.');
         }
 
         if (!this.hasCorrectFlags()) {

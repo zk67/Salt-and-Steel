@@ -50,6 +50,10 @@ export class CurrentGameBroadcastService {
         }
     }
 
+    emitCombatRoundDetailsToRoom(roomId: string, payload: CombatRoundDetails): void {
+        this.server?.to(roomId).emit(GatewayEvents.HandleCombatRound, payload);
+    }
+
     emitGameOver(roomId: string, payload: GameOverPayload | string): void {
         this.server?.to(roomId).emit(GatewayEvents.GameOver, payload);
     }

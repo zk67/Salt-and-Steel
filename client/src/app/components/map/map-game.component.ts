@@ -190,7 +190,13 @@ export class MapGameComponent implements OnInit, OnDestroy {
             this.contextMenu.set({
                 posX: event.clientX,
                 posY: event.clientY,
-                content: { type: ContextMenuType.PlayerToolTip, name: player.name, imageUrl: player.imageUrl },
+                content: {
+                    type: ContextMenuType.PlayerToolTip,
+                    name: player.name,
+                    imageUrl: player.imageUrl,
+                    tileType: tile ? this.tileType[tile.tileType] : undefined,
+                    cost: tile ? TILE_MOVEMENT_COST[tile.tileType] : undefined,
+                },
             });
         } else if (tile) {
             this.contextMenu.set({

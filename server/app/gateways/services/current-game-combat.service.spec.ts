@@ -45,7 +45,7 @@ describe('CurrentGameCombatService', () => {
         } as unknown as jest.Mocked<CurrentGamesService>;
         broadcastService = {
             emitCombatStarted: jest.fn(),
-            emitCombatRoundDetails: jest.fn(),
+            emitCombatRoundDetailsToRoom: jest.fn(),
             emitBattleWon: jest.fn(),
             emitGameOver: jest.fn(),
         } as unknown as jest.Mocked<CurrentGameBroadcastService>;
@@ -199,7 +199,7 @@ describe('CurrentGameCombatService', () => {
         );
         jest.advanceTimersByTime(ROUND_TIMEOUT_MS);
         expect(currentGamesService.resolveCombatRoundOnTimeout).toHaveBeenCalledWith('room-1');
-        expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalled();
+        expect(broadcastService.emitCombatRoundDetailsToRoom).toHaveBeenCalled();
     });
 
     it('annule le timeout du round courant puis programme immédiatement celui du round suivant', () => {
@@ -227,7 +227,7 @@ describe('CurrentGameCombatService', () => {
             posture: CombatPosture.Offensive,
         });
         // Le round courant est résolu immédiatement
-        expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalledTimes(1);
+        expect(broadcastService.emitCombatRoundDetailsToRoom).toHaveBeenCalledTimes(1);
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledTimes(2);
         // L'ancien timeout aurait expiré ici s'il n'avait pas été annulé
         jest.advanceTimersByTime(TIME_UNTIL_ORIGINAL_TIMEOUT_WOULD_FIRE_MS);
@@ -252,7 +252,7 @@ describe('CurrentGameCombatService', () => {
             posture: CombatPosture.Offensive,
         });
 
-        expect(broadcastService.emitCombatRoundDetails).toHaveBeenCalledWith(['a1', 'd1'], result.combatRound);
+        expect(broadcastService.emitCombatRoundDetailsToRoom).toHaveBeenCalledWith('room-1', result.combatRound);
         expect(broadcastService.emitCombatStarted).toHaveBeenCalledWith(
             'room-1',
             { attackerId: 'a1', defenderId: 'd1', roundTimeSeconds: ROUND_TIME_SECONDS },

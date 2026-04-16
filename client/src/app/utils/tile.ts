@@ -5,12 +5,12 @@ export function createTile(type: TileType = TileType.Basic, mapObject: MapObject
 }
 
 export function getShrineImageUrl(type: MapObjectType, index: number): string {
-    const baseUrl = 'assets/shrines/';
+    const baseUrl = '../../../assets/objects/';
     switch (type) {
         case MapObjectType.HealingShrine:
-            return `${baseUrl}healing_shrine_${index}.png`;
+            return `${baseUrl}heal${index}.png`;
         case MapObjectType.CombatShrine:
-            return `${baseUrl}combat_shrine_${index}.png`;
+            return `${baseUrl}combat${index}.png`;
         default:
             return '';
     }

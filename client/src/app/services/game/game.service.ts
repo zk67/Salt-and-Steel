@@ -179,6 +179,11 @@ export class GameService {
 
         this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
+        const player = this.players().find(p => p.id === payload.playerId);
+        if (player) {
+            this.mapService.setMapObject(player.position, 0);
+        }
+
         if (!this.activeCombat()) {
             this.turnService.refreshActionTiles();
         }
@@ -187,8 +192,8 @@ export class GameService {
             return;
         }
 
-        const remainingPlayers = this.players().filter((player) => !player.hasAbandoned);
-        const teams = new Set(remainingPlayers.map((player) => player.isRedTeam));
+        const remainingPlayers = this.players().filter((remainingPlayer) => !remainingPlayer.hasAbandoned);
+        const teams = new Set(remainingPlayers.map((remainingPlayer) => remainingPlayer.isRedTeam));
 
         if (teams.size === 1 && remainingPlayers.length > 0) {
             const isRedTeam = remainingPlayers[0].isRedTeam;
