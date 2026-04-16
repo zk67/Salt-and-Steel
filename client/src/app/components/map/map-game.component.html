@@ -11,6 +11,7 @@
                         [attr.data-tile-type]="tileType[tile.tileType]"
                         [attr.data-object]="mapObjectType[tile.mapObject]"
                         [attr.data-movable]="getMovableTilesAt({ x: colIndex, y: rowIndex }) && isClientPlayerTurn() ? 'true' : null"
+                        [attr.data-shrine-disabled]="isShrineDeactivated({ x: colIndex, y: rowIndex }) ? 'true' : null"
                         [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                         [style.--shrine-image]="mapService.getShrineBackgroundImage({ x: colIndex, y: rowIndex })"
                         [style.--tile-image]="getTileImage(tile.tileType)">
@@ -19,6 +20,9 @@
                                 <img class="player-avatar"
                                     [src]="player.imageUrl"
                                     [alt]="player.name" />
+                                @if (hasCombatShrineBuff(player)) {
+                                    <span class="player-buff">ATQ & DEF +{{ getCombatShrineBuffAmount(player) }}</span>
+                                }
                             }
                         }
                     </div>
@@ -27,23 +31,23 @@
         }
     </div>
 
-    @if (contextMenu()) {
+    @if (this.contextMenu()) {
         <div class="context-overlay" (mousedown)="contextMenu.set(null)"></div>
         <div class="context-menu" [style.left.px]="contextMenu()!.posX" [style.top.px]="contextMenu()!.posY">
-            @if (contextMenu()!.content.type === 'player') {
+            @if (this.contextMenu()!.content.type === 'player') {
                 <div style="display: flex; justify-content: center;">
                     <img [src]="contextMenu()!.content.imageUrl" [alt]="contextMenu()!.content.name" class="context-menu__avatar" />
                 </div>
-                <span class="context-menu__name">{{ contextMenu()!.content.name }}</span>
-                @if (contextMenu()!.content.tileType) {
-                    <p><strong>Tuile :</strong> {{ contextMenu()!.content.tileType }}</p>
+                <span class="context-menu__name">{{ this.contextMenu()!.content.name }}</span>
+                @if (this.contextMenu()!.content.tileType) {
+                    <p><strong>Tuile :</strong> {{ this.contextMenu()!.content.tileType }}</p>
                 }
-                @if (contextMenu()!.content.cost !== undefined) {
-                    <p><strong>Coût :</strong> {{ contextMenu()!.content.cost }} PM</p>
+                @if (this.contextMenu()!.content.cost !== undefined) {
+                    <p><strong>Coût :</strong> {{ this.contextMenu()!.content.cost }} PM</p>
                 }
             } @else {
-                <p><strong>Tuile :</strong> {{ contextMenu()!.content.tileType }}</p>
-                <p><strong>Coût :</strong> {{ contextMenu()!.content.cost }} PM</p>
+                <p><strong>Tuile :</strong> {{ this.contextMenu()!.content.tileType }}</p>
+                <p><strong>Coût :</strong> {{ this.contextMenu()!.content.cost }} PM</p>
             }
         </div>
     }

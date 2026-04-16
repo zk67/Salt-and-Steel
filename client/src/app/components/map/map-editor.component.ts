@@ -9,6 +9,12 @@ import { GameMode, MapObjectType, MapSize, TileType } from '@common/interfaces/m
 import { Position } from '@common/utils/map.utils';
 import { firstValueFrom } from 'rxjs';
 
+export enum MouseButton {
+    None = 0,
+    Middle = 1,
+    Right = 2,
+}
+
 @Component({
     selector: 'app-map-editor',
     templateUrl: './map-editor.component.html',
@@ -43,7 +49,7 @@ export class MapEditorComponent implements OnInit {
         event.preventDefault();
     }
 
-    private mouseButton = 0;
+    private mouseButton = MouseButton.None;
 
     constructor(
         private route: ActivatedRoute,
@@ -62,7 +68,7 @@ export class MapEditorComponent implements OnInit {
     onMouseEnter(event: MouseEvent, position: Position): void {
         if (this.isMouseDown) {
             const isObjectTool = this.toolService.getToolType() === ToolType.Object;
-            const canDrag = !isObjectTool || this.mouseButton === 2;
+            const canDrag = !isObjectTool || this.mouseButton === MouseButton.Right;
 
             if (canDrag) {
                 this.toolService.useTool(this.mouseButton, event.shiftKey, position);

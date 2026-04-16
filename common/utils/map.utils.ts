@@ -125,7 +125,7 @@ export function getActionableTiles(game: Game, player: Player, players: Player[]
         }
 
         const targetPlayer = getPlayerAt(players, newPosition);
-        if (targetPlayer && player.isRedTeam === targetPlayer.isRedTeam) {
+        if (targetPlayer && player.isRedTeam === targetPlayer.isRedTeam && game.gameMode === GameMode.CTF) {
             result[newPosition.y][newPosition.x] = canPassFlag(game.gameMode, player, targetPlayer);
         }
     });

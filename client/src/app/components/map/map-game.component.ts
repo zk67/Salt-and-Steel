@@ -39,6 +39,12 @@ interface ContextMenuContent {
     cost?: number;
 }
 
+interface ContextMenuState {
+    posX: number;
+    posY: number;
+    content: ContextMenuContent;
+}
+
 @Component({
     selector: 'app-map-game',
     templateUrl: './map-game.component.html',
@@ -63,7 +69,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     tileType = TileType;
     mapObjectType = MapObjectType;
 
-    contextMenu = signal<{ posX: number; posY: number; content: ContextMenuContent } | null>(null);
+    contextMenu = signal<ContextMenuState | null>(null);
     isClientPlayerTurn = computed(() => this.gameService.isClientPlayerTurn());
 
     private handlePlayerMovePayloadBound = this.handlePlayerMovePayload.bind(this);
@@ -166,6 +172,24 @@ export class MapGameComponent implements OnInit, OnDestroy {
 
     getTileImage(tileType: TileType): string {
         return `url(../../../assets/tiles/${this.tileAssetNameByType[tileType]}.png)`;
+    }
+
+    hasCombatShrineBuff(player: Player): boolean {
+        return (player.shrineBuffs?.bonusAmount ?? 0) >= 1 && (player.shrineBuffs?.turnsLeft ?? 0) > 0;
+    }
+
+    getCombatShrineBuffAmount(player: Player): number {
+        return player.shrineBuffs?.bonusAmount ?? 0;
+    }
+
+    isShrineDeactivated(position: Position): boolean {
+        const tile = this.mapService.getTile(position);
+        if (!tile || (tile.mapObject !== MapObjectType.HealingShrine && tile.mapObject !== MapObjectType.CombatShrine)) {
+            return false;
+        }
+
+        const shrine = this.mapService.getShrineAtPosition(position);
+        return shrine ? shrine.turnLeftDeactivated > 0 : false;
     }
 
     private handleMovePlayer(player: Player, direction: string): void {
@@ -317,13 +341,11 @@ export class MapGameComponent implements OnInit, OnDestroy {
             playerId: player.id,
             targetPos: position,
         };
-
         this.socketService.send(GatewayEvents.DebugMove, debugPayload);
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
         this.mapGameStateService.handleClickDebugPayload(payload);
-
         if (this.gameService.clientPlayer()?.id === payload.playerId && !this.gameService.canPlayerStillDoAction()) {
             this.socketService.send(GatewayEvents.EndTurnEarly);
         }
@@ -350,10 +372,8 @@ export class MapGameComponent implements OnInit, OnDestroy {
             }
             const isRedTeam = winner.isRedTeam;
             const winningTeamPlayers = this.gameService.getPlayers().filter(p => p.isRedTeam === isRedTeam);
-
             const teamName = isRedTeam ? 'Rouge' : 'Bleu';
             const playerNames = winningTeamPlayers.map(p => p.name).join(', ');
-
             this.popupService.open(`Partie terminée ! L'équipe ${teamName} gagne ! Joueurs : ${playerNames}`);
         }
 

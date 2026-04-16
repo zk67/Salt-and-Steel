@@ -10,8 +10,8 @@ import { Player } from '@common/interfaces/player.interface';
     templateUrl: './player-info.component.html',
     styleUrl: './player-info.component.scss',
     imports: [CommonModule],
-
 })
+
 export class PlayerInfoComponent {
     readonly diceTarget = DiceTarget;
 

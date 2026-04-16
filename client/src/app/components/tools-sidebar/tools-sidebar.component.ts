@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PopupComponent } from '@app/components/popup/popup.component';
 import { Router } from '@angular/router';
+import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
@@ -97,7 +97,7 @@ export class ToolsSidebarComponent implements OnInit {
         try {
             if (game._id) {
                 const updatedGame = await firstValueFrom(this.saveService.getGame(game._id));
-                if (updatedGame === undefined || updatedGame === null) {
+                if (!updatedGame) {
                     await firstValueFrom(this.saveService.addGame(game));
                     this.popupMessage = `Jeu "${game.name}" créé avec succès !`;
                     this.showPopup = true;

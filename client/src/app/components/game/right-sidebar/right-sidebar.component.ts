@@ -1,6 +1,6 @@
 import { Component, computed, effect, HostListener, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Button } from '@app/components/game/game-button/game-button.component';
+import { Button, ButtonVariant } from '@app/components/game/game-button/game-button.component';
 import { PlayerInfoComponent } from '@app/components/game/player-info/player-info.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
@@ -19,6 +19,7 @@ export class RightSidebarComponent {
     private readonly hasSubmittedCombatPosture = signal(false);
     private lastActiveCombat: ActiveCombatPayload | null = null;
     private lastCombatRound: CombatRoundDetails | null = null;
+    readonly buttonVariant = ButtonVariant;
 
     currentTime = computed(() => this.timerService.time());
     isYourTurn = computed(() => this.gameService.activePlayer()?.id === this.gameService.clientPlayer()?.id && !this.gameService.isWaitTurn());
