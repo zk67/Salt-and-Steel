@@ -11,6 +11,7 @@
                         [attr.data-tile-type]="tileType[tile.tileType]"
                         [attr.data-object]="mapObjectType[tile.mapObject]"
                         [attr.data-movable]="getMovableTilesAt({ x: colIndex, y: rowIndex }) && isClientPlayerTurn() ? 'true' : null"
+                        [attr.data-shrine-disabled]="isShrineDeactivated({ x: colIndex, y: rowIndex }) ? 'true' : null"
                         [attr.data-tooltip]="tile.mapObject !== mapObjectType.None ? getObjectDescription(tile.mapObject) : null"
                         [style.--shrine-image]="mapService.getShrineBackgroundImage({ x: colIndex, y: rowIndex })"
                         [style.--tile-image]="getTileImage(tile.tileType)">
@@ -19,6 +20,9 @@
                                 <img class="player-avatar"
                                     [src]="player.imageUrl"
                                     [alt]="player.name" />
+                                @if (hasCombatShrineBuff(player)) {
+                                    <span class="player-buff">ATQ & DEF +{{ getCombatShrineBuffAmount(player) }}</span>
+                                }
                             }
                         }
                     </div>
