@@ -30,5 +30,7 @@ export class GamePageComponent implements OnInit {
             this.router.navigate([APP_ROUTES.home]);
             return;
         }
+
+        window.history.pushState(null, '', window.location.href);
     }
 }
