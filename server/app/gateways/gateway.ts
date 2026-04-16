@@ -1,3 +1,4 @@
+import { ChatService } from '@app/gateways/services/chat.service';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -13,6 +14,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
         private readonly logger: Logger,
         private readonly currentGamesService: CurrentGamesService,
+        private readonly chatService: ChatService,
     ) {}
 
     broadcastUpdate(): void {
@@ -24,6 +26,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     handleDisconnect(socket: Socket): void {
+        this.chatService.removePlayer(socket.id);
+
         const updatedRooms = this.currentGamesService.clearSelectedAvatarByClientId(socket.id);
         for (const room of updatedRooms) {
             const avatars = this.currentGamesService.getUnavailableAvatars(room);
@@ -49,6 +53,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage(GatewayEvents.GetPlayerId)
     getPlayerId(client: Socket, player: Player): void {
         player.id = client.id;
+        this.chatService.setPlayerName(client.id, player.name);
         client.emit(GatewayEvents.PlayerId, player);
     }
 }

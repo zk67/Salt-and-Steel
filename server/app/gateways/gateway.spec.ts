@@ -1,3 +1,4 @@
+import { ChatService } from '@app/gateways/services/chat.service';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Logger } from '@nestjs/common';
@@ -49,6 +50,12 @@ describe('Gateway', () => {
         getUnavailableAvatars: jest.fn().mockReturnValue([]),
     };
 
+    const mockChatService = {
+        setPlayerName: jest.fn(),
+        getPlayerName: jest.fn(),
+        removePlayer: jest.fn(),
+    };
+
     const mockSocket = {
         id: 'socket-id',
         broadcast: { emit: jest.fn() },
@@ -63,7 +70,12 @@ describe('Gateway', () => {
         (mockServer.to as jest.Mock).mockReturnValue(roomEmitter);
 
         const module: TestingModule = await Test.createTestingModule({
-            providers: [Gateway, { provide: Logger, useValue: mockLogger }, { provide: CurrentGamesService, useValue: mockCurrentGamesService }],
+            providers: [
+                Gateway,
+                { provide: Logger, useValue: mockLogger },
+                { provide: CurrentGamesService, useValue: mockCurrentGamesService },
+                { provide: ChatService, useValue: mockChatService },
+            ],
         }).compile();
 
         gateway = module.get<Gateway>(Gateway);
@@ -91,6 +103,7 @@ describe('Gateway', () => {
 
         gateway.handleDisconnect(mockSocket);
 
+        expect(mockChatService.removePlayer).toHaveBeenCalledWith('socket-id');
         expect(mockCurrentGamesService.clearSelectedAvatarByClientId).toHaveBeenCalledWith('socket-id');
         expect(mockServer.to).toHaveBeenCalledWith('room-1');
         expect(mockServer.to).toHaveBeenCalledWith('room-2');
