@@ -1,6 +1,7 @@
 import {
     ActionOnTilePayload, ActiveCombatPayload, BattleWonPayload, CombatRoundDetails, DebugMovePayload, GameInfoPayload,
-    GameOverPayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
+    GameOverPayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload,
+} from '@common/interfaces/game.interface';
 import { GameMode } from '@common/interfaces/map.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';

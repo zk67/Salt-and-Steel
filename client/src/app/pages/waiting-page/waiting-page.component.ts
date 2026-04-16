@@ -140,6 +140,12 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             return;
         }
 
+        const currentPlayer = this.gameService.clientPlayer();
+        if (currentPlayer) {
+            this.currentPlayerName = currentPlayer.name;
+            this.currentPlayerId = currentPlayer.id;
+        }
+
         window.addEventListener('beforeunload', this.onBeforeUnload);
         window.addEventListener('unload', this.onBeforeUnload);
         window.addEventListener('pagehide', this.onBeforeUnload);
@@ -150,19 +156,10 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         });
 
         this.socketService.on(GatewayEvents.PlayersToGame, this.onPlayersToGame);
-        this.socketService.on(GatewayEvents.Message, this.addMessage);
         this.socketService.on(GatewayEvents.GameClosed, this.onGameClosed);
         this.socketService.on(GatewayEvents.GameStartInfo, this.onGameStarted);
         this.socketService.on(GatewayEvents.Kicked, this.onKicked);
         this.socketService.send(GatewayEvents.GetPlayersToGame);
-
-        this.gameService.clearChatMessages();
-        this.messages = this.gameService.getChatMessages();
-        const currentPlayer = this.gameService.clientPlayer();
-        if (currentPlayer) {
-            this.currentPlayerName = currentPlayer.name;
-            this.currentPlayerId = currentPlayer.id;
-        }
     }
 
     ngOnDestroy(): void {
@@ -172,7 +169,6 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         window.removeEventListener('popstate', this.onPopState);
 
         this.socketService.off(GatewayEvents.PlayersToGame, this.onPlayersToGame);
-        this.socketService.off(GatewayEvents.Message, this.addMessage);
         this.socketService.off(GatewayEvents.GameClosed, this.onGameClosed);
         this.socketService.off(GatewayEvents.GameStartInfo, this.onGameStarted);
         this.socketService.off(GatewayEvents.Kicked, this.onKicked);
@@ -182,18 +178,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         if (!this.isOrganizer) {
             return;
         }
-
         this.socketService.send(GatewayEvents.KickPlayer, { playerId });
-    }
-
-
-    private addMessage = (msg: ChatMessage) => {
-        this.messages = [...this.messages, msg];
-        this.gameService.setChatMessages(this.messages);
-    };
-
-    sendMessage(content: string): void {
-        this.socketService.sendMessage(content);
     }
 };
 

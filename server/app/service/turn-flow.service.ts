@@ -41,6 +41,8 @@ export class TurnFlowService {
         }
 
         currentPlayer.movementPoints = currentPlayer.speed;
+        currentPlayer.actionsLeft = 1;
+
         this.emitTurnUpdate(game, emitTurnUpdate);
         timer.startTurnTimer(game.roomId, TIMER_TURN);
     }
