@@ -39,6 +39,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
             this.router.navigate([APP_ROUTES.home]);
             return;
         }
+        window.history.pushState(null, '', window.location.href);
         this.messages = this.gameService.getChatMessages();
         this.currentPlayerName = currentPlayer.name;
         this.currentPlayerId = currentPlayer.id;

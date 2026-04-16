@@ -49,6 +49,11 @@ export class RightSidebarComponent {
         this.socketService.send(GatewayEvents.Surrender);
     }
 
+    @HostListener('window:popstate')
+    onPopState(): void {
+        this.onSurrender();
+    }
+
     onAction = () => {
         if (this.isCombatActive()) {
             return;
