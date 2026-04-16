@@ -28,6 +28,10 @@ export function getObjectDescription(objectType: number): string {
             return 'Point de départ des joueurs';
         case MapObjectType.Flag:
             return 'Drapeau - Objectif à capturer';
+        case MapObjectType.HealingShrine:
+            return 'Sanctuaire de soin - Rend des points de vie';
+        case MapObjectType.CombatShrine:
+            return 'Sanctuaire de combat - Offre un bonus en combat';
         default:
             return '';
     }

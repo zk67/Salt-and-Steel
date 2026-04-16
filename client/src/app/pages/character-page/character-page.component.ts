@@ -157,6 +157,68 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     }
 
     this.isSubmitting = true;
+    const player = this.createPlayerFromForm();
+
+    if (!this.socketService.isSocketAlive()) {
+      this.socketService.connect();
+    }
+
+    const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
+    const selectedHostGame = this.gameService.getSelectedHostGame();
+    const tryJoinCurrentGame = () => this.tryJoinCurrentGame(selectedJoinRoomId, player);
+    const onJoinCurrentGameResult = this.createOnJoinCurrentGameResult(tryJoinCurrentGame);
+
+    const onPlayerId = (p: Player) => {
+      this.socketService.off(GatewayEvents.PlayerId, onPlayerId);
+      player.id = p.id;
+      this.gameService.setClientPlayer(player);
+      this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
+
+      if (selectedJoinRoomId) {
+        tryJoinCurrentGame();
+        return;
+      }
+
+      if (selectedHostGame?._id) {
+        this.createHostedGame(selectedHostGame._id, player);
+        return;
+      }
+
+      this.router.navigate([APP_ROUTES.waiting]);
+    };
+
+    this.socketService.on(GatewayEvents.PlayerId, onPlayerId);
+    this.socketService.send(GatewayEvents.GetPlayerId, player);
+  }
+
+  private createOnJoinCurrentGameResult(tryJoinCurrentGame: () => void): (result: { success: boolean }) => void {
+    const onJoinCurrentGameResult = (result: { success: boolean }) => {
+      this.socketService.off(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
+
+      if (result.success) {
+        this.gameService.clearSelectedHostGame();
+        this.router.navigate([APP_ROUTES.waiting]);
+        return;
+      }
+
+      const retry = window.confirm(
+        "La partie n'est plus disponible. Appuyez sur OK pour réessayer ou Annuler pour retourner à l'accueil.",
+      );
+
+      if (!retry) {
+        this.gameService.clearSelectedJoinRoomId();
+        this.router.navigate([APP_ROUTES.home]);
+        return;
+      }
+
+      this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
+      tryJoinCurrentGame();
+    };
+
+    return onJoinCurrentGameResult;
+  }
+
+  private createPlayerFromForm(): Player {
     const characterName = this.characterName.value ?? '';
     const avatar = this.avatar.value ?? '';
     const d6 = this.d6Target.value;
@@ -189,58 +251,7 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
       },
       visitedTiles: [],
     };
-
-    if (!this.socketService.isSocketAlive()) {
-      this.socketService.connect();
-    }
-
-    const selectedJoinRoomId = this.gameService.getSelectedJoinRoomId();
-    const selectedHostGame = this.gameService.getSelectedHostGame();
-    const tryJoinCurrentGame = () => this.tryJoinCurrentGame(selectedJoinRoomId, player);
-    const onJoinCurrentGameResult = (result: { success: boolean }) => {
-      this.socketService.off(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
-
-      if (result.success) {
-        this.gameService.clearSelectedHostGame();
-        this.router.navigate([APP_ROUTES.waiting]);
-        return;
-      }
-
-      const retry = window.confirm(
-        "La partie n'est plus disponible. Appuyez sur OK pour réessayer ou Annuler pour retourner à l'accueil.",
-      );
-
-      if (!retry) {
-        this.gameService.clearSelectedJoinRoomId();
-        this.router.navigate([APP_ROUTES.home]);
-        return;
-      }
-
-      this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
-      tryJoinCurrentGame();
-    };
-
-    const onPlayerId = (p: Player) => {
-      this.socketService.off(GatewayEvents.PlayerId, onPlayerId);
-      player.id = p.id;
-      this.gameService.setClientPlayer(player);
-      this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
-
-      if (selectedJoinRoomId) {
-        tryJoinCurrentGame();
-        return;
-      }
-
-      if (selectedHostGame?._id) {
-        this.createHostedGame(selectedHostGame._id, player);
-        return;
-      }
-
-      this.router.navigate([APP_ROUTES.waiting]);
-    };
-
-    this.socketService.on(GatewayEvents.PlayerId, onPlayerId);
-    this.socketService.send(GatewayEvents.GetPlayerId, player);
+    return player;
   }
 
   goHome(): void {
