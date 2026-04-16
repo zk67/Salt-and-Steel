@@ -5,7 +5,7 @@ export function createTile(type: TileType = TileType.Basic, mapObject: MapObject
 }
 
 export function getShrineImageUrl(type: MapObjectType, index: number): string {
-    const baseUrl = '../../../assets/objects/';
+    const baseUrl = 'assets/objects/';
     switch (type) {
         case MapObjectType.HealingShrine:
             return `${baseUrl}heal${index}.png`;
