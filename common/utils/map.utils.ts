@@ -1,5 +1,5 @@
 import { Game } from '@common/interfaces/game.interface';
-import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
 export type Position = { x: number; y: number };
@@ -124,9 +124,9 @@ export function getActionableTiles(game: Game, player: Player, players: Player[]
             result[newPosition.y][newPosition.x] = true;
         }
 
-        if (player.isRedTeam !== undefined && getPlayerAt(players, newPosition)
-            && !player.hasFlag && player.isRedTeam === getPlayerAt(players, newPosition)?.isRedTeam) {
-            result[newPosition.y][newPosition.x] = false;
+        const targetPlayer = getPlayerAt(players, newPosition);
+        if (targetPlayer && player.isRedTeam === targetPlayer.isRedTeam) {
+            result[newPosition.y][newPosition.x] = canPassFlag(game.gameMode, player, targetPlayer);
         }
     });
 
@@ -183,4 +183,12 @@ export function isTileDoor(tile: TileData): boolean {
 
 export function isShrine(objectType: MapObjectType): boolean {
     return objectType === MapObjectType.HealingShrine || objectType === MapObjectType.CombatShrine;
+}
+
+export function canPassFlag(gameMode: GameMode, clientPlayer: Player, player: Player): boolean {
+    return (
+        gameMode === GameMode.CTF &&
+        ((clientPlayer.hasFlag ?? false) || (player.hasFlag ?? false)) &&
+        (clientPlayer.isRedTeam ?? false) === (player.isRedTeam ?? false)
+    );
 }

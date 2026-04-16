@@ -2,7 +2,7 @@ import { GamesService } from '@app/database/game/services/game.service';
 import { JoinableGameSummary } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { ToggleDebugPayload } from '@common/interfaces/game.interface';
+import { ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
@@ -98,6 +98,17 @@ export class CurrentGameLobbyService {
 
         const player = game.players.find((currentPlayer) => currentPlayer.id === client.id);
         const isHost = !!player?.isOrganizer;
+
+        if (player?.hasFlag) {
+            const payload: UpdateFlagPayload = {
+                playerId: player.id,
+                flagStatus: false,
+                position: player.position,
+            };
+
+            this.currentGamesService.handleUpdateFlag(room, payload);
+            this.broadcastService.emitUpdateFlag(room, payload);
+        }
 
         if (isHost && game.currentPhase === undefined) {
             this.logger.log(`Host ${client.id} is leaving: closing room ${room}`);

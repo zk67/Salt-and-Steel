@@ -7,7 +7,7 @@ import { MapGameStateService } from '@app/services/game/map-game-state.service';
 import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { canPassFlag, getObjectDescription } from '@app/utils/game-utils';
+import { getObjectDescription } from '@app/utils/game-utils';
 import {
     ActionOnTilePayload, DebugMovePayload, GameOverPayload, MovePlayerPayload,
     PassFlagPayload, ToggleDebugPayload,
@@ -16,7 +16,7 @@ import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interf
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { GatewayEvents } from '@common/types/gateway.events';
-import { addPositions, equalPositions, isTileDoor, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, canPassFlag, equalPositions, isTileDoor, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 const PLAYER_DIRECTION: Record<string, string> = {
     w: 'up', a: 'left', s: 'down', d: 'right',
@@ -102,16 +102,32 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<ActionOnTilePayload>(GatewayEvents.ActionOnTile, this.handleActionOnTileBound);
         this.socketService.on<PassFlagPayload>(GatewayEvents.PassFlagRequest, (payload) => {
             if (this.gameService.clientPlayer()?.id === payload.targetId) {
+
                 const initiator = this.gameService.players().find(p => p.id === payload.initiatorId);
 
+                const message = payload.isPass
+                    ? `Le joueur ${initiator?.name} veut vous donner le drapeau. Acceptez-vous ?`
+                    : `Le joueur ${initiator?.name} veut que vous lui donniez le drapeau. Acceptez-vous ?`;
 
                 this.popupService.openChoice({
-                    title: 'Passer le drapeau',
-                    message: `Le joueur ${initiator?.name} veut vous donner le drapeau. Acceptez-vous ?`,
+                    title: 'Interaction drapeau',
+                    message,
                     firstOptionLabel: 'Accepter',
                     secondOptionLabel: 'Refuser',
-                    onFirstOption: () => this.socketService.send(GatewayEvents.PassFlagResponse, { ...payload, accepted: true }),
-                    onSecondOption: () => this.socketService.send(GatewayEvents.PassFlagResponse, { ...payload, accepted: false }),
+
+                    onFirstOption: () => {
+                        this.socketService.send(GatewayEvents.PassFlagResponse, {
+                            ...payload,
+                            accepted: true,
+                        });
+                    },
+
+                    onSecondOption: () => {
+                        this.socketService.send(GatewayEvents.PassFlagResponse, {
+                            ...payload,
+                            accepted: false,
+                        });
+                    },
                 });
             }
         });
@@ -201,6 +217,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
                 const payload: PassFlagPayload = {
                     initiatorId: clientPlayer.id,
                     targetId: player.id,
+                    isPass: clientPlayer.hasFlag ? true : false,
                 };
 
                 this.socketService.send(GatewayEvents.PassFlagRequest, payload);

@@ -123,9 +123,15 @@ export class GamePlayerStateService {
         const target = this.players().find(p => p.id === payload.targetId);
         if (!initiator || !target) return;
 
-        this.updatePlayer(initiator.id, { hasFlag: false });
-        this.updatePlayer(target.id, { hasFlag: true });
-        this.flagHolderIds.add(target.id);
+        if (payload.isPass) {
+            this.updatePlayer(initiator.id, { hasFlag: false });
+            this.updatePlayer(target.id, { hasFlag: true });
+            this.flagHolderIds.add(target.id);
+        } else {
+            this.updatePlayer(initiator.id, { hasFlag: true });
+            this.updatePlayer(target.id, { hasFlag: false });
+            this.flagHolderIds.add(initiator.id);
+        }
 
         if (initiator.actionsLeft > 0) {
             this.updatePlayer(initiator.id, { actionsLeft: initiator.actionsLeft - 1 });
@@ -140,7 +146,6 @@ export class GamePlayerStateService {
             this.flagHolderIds.add(player.id);
         }
         this.mapService.setMapObject(payload.position, payload.flagStatus ? MapObjectType.None : MapObjectType.Flag);
-
     }
 
     getFlagHolderCount(): number {

@@ -146,6 +146,7 @@ export interface UpdateFlagPayload {
 export interface PassFlagPayload {
     initiatorId: string;
     targetId: string;
+    isPass: boolean;
 }
 
 export interface UpdateFlagPayload {

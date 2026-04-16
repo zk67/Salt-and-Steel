@@ -5,6 +5,7 @@ import {
     ActiveCombatPayload,
     DebugMovePayload,
     GameInfoPayload,
+    GameOverPayload,
     MovePlayerPayload,
     PassFlagPayload,
     SubmitCombatPosturePayload,
@@ -12,6 +13,8 @@ import {
     UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { MapObjectType } from '@common/interfaces/map.interface';
+import { Player } from '@common/interfaces/player.interface';
+import { equalPositions } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
@@ -180,10 +183,28 @@ export class CurrentGamePlayService {
 
         if (!initiator || !target) return false;
 
-        initiator.hasFlag = false;
-        target.hasFlag = true;
+        let receiver: Player;
 
-        this.logger.log(`Flag passed: ${initiator.name} -> ${target.name}`);
+        if (payload.isPass) {
+            initiator.hasFlag = false;
+            target.hasFlag = true;
+            receiver = target;
+
+            this.logger.log(`Flag given: ${initiator.name} -> ${target.name}`);
+        } else {
+            target.hasFlag = false;
+            initiator.hasFlag = true;
+            receiver = initiator;
+
+            this.logger.log(`Flag requested: ${target.name} -> ${initiator.name}`);
+        }
+
+        const spawnPoint = game.spawnPoints?.get(receiver.id);
+
+        if (spawnPoint && equalPositions(receiver.position, spawnPoint) && receiver.hasFlag) {
+            const gameOverPayload: GameOverPayload = { winnerId: receiver.id, gameDurationSeconds: 0 };
+            this.currentGamesService.gameOver(getRoomIdFromSocket(client), gameOverPayload);
+        }
 
         return true;
     }
@@ -202,13 +223,9 @@ export class CurrentGamePlayService {
             return false;
         }
 
-        this.logger.warn('flagStatus: ' + payload.flagStatus);
-
         player.hasFlag = payload.flagStatus;
         player.position = payload.position;
         game._game.tiles[payload.position.y][payload.position.x].mapObject = payload.flagStatus ? MapObjectType.None : MapObjectType.Flag;
-
-        this.logger.warn(`Player ${player.name} flag status is ${payload.flagStatus} and updated hasFlag to ${player.hasFlag} in room ${room}`);
 
         return true;
     }
