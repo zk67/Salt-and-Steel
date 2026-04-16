@@ -123,8 +123,8 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const opponent = isAttacker ? payload.defender : payload.attacker;
 
-    const damageSelfVsOpponent = self.attack.total - opponent.defense.total;
-    const damageOpponentVsSelf = opponent.attack.total - self.defense.total;
+    const damageSelfVsOpponent = Math.abs(self.attack.total - opponent.defense.total);
+    const damageOpponentVsSelf = Math.abs(opponent.attack.total - self.defense.total);
 
     const messageDiffSelf: ChatMessage = {
       author: 'System',
@@ -240,6 +240,28 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private combatEnded = (payload: BattleWonPayload) => {
     const players = this.gameService.getPlayers();
+
+    if (payload.doubleKo) {
+      const attackerId = payload.attackerRespawn?.playerId;
+      const defenderId = payload.defenderRespawn?.playerId;
+
+      const attacker = players.find((p) => p.id === attackerId);
+      const defender = players.find((p) => p.id === defenderId);
+
+      const attackerName = attacker?.name;
+      const defenderName = defender?.name;
+
+      const doubleKoMessage: ChatMessage = {
+        author: 'System',
+        content: `Le combat est terminé par un double KO entre ${attackerName} et ${defenderName} !`,
+        time: this.formatTime(),
+      };
+
+      this.addMessage(doubleKoMessage);
+      this._currentCombatKey = '';
+      return;
+    }
+
     const winner = players.find((player) => player.id === payload.winnerId);
     const loser = players.find((player) => player.id === payload.loserId);
 
