@@ -1,7 +1,8 @@
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { CurrentGameCombatService } from '@app/gateways/services/current-game-combat.service';
 import { PlayableGame } from '@app/interface/game.interface';
-import { CurrentGamesService, SubmitCombatPostureResult } from '@app/service/current-games.service';
+import { SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
+import { CurrentGamesService } from '@app/service/current-games.service';
 import { CombatPosture, CombatRoundDetails, Game } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
 import type { Socket } from 'socket.io';
@@ -42,6 +43,7 @@ describe('CurrentGameCombatService', () => {
             gameOver: jest.fn(),
             nextPlayerTurn: jest.fn(),
             resumeTurnTimer: jest.fn(),
+            submitVirtualPlayerPostures: jest.fn(),
         } as unknown as jest.Mocked<CurrentGamesService>;
         broadcastService = {
             emitCombatStarted: jest.fn(),
@@ -112,6 +114,7 @@ describe('CurrentGameCombatService', () => {
                         totalDamageDealt: 0,
                         percentageOfTileVisited: 0,
                     },
+                    isVirtual: false,
                 },
                 {
                     id: 'd1',
@@ -137,6 +140,7 @@ describe('CurrentGameCombatService', () => {
                         totalDamageDealt: 0,
                         percentageOfTileVisited: 0,
                     },
+                    isVirtual: false,
                 },
             ],
             activeCombat: {

@@ -12,6 +12,8 @@
                         {{ player.name }}
                         @if (player.isOrganizer) { <span class="organizer-badge">★</span> }
                         @if (player.hasFlag) { <span class="flag-indicator">🏴‍☠️</span> }
+                        @if (player.isVirtual) { <span class="virtual-indicator">(virtuel)</span> 
+    }
                     </span>
                     @if (!isCTF()) {
                         <span class="player-stat">Combats gagnés: {{ player.stats.victoryPoints }}</span>

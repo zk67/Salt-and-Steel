@@ -4,6 +4,7 @@ import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { Logger } from '@nestjs/common';
+import { getVPTurnDelayMs } from '@common/types/player.constants';
 
 export class TurnFlowService {
     constructor(private readonly emitShrineBuffOff: (roomId: string, playerId: string) => void) {}
@@ -16,10 +17,12 @@ export class TurnFlowService {
         this.emitTurnUpdate(game, emitTurnUpdate);
     }
 
-    changeTurn(game: PlayableGame, timer: Timer, emitTurnUpdate: (roomId: string, payload: NewTurnPayload) => void): void {
+    changeTurn(game: PlayableGame, timer: Timer, emitTurnUpdate: (roomId: string, payload: NewTurnPayload) => void,
+     executeVirtualPlayerTurn: (roomId: string, playerId: string) => void): void {
         if (!game.turnOrder) {
             return;
         }
+        
 
         if (game.currentPhase === TurnPhase.Turn) {
             this.nextPlayerTurn(game, timer, emitTurnUpdate);
@@ -45,6 +48,17 @@ export class TurnFlowService {
 
         this.emitTurnUpdate(game, emitTurnUpdate);
         timer.startTurnTimer(game.roomId, TIMER_TURN);
+
+        if (game.currentPhase !== TurnPhase.Turn) return;
+
+        Logger.log(`changeTurn: currentPlayerId=${currentPlayerId}, isVirtual=${currentPlayer?.isVirtual}`);
+
+        if (currentPlayer?.isVirtual) {
+            setTimeout(
+                () => executeVirtualPlayerTurn(game.roomId, currentPlayerId),
+                getVPTurnDelayMs(),
+            );
+        }
     }
 
     nextPlayerTurn(game: PlayableGame, timer: Timer, emitTurnUpdate: (roomId: string, payload: NewTurnPayload) => void): void {

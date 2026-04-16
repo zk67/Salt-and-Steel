@@ -180,5 +180,15 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
         }
         this.socketService.send(GatewayEvents.KickPlayer, { playerId });
     }
+
+    addVirtualPlayer(profile: string): void {
+        if (!this.isOrganizer) return;
+        this.socketService.send(GatewayEvents.AddVirtualPlayer, { profile });
+    }
+
+    removeVirtualPlayer(playerId: string): void {
+        if (!this.isOrganizer) return;
+        this.socketService.send(GatewayEvents.RemoveVirtualPlayer, { playerId });
+    }
 };
 

@@ -31,10 +31,15 @@
                         @if (player.isOrganizer) {
                             <span class="organizer-badge">(Organisateur)</span>
                         }
+                        @if (player.isVirtual) {
+                            <span class="virtual-badge">(Virtuel)</span>
+                        }
                     </p>
-                    @if (isOrganizer && !player.isOrganizer && player.id !== clientPlayerId) {
+                    @if (isOrganizer && player.isVirtual) {
+                        <button class="button small" (click)="removeVirtualPlayer(player.id)">Retirer</button>
+                    } @else if (isOrganizer && !player.isOrganizer && player.id !== clientPlayerId) {
                         <button class="button small" (click)="kickPlayer(player.id)">Exclure</button>
-                    }
+}
                 </div>
             }
 
@@ -44,6 +49,15 @@
                 </div>
             }
         </div>
+        @if (isOrganizer && playersSignal.length < 6) {
+        <div class="virtual-players">
+            <select #vpProfile>
+                <option value="aggressive">Agressif</option>
+                <option value="defensive">Défensif</option>
+            </select>
+            <button class="button small" (click)="addVirtualPlayer(vpProfile.value)">Ajouter un joueur virtuel</button>
+        </div>
+}
         <button class="button" (click)="startGame()" [disabled]="!isStartingGameValid()" title="Seul l'organisateur peut démarrer la partie et il faut au moins 2 joueurs">Commencer</button>
         <button class="button" (click)="goHome()">Retour</button>
     </div>

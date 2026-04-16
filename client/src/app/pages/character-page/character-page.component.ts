@@ -9,9 +9,12 @@ import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import {
-  BASE_ATTACK, BASE_DEFENSE, BASE_HP, BASE_SPEED, CHARACTER_PAGE_AVATARS,
-  CHARACTER_PAGE_REFRESH_FLAG, CHARACTER_STAT_DESCRIPTIONS, HALF_RANDOM, MESSAGE_SHOW_TIME, PIRATE_NAMES,
+  CHARACTER_PAGE_AVATARS,
+  CHARACTER_STAT_DESCRIPTIONS,
+  CHARACTER_PAGE_REFRESH_FLAG,
+  MESSAGE_SHOW_TIME,
 } from './character-page.constants';
+import { PIRATE_NAMES,BASE_ATTACK, BASE_DEFENSE, BASE_HP, BASE_SPEED, HALF_RANDOM } from '@common/types/player.constants';
 
 @Component({
   selector: 'app-character-page',
@@ -128,7 +131,6 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
   toggleDiceBonus(target: DiceTarget): void {
     this.d6Target.setValue(target);
   }
-
   randomizeStats(): void {
     this.characterName.setValue(this.pirateNames[Math.floor(Math.random() * this.pirateNames.length)]);
 
@@ -188,6 +190,8 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
         percentageOfTileVisited: 0,
       },
       visitedTiles: [],
+      isVirtual: false,
+      virtualProfile: undefined,
     };
 
     if (!this.socketService.isSocketAlive()) {

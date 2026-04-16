@@ -1,5 +1,5 @@
-import { DiceTarget } from '@common/enums/player.enums';
-import { Position } from "@common/utils/map.utils";
+import { DiceTarget } from '../enums/player.enums';
+import { Position } from "../utils/map.utils";
 
 export interface Player {
     id: string;
@@ -23,6 +23,8 @@ export interface Player {
     visitedTiles?: string[];
     isRedTeam?: boolean;
     hasFlag?: boolean;
+    isVirtual: boolean;
+    virtualProfile?: Profile;
 }
 
 export interface ShrineBuff {
@@ -36,4 +38,9 @@ export interface PlayerStats {
     totalLifeLost: number;
     totalDamageDealt: number;
     percentageOfTileVisited: number;
+}
+
+export enum Profile {
+    Aggressive = 'aggressive',
+    Defensive = 'defensive',
 }
