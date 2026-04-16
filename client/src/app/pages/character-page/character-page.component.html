@@ -3,6 +3,7 @@
     <header class="hud__header">
       <h1 class="title">Création de personnage</h1>
       <p class="subtitle">Choisis ton visage, ajuste tes attributs… et hisse les voiles.</p>
+      <button type="button" class="btn btn--random action_edge" (click)="goHome()">Accueil</button>     
     </header>
 
     <main class="layout-3">
@@ -206,7 +207,6 @@
     </main>
 
     <footer class="actions">
-      <button type="button" class="btn btn--random" (click)="goBack()">Retour</button>
       <button type="button" class="btn btn--random" (click)="randomizeStats()">
         🎲 Générer un personnage aléatoire
       </button>
@@ -218,9 +218,12 @@
       >
         ⚓ Créer personnage
       </button>
-      <button type="button" class="btn btn--random" (click)="goHome()">Accueil</button>
 
     </footer>
+
+
+
+
     @if (showInvalidFormMessage) {
       <div class="popup-overlay">
         <div class="popup">
