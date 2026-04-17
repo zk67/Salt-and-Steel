@@ -149,6 +149,17 @@ export class CurrentGameGateway implements OnGatewayInit, OnModuleInit {
 
     @SubscribeMessage(GatewayEvents.PassFlagRequest)
     handlePassFlagRequest(client: Socket, payload: PassFlagPayload): void {
+        const room = getRoomIdFromSocket(client);
+        const game = this.currentGamesService.getGameByRoomId(room);
+        const target = game?.players.find(player => player.id === payload.targetId);
+
+        if (target?.isVirtual && target.hasFlag) {
+            if (this.playService.handlePassFlag(client, payload)) {
+                this.broadcastService.emitHandlePassFlag(room, payload);
+            }
+            return;
+        }
+
         this.server.sockets.sockets.get(payload.targetId)?.emit(GatewayEvents.PassFlagRequest, payload);
     }
 
