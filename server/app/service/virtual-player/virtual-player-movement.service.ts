@@ -3,7 +3,7 @@ import { ActionOnTilePayload } from '@common/interfaces/game.interface';
 import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import {
-    addPositions, isTileDoor, isValidTile,
+    addPositions, isShrine, isValidTile,
     Position, TILE_MOVEMENT_COST,
 } from '@common/utils/map.utils';
 
@@ -49,7 +49,8 @@ export class VirtualPlayerMovementService {
                 const tile = tiles[next.y][next.x];
 
                 if (tile.tileType === TileType.Wall) continue;
-                if (tile.tileType === TileType.CloseDoor) continue;
+                if (tile.tileType === TileType.CloseDoor && vp.actionsLeft === 0) continue;
+                if(isShrine(tile.mapObject)) continue;
 
                 const isGoal = next.x === goal.x && next.y === goal.y;
 
@@ -148,9 +149,7 @@ export class VirtualPlayerMovementService {
 
             const tile = tiles[pos.y][pos.x];
             const isInteractable =
-                isTileDoor(tile) ||
-                tile.mapObject === MapObjectType.HealingShrine ||
-                tile.mapObject === MapObjectType.CombatShrine;
+                tile.tileType === TileType.CloseDoor || this.isShrineInteractable(pos, game);
 
             if (isInteractable) {
                 return { playerId: vp.id, position: pos, isDoubleOrNothing: false };
@@ -170,5 +169,15 @@ export class VirtualPlayerMovementService {
             }
         }
         return null;
+    }
+
+    isShrineInteractable(position: Position, game: PlayableGame): boolean {
+        const tile = game._game.tiles[position.y][position.x];
+        if(!isShrine(tile.mapObject)) return false;
+
+        const shrine = game._game.shrine?.find(s => s.position.some(p => p.x === position.x && p.y === position.y));
+        if(shrine.turnLeftDeactivated > 0) return false;
+
+        return true;
     }
 }
