@@ -123,14 +123,15 @@
 }
 
 app-journal-de-jeu {
-    flex: 0 0 auto;
-    max-height: 67vh;
+    flex: 1 1 auto;
+    max-height: none;
     min-height: 0;
 }
 
 .back-button {
-    margin-top: 8px;
+    margin-top: auto;
     align-self: flex-end;
+    flex-shrink: 0;
     padding: 8px 20px;
     background-color: #12121a;
     color: #a0c4f8;
