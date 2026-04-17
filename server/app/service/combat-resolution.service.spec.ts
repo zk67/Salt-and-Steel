@@ -333,4 +333,35 @@ describe('CombatResolutionService', () => {
         expect(result.payload.winnerId).toBe(attacker.id);
     });
 
+    it('detecte immediatement la fin du combat des quun joueur tombe a 0 PV', () => {
+        const attacker = createPlayer('a1', 'Attacker', { hp: 1 });
+        const defender = createPlayer('d1', 'Defender', { hp: 2 });
+
+        expect(service.isCombatFinished(attacker, defender)).toBe(false);
+
+        attacker.hp = 0;
+        expect(service.isCombatFinished(attacker, defender)).toBe(true);
+
+        attacker.hp = 1;
+        defender.hp = 0;
+        expect(service.isCombatFinished(attacker, defender)).toBe(true);
+    });
+
+    it('replace le perdant sur la case libre la plus proche si son spawn est occupe', () => {
+        const game = createGame();
+        const attacker = game.players[0];
+        const defender = game.players[1];
+        const blockingPlayer = createPlayer('b1', 'Blocker', { position: { ...DEFENDER_SPAWN_POSITION } });
+
+        game.players.push(blockingPlayer);
+        defender.hp = 0;
+
+        const payload: BattleWonPayload = service.createBattlePayload(makeRound(0, LETHAL_DAMAGE));
+        const result = service.finalizeCombatAfterRound(game, payload, attacker, defender);
+
+        expect(result.payload.loserPos).toEqual({ x: 3, y: 2 });
+        expect(defender.position).toEqual({ x: 3, y: 2 });
+        expect(defender.position).not.toEqual(DEFENDER_SPAWN_POSITION);
+    });
+
 });
