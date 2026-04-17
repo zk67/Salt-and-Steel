@@ -49,7 +49,7 @@ export class CurrentGameLobbyService {
 
         const game = this.currentGamesService.getGameByRoomId(room);
         if (game) {
-            client.emit(GatewayEvents.GetGameModes, { gameMode: game._game.gameMode });
+            client.emit(GatewayEvents.GetGameModes, { gameMode: game._game.gameMode, maxPlayers: game._game.maxPlayers });
         }
     }
 
@@ -80,7 +80,7 @@ export class CurrentGameLobbyService {
         }
 
         if (game) {
-            this.broadcastService.emitGameMode(room, game._game.gameMode);
+            this.broadcastService.emitGameMode(room, game._game.gameMode, game._game.maxPlayers);
         }
 
         this.logger.log(`Player ${player.name} added to current game in room ${room}`);

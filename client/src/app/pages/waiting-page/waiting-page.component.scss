@@ -41,7 +41,7 @@
 
 .slots {
     display: grid;
-    grid-template-rows: repeat(6, 1fr);
+    grid-template-rows: repeat(var(--slots-count, 6), 1fr);
     gap: 10px;
     flex: 1;
     min-height: 0;

@@ -17,7 +17,7 @@
                 <p>Redirection vers l'accueil...</p>
             </app-popup>
         }
-        <div class="slots">
+        <div class="slots" [style.--slots-count]="maxPlayers()">
             @for (player of playersSignal(); track player.id; let i = $index) {
                 <div class="player-slot" [class.organizer]="player.isOrganizer">
                     <img
@@ -43,13 +43,13 @@
                 </div>
             }
 
-            @for (i of [].constructor(6 - playersSignal().length); track $index) {
+            @for (slot of emptySlots(); track $index) {
                 <div class="player-slot empty">
                     <p>Emplacement vide</p>
                 </div>
             }
         </div>
-        @if (isOrganizer && playersSignal.length < 6) {
+        @if (canAddVirtualPlayer()) {
         <div class="virtual-players">
             <select #vpProfile>
                 <option value="aggressive">Agressif</option>
