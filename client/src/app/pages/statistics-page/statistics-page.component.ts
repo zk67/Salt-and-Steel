@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ChatComponent } from '@app/components/chat/chat.component';
 import { JournalDeJeuComponent } from '@app/components/journal-de-jeu/journal-de-jeu.component';
+import { APP_ROUTES } from '@app/const/routes-const';
 import { GameSessionService } from '@app/services/game/game-session.service';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
@@ -12,6 +13,7 @@ import { GatewayEvents } from '@common/types/gateway.events';
 
 const PERCENTAGE = 100;
 const TIME_CONVERSION = 60;
+const STATISTICS_PAGE_REFRESH_FLAG = 'statistics-page-refresh-flag';
 
 @Component({
     selector: 'app-statistics-page',
@@ -32,11 +34,21 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     sortColumn: PlayerColumn = PlayerColumn.Victory;
     sortDirection: 'asc' | 'desc' = 'desc';
 
-    constructor(private gameService: GameService,
+    constructor(
+        private router: Router,
+        private gameService: GameService,
         private socketService: SocketClientService,
-        private gameSessionService: GameSessionService) {}
+        private gameSessionService: GameSessionService,
+    ) {}
 
     ngOnInit(): void {
+        const wasRefreshing = sessionStorage.getItem(STATISTICS_PAGE_REFRESH_FLAG);
+        if (wasRefreshing) {
+            sessionStorage.removeItem(STATISTICS_PAGE_REFRESH_FLAG);
+            this.router.navigate([APP_ROUTES.home]);
+            return;
+        }
+
         this.messages = this.gameService.getChatMessages();
         this.socketService.on(GatewayEvents.Message, this.addMessage);
         const currentPlayer = this.gameService.clientPlayer();
@@ -50,6 +62,12 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.socketService.off(GatewayEvents.Message, this.addMessage);
+    }
+
+    @HostListener('window:beforeunload')
+    onBeforeUnload(): void {
+        sessionStorage.setItem(STATISTICS_PAGE_REFRESH_FLAG, '1');
+        this.router.navigate([APP_ROUTES.home]);
     }
 
     sortPlayers(): void {
