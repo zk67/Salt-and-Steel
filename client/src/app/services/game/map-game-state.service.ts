@@ -51,7 +51,11 @@ export class MapGameStateService {
         const player = this.gameService.players().find((p) => p.id === payload.playerId);
         if (!player) return;
 
-        const updatedPlayer: Player = { ...player, position: payload.targetPos };
+        const updatedPlayer: Player = {
+            ...player,
+            position: payload.targetPos,
+            visitedTiles: this.getUpdatedVisitedTiles(player, payload.targetPos),
+        };
         this.gameService.updatePlayer(player.id, updatedPlayer);
         this.refreshActionTilesForClient(updatedPlayer);
     }
@@ -151,19 +155,24 @@ export class MapGameStateService {
     }
 
     private createMovedPlayer(player: Player, newPosition: { x: number; y: number }, tileType: TileType): Player {
-        const visitedTiles: string[] = Array.isArray(player.visitedTiles) ? [...player.visitedTiles] : [];
-        const newTile = `${newPosition.x},${newPosition.y}`;
-        if (!visitedTiles.includes(newTile)) {
-            visitedTiles.push(newTile);
-        }
-
         return {
             ...player,
             position: newPosition,
             movementPoints: player.movementPoints - TILE_MOVEMENT_COST[tileType],
-            visitedTiles,
+            visitedTiles: this.getUpdatedVisitedTiles(player, newPosition),
             hasFlag: player.hasFlag,
         };
+    }
+
+    private getUpdatedVisitedTiles(player: Player, position: { x: number; y: number }): string[] {
+        const visitedTiles: string[] = Array.isArray(player.visitedTiles) ? [...player.visitedTiles] : [];
+        const tileKey = `${position.x},${position.y}`;
+
+        if (!visitedTiles.includes(tileKey)) {
+            visitedTiles.push(tileKey);
+        }
+
+        return visitedTiles;
     }
 
     private refreshActionTilesForClient(updatedPlayer: Player): void {
