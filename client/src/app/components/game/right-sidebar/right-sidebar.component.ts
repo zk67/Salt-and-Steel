@@ -6,7 +6,8 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { TimeService } from '@app/services/game/time.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { ActiveCombatPayload, CombatPosture, CombatRoundDetails, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { ActiveCombatPayload, CombatRoundDetails, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 @Component({

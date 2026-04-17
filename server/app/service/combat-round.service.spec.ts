@@ -1,9 +1,16 @@
 import { PlayableGame } from '@app/interface/game.interface';
 import { CombatRoundService } from '@app/service/combat-round.service';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import { DiceTarget } from '@common/enums/player.enums';
-import { CombatPosture, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { Game } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
+import {
+    DEFAULT_TILE, EXPECTED_TOTAL_WITH_ICE_PENALTY,
+    EXPECTED_TOTAL_WITH_POSTURE_BONUS, EXPECTED_TOTAL_WITH_SINGLE_DIE,
+    ICE_TILE_PENALTY, MAX_D4_ROLL, MAX_D6_ROLL, RANDOM_VALUE_FOR_D4_ROLL_OF_4,
+    RANDOM_VALUE_FOR_D6_ROLL_OF_4,
+} from '@common/types/tests.constant';
 
 /**
  * Description:
@@ -17,16 +24,6 @@ import { Player } from '@common/interfaces/player.interface';
  * 2) On contrôle les tirages aléatoires pour valider les calculs d'attaque,
  * de défense, de dégâts ainsi que les cas particuliers gérés par le service.
  */
-const DEFAULT_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
-const MAX_D6_ROLL = 6;
-const MAX_D4_ROLL = 4;
-const ICE_TILE_PENALTY = -2;
-const EXPECTED_TOTAL_WITH_ICE_PENALTY = 3;
-const EXPECTED_TOTAL_WITH_SINGLE_DIE = 5;
-const EXPECTED_TOTAL_WITH_POSTURE_BONUS = 10;
-const RANDOM_VALUE_FOR_D6_ROLL_OF_4 = 0.5;
-const RANDOM_VALUE_FOR_D4_ROLL_OF_4 = 0.75;
-
 
 describe('CombatRoundService', () => {
     let service: CombatRoundService;

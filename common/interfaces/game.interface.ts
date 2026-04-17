@@ -1,4 +1,6 @@
-import { GameMode, Shrine, TileData } from '@common/interfaces/map.interface';
+import { CombatPosture, TurnPhase } from '@common/enums/game.enums';
+import { GameMode } from '@common/enums/map.enums';
+import { Shrine, TileData } from '@common/interfaces/map.interface';
 import { Position } from '@common/utils/map.utils';
 import { Player } from './player.interface';
 
@@ -64,11 +66,6 @@ export interface GameOverPayload {
     gameDurationSeconds: number;
 }
 
-export enum TurnPhase {
-    WaitTurn,
-    Turn,
-}
-
 export interface DebugMovePayload {
     playerId: string;
     targetPos: Position;
@@ -103,11 +100,6 @@ export interface ActiveCombatPayload {
     roundTimeSeconds: number;
 }
 
-export enum CombatPosture {
-    None = 'none',
-    Offensive = 'offensive',
-    Defensive = 'defensive',
-}
 export interface SubmitCombatPosturePayload {
     posture: CombatPosture;
 }

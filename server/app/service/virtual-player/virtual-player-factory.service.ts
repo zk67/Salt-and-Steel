@@ -7,12 +7,12 @@ import {
 
 export class VirtualPlayerFactoryService {
     createVirtualPlayer(id: string, profile: Profile, existingPlayers: Player[]): Player {
-        const usedNames = new Set(existingPlayers.map(p => p.name));
-        const availableNames = PIRATE_NAMES.filter(n => !usedNames.has(n));
+        const usedNames = new Set(existingPlayers.map(player => player.name));
+        const availableNames = PIRATE_NAMES.filter(findName => !usedNames.has(findName));
         const name = availableNames[Math.floor(Math.random() * availableNames.length)];
-        const usedAvatars = new Set(existingPlayers.map(p => p.imageUrl));
+        const usedAvatars = new Set(existingPlayers.map(player => player.imageUrl));
         const allAvatars = Array.from({ length: NUMBER_OF_AVATARS }, (_, i) => `assets/avatars/avatar-${i + 1}.png`);
-        const availableAvatars = allAvatars.filter(a => !usedAvatars.has(a));
+        const availableAvatars = allAvatars.filter(avatar => !usedAvatars.has(avatar));
         const imageUrl = availableAvatars.length > 0
             ? availableAvatars[Math.floor(Math.random() * availableAvatars.length)]
             : allAvatars[0];

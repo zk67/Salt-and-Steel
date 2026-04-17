@@ -1,4 +1,5 @@
-import { GameMode, Shrine, TileData } from '@common/interfaces/map.interface';
+import { Shrine, TileData } from '@common/interfaces/map.interface';
+import { GameMode } from '@common/enums/map.enums';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 

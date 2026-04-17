@@ -5,15 +5,12 @@ import { PopupComponent } from '@app/components/popup/popup.component';
 import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GameMode } from '@common/enums/map.enums';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
+import { TIME_BEFORE_NAVIGATE_HOME, TIME_BEFORE_NAVIGATING_HOME, WAITING_PAGE_REFRESH_FLAG, MAX_PLAYERS } from '@common/types/menu-page.constants';
 
-const TIME_BEFORE_NAVIGATE_HOME = 5000;
-const TIME_BEFORE_NAVIGATING_HOME = 10;
-const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
-const MAX_PLAYERS = 6;
 
 @Component({
     selector: 'app-waiting-page',

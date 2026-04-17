@@ -3,7 +3,7 @@ import { JoinableGameSummary } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
 import { ToggleDebugPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
-import { GameMode } from '@common/interfaces/map.interface';
+import { GameMode } from '@common/enums/map.enums';
 import { Player, Profile } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable, Logger } from '@nestjs/common';
@@ -110,7 +110,7 @@ export class CurrentGameLobbyService {
             this.broadcastService.emitUpdateFlag(room, payload);
         }
 
-        if (isHost && game.currentPhase === undefined) {
+        if (isHost && !game.currentPhase) {
             this.logger.log(`Host ${client.id} is leaving: closing room ${room}`);
             this.currentGamesService.removeGame(room);
             this.broadcastService.emitGameClosed(room);
@@ -205,7 +205,7 @@ export class CurrentGameLobbyService {
         if (!room) return;
         const game = this.currentGamesService.getGameByRoomId(room);
         if (!game) return;
-        const isOrganizer = game.players.find(p => p.id === client.id)?.isOrganizer;
+        const isOrganizer = game.players.find(findPlayer => findPlayer.id === client.id)?.isOrganizer;
         if (!isOrganizer) return;
 
         const profile = payload?.profile === Profile.Aggressive ? Profile.Aggressive : Profile.Defensive;
@@ -220,9 +220,9 @@ export class CurrentGameLobbyService {
         if (!room) return;
         const game = this.currentGamesService.getGameByRoomId(room);
         if (!game) return;
-        const isOrganizer = game.players.find(p => p.id === client.id)?.isOrganizer;
+        const isOrganizer = game.players.find(player => player.id === client.id)?.isOrganizer;
         if (!isOrganizer) return;
-        const virtualPlayer = game.players.find(p => p.isVirtual);
+        const virtualPlayer = game.players.find(player => player.isVirtual);
         if (!virtualPlayer) return;
         const removed = this.currentGamesService.getVirtualPlayerFlowService().removeVirtualPlayer(room, virtualPlayer.id);
         if (removed) {
@@ -246,10 +246,8 @@ export class CurrentGameLobbyService {
         this.broadcastService.emitUnavailableAvatars(roomId, avatars);
     }
 
-    private emitGameOverIfAllButOnePlayerLeft(
-        game: { currentPhase?: unknown; _game?: { gameMode?: GameMode } } | null | undefined,
-        roomId: string,
-    ): void {
+    private emitGameOverIfAllButOnePlayerLeft(game: { currentPhase?: unknown; _game?: 
+        { gameMode?: GameMode } } | null | undefined, roomId: string): void {
         if (!game || game.currentPhase === undefined || game._game?.gameMode !== GameMode.Classic) {
             return;
         }

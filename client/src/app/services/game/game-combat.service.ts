@@ -8,8 +8,7 @@ import { GatewayEvents } from '@common/types/gateway.events';
 import { movableTiles } from '@common/utils/map.utils';
 import { GamePlayerStateService } from './game-player-state.service';
 import { GameTurnService } from './game-turn.service';
-
-const COMBAT_RESULT_NOTIFICATION_DURATION_MS = 3000;
+import { COMBAT_RESULT_NOTIFICATION_DURATION_MS } from '@common/types/game.constant';
 
 @Injectable({
     providedIn: 'root',

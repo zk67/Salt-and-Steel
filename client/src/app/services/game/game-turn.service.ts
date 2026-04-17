@@ -1,7 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
-import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
+import { TurnPhase } from '@common/enums/game.enums';
+import { NewTurnPayload } from '@common/interfaces/game.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { canMoveToTile, getActionableTiles, getNeighborPositions, isValidTile, movableTiles } from '@common/utils/map.utils';
@@ -65,10 +66,10 @@ export class GameTurnService {
             this.timeService.startTimer(TIMER_WAIT_TURN);
             this.playerState.setActivePlayer(newTurn.playerId);
             const shrines = this.mapService.getGameData()?.shrine ?? [];
-            shrines.forEach(s => {
-                if (s.turnLeftDeactivated > 0) {
-                    s.turnLeftDeactivated -= 1;
-                    this.mapService.updateShrine(s, null);
+            shrines.forEach(shrine => {
+                if (shrine.turnLeftDeactivated > 0) {
+                    shrine.turnLeftDeactivated -= 1;
+                    this.mapService.updateShrine(shrine, null);
                 }
             });
             this.actionTile.set([]);

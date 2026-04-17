@@ -5,17 +5,17 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { isStringValid } from '@app/utils/validation';
-import { generateUUID } from '@common/utils/general.utils';
 import { BonusTarget, DiceKind, DiceTarget, StatKey } from '@common/enums/player.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 import {
   CHARACTER_PAGE_AVATARS,
-  CHARACTER_STAT_DESCRIPTIONS,
   CHARACTER_PAGE_REFRESH_FLAG,
+  CHARACTER_STAT_DESCRIPTIONS,
   MESSAGE_SHOW_TIME,
-} from './character-page.constants';
-import { PIRATE_NAMES,BASE_ATTACK, BASE_DEFENSE, BASE_HP, BASE_SPEED, HALF_RANDOM } from '@common/types/player.constants';
+} from '@common/types/menu-page.constants';
+import { BASE_ATTACK, BASE_DEFENSE, BASE_HP, BASE_SPEED, HALF_RANDOM, PIRATE_NAMES } from '@common/types/player.constants';
+import { generateUUID } from '@common/utils/general.utils';
 
 @Component({
   selector: 'app-character-page',
@@ -112,15 +112,15 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     return lines.join('\n');
   }
 
-  selectAvatar(a: string): void {
-    if (this.isAvatarUnavailable(a) && this.avatar.value !== a) {
+  selectAvatar(avatar: string): void {
+    if (this.isAvatarUnavailable(avatar) && this.avatar.value !== avatar) {
       return;
     }
 
-    this.avatar.setValue(a);
+    this.avatar.setValue(avatar);
 
     if (this.gameService.getSelectedJoinRoomId()) {
-      this.socketService.send(GatewayEvents.SelectAvatarInJoinForm, a);
+      this.socketService.send(GatewayEvents.SelectAvatarInJoinForm, avatar);
     }
   }
 
@@ -171,9 +171,9 @@ export class CharacterPageComponent implements OnInit, OnDestroy {
     const tryJoinCurrentGame = () => this.tryJoinCurrentGame(selectedJoinRoomId, player);
     const onJoinCurrentGameResult = this.createOnJoinCurrentGameResult(tryJoinCurrentGame);
 
-    const onPlayerId = (p: Player) => {
+    const onPlayerId = (onPlayer: Player) => {
       this.socketService.off(GatewayEvents.PlayerId, onPlayerId);
-      player.id = p.id;
+      player.id = onPlayer.id;
       this.gameService.setClientPlayer(player);
       this.socketService.on(GatewayEvents.JoinCurrentGameResult, onJoinCurrentGameResult);
 

@@ -4,20 +4,17 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GameMode, MapObjectType } from '@common/enums/map.enums';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import { Game, GameInfoPayload, NewTurnPayload } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { DELAY_BEFORE_NAVIGATE_HOME, PERCENTAGE, WALL } from '@common/types/game.constant';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { GameCombatService } from './game-combat.service';
 import { GamePlayerStateService } from './game-player-state.service';
 import { GameSessionService } from './game-session.service';
 import { GameSocketEventsService } from './game-socket-events.service';
 import { GameTurnService } from './game-turn.service';
-
-const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
-const PERCENTAGE = 100;
-const WALL = 3;
 
 @Injectable({
     providedIn: 'root',
@@ -151,7 +148,7 @@ export class GameService {
         this.isGameStarted = true;
         this.combatService.clear();
 
-        const sorted = [...payload.players].sort((a, b) => a.turnOrder - b.turnOrder);
+        const sorted = [...payload.players].sort((aPlayer, bPlayer) => aPlayer.turnOrder - bPlayer.turnOrder);
         this.playerState.setPlayers(sorted);
         const gameWithTurns = { ...payload.game, totalTurns: payload.totalTurns ?? 0 };
         this.mapService.loadFromDB(gameWithTurns);
@@ -191,7 +188,7 @@ export class GameService {
 
         this.updatePlayer(payload.playerId, { hasAbandoned: true });
 
-        const player = this.players().find(p => p.id === payload.playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === payload.playerId);
         if (player) {
             this.mapService.setMapObject(player.position, 0);
         }
@@ -233,7 +230,7 @@ export class GameService {
     }
 
     private clearShrineBuffsIfExpired(playerId: string): void {
-        const player = this.players().find(p => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (player?.shrineBuffs) {
             this.updatePlayer(playerId, {
                 attack: player.attack - (player.shrineBuffs.bonusAmount),

@@ -5,7 +5,7 @@ import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
 import { getObjectDescription } from '@app/utils/game-utils';
-import { GameMode, MapObjectType, MapSize, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, MapSize, TileType } from '@common/enums/map.enums';
 import { Position } from '@common/utils/map.utils';
 import { firstValueFrom } from 'rxjs';
 
@@ -96,11 +96,8 @@ export class MapEditorComponent implements OnInit {
             const sizeParam = Number(this.route.snapshot.queryParams.size);
             let mode = this.route.snapshot.queryParams.mode as GameMode;
 
-            if (Object.values(MapSize).includes(sizeParam)) {
-                this._gridSize = sizeParam as MapSize;
-            } else {
-                this._gridSize = MapSize.Small;
-            }
+            this._gridSize = Object.values(MapSize).includes(sizeParam)
+                ? (sizeParam as MapSize) : MapSize.Small;
 
             if (!Object.values(GameMode).includes(this.route.snapshot.queryParams.mode)) {
                 mode = GameMode.Classic;

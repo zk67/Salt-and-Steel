@@ -1,6 +1,6 @@
 import { PlayableGame } from '@app/interface/game.interface';
+import { MapObjectType, TileType } from '@common/enums/map.enums';
 import { ActionOnTilePayload } from '@common/interfaces/game.interface';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import {
     addPositions, isShrine, isValidTile,

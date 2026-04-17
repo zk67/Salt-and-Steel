@@ -8,16 +8,16 @@ import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { giveShrineBuff } from '@app/utils/game-utils';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, TileType } from '@common/enums/map.enums';
 import {
     ActionOnTilePayload,
-    CombatPosture,
     Game,
     GameOverPayload,
     NewTurnPayload,
     ToggleDebugPayload,
     UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { addPositions, arePositionAdjacent, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
@@ -77,11 +77,11 @@ export class CurrentGamesService {
     }
 
     getGameByRoomId(roomId: string): PlayableGame | undefined {
-        return this.games.find((g) => g.roomId === roomId);
+        return this.games.find((game) => game.roomId === roomId);
     }
 
     removeGame(roomId: string): boolean {
-        const index = this.games.findIndex((g) => g.roomId === roomId);
+        const index = this.games.findIndex((game) => game.roomId === roomId);
         if (index === -1) return false;
 
         this.games.splice(index, 1);
@@ -187,7 +187,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find((p) => p.id === playerId);
+        const player = game.players.find((findPlayer) => findPlayer.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {
@@ -202,7 +202,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game || game.activeCombat) return false;
 
-        const player = game.players.find((p) => p.id === playerId);
+        const player = game.players.find((findPlayer) => findPlayer.id === playerId);
         if (!player) return false;
 
         const directionVector = DIRECTION_STRING[direction];
@@ -269,7 +269,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game) return false;
 
-        const player = game.players.find((p) => p.id === playerId);
+        const player = game.players.find((findPlayer) => findPlayer.id === playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurnById(game, player.id)) return false;
@@ -282,7 +282,7 @@ export class CurrentGamesService {
         const game = this.getGameByRoomId(roomId);
         if (!game || game.activeCombat) return false;
 
-        const player = game.players.find((p) => p.id === payload.playerId);
+        const player = game.players.find((findPlayer) => findPlayer.id === payload.playerId);
         if (!player) return false;
 
         if (!this.turnFlowService.isCurrentPlayerTurn(game, player)) {

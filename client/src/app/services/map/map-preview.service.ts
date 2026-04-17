@@ -1,11 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
+import { MapObjectType, TileType } from '@common/enums/map.enums';
 import { Game } from '@common/interfaces/game.interface';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { DEFAULT_PREVIEW_SIZE, OBJECT_PADDING_RATIO } from '@common/types/map.constant';
 import { Position } from '@common/utils/map.utils';
 
-const DEFAULT_PREVIEW_SIZE = 256;
-const OBJECT_PADDING_RATIO = 0.15;
 type PreviewCanvas = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; cellSize: number };
 
 @Injectable({

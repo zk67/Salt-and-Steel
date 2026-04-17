@@ -1,9 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ToolService } from '@app/services/tool/tool.service';
-import { isStringValid, MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@app/utils/validation';
+import { isStringValid } from '@app/utils/validation';
+import { MapObjectType, TileType } from '@common/enums/map.enums';
 import { Game } from '@common/interfaces/game.interface';
-import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { TileData } from '@common/interfaces/map.interface';
+import { MAX_DESCRIPTION_LENGTH, MIN_NAME_LENGTH } from '@common/types/menu-page.constants';
 import { createBooleanGrid, getNeighborPositions, isShrine, isTileDoor, isValidTile, Position } from '@common/utils/map.utils';
 import { firstValueFrom, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -66,11 +68,11 @@ export class SaveService {
 
     private async validateNameUniqueness(game: Game): Promise<boolean> {
         const games = await firstValueFrom(this.getAllGames());
-        return games.some(g => g.name === game.name && g._id !== game._id);
+        return games.some(findGame => findGame.name === game.name && findGame._id !== game._id);
     }
 
     private hasEnoughBasicTiles(tiles: TileData[][], size: number): boolean {
-        const numberTiles = tiles.flat().filter(t => t.tileType !== TileType.Wall).length;
+        const numberTiles = tiles.flat().filter(tile => tile.tileType !== TileType.Wall).length;
         return numberTiles >= (size * size) / 2;
     }
 

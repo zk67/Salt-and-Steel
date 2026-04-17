@@ -1,4 +1,5 @@
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { NOTIFICATION_DURATION_MS, ONE_MILLISECOND } from '@common/types/tests.constant';
 import { PopupService } from './popup.service';
 
 /**
@@ -14,9 +15,6 @@ import { PopupService } from './popup.service';
  * fermeture automatique, fermeture manuelle, remplacement d'une notification
  * deja ouverte et coexistence avec les autres etats de popup.
  */
-
-const NOTIFICATION_DURATION_MS = 3000;
-const ONE_MILLISECOND = 1;
 
 describe('PopupService', () => {
     let service: PopupService;

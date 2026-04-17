@@ -1,6 +1,7 @@
 import { PlayableGame } from '@app/interface/game.interface';
-import { BattleWonPayload, CombatPosture, CombatRoundDetails, UpdateFlagPayload } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, MapObjectType } from '@common/enums/map.enums';
+import { BattleWonPayload, CombatRoundDetails, UpdateFlagPayload } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MAX_VICTORIES } from '@common/types/game.constant';
 import { Position, findNearestFreeSpawn } from '@common/utils/map.utils';

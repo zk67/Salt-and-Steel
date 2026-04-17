@@ -6,14 +6,11 @@ import { APP_ROUTES } from '@app/const/routes-const';
 import { GameSessionService } from '@app/services/game/game-session.service';
 import { GameService } from '@app/services/game/game.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GameMode } from '@common/enums/map.enums';
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
-import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
-
-const PERCENTAGE = 100;
-const TIME_CONVERSION = 60;
-const STATISTICS_PAGE_REFRESH_FLAG = 'statistics-page-refresh-flag';
+import { PERCENTAGE, TIME_CONVERSION, STATISTICS_PAGE_REFRESH_FLAG } from '@common/types/menu-page.constants';
 
 @Component({
     selector: 'app-statistics-page',
@@ -71,37 +68,37 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     }
 
     sortPlayers(): void {
-        this.sortedPlayers = [...this.players].sort((a, b) => {
+        this.sortedPlayers = [...this.players].sort((aPlayer, bPlayer) => {
             let aValue: string | number = '';
             let bValue: string | number = '';
             switch (this.sortColumn) {
                 case PlayerColumn.Name:
-                    aValue = a.name.toLowerCase();
-                    bValue = b.name.toLowerCase();
+                    aValue = aPlayer.name.toLowerCase();
+                    bValue = bPlayer.name.toLowerCase();
                     break;
                 case PlayerColumn.Combat:
-                    aValue = a.stats.combatPoints;
-                    bValue = b.stats.combatPoints;
+                    aValue = aPlayer.stats.combatPoints;
+                    bValue = bPlayer.stats.combatPoints;
                     break;
                 case PlayerColumn.Victory:
-                    aValue = a.stats.victoryPoints;
-                    bValue = b.stats.victoryPoints;
+                    aValue = aPlayer.stats.victoryPoints;
+                    bValue = bPlayer.stats.victoryPoints;
                     break;
                 case PlayerColumn.Defeat:
-                    aValue = a.stats.defeatPoints;
-                    bValue = b.stats.defeatPoints;
+                    aValue = aPlayer.stats.defeatPoints;
+                    bValue = bPlayer.stats.defeatPoints;
                     break;
                 case PlayerColumn.TotalLifeLost:
-                    aValue = a.stats.totalLifeLost;
-                    bValue = b.stats.totalLifeLost;
+                    aValue = aPlayer.stats.totalLifeLost;
+                    bValue = bPlayer.stats.totalLifeLost;
                     break;
                 case PlayerColumn.TotalDamageDealt:
-                    aValue = a.stats.totalDamageDealt;
-                    bValue = b.stats.totalDamageDealt;
+                    aValue = aPlayer.stats.totalDamageDealt;
+                    bValue = bPlayer.stats.totalDamageDealt;
                     break;
                 case PlayerColumn.PercentageOfTileVisited:
-                    aValue = a.stats.percentageOfTileVisited;
-                    bValue = b.stats.percentageOfTileVisited;
+                    aValue = aPlayer.stats.percentageOfTileVisited;
+                    bValue = bPlayer.stats.percentageOfTileVisited;
                     break;
                 default:
                     aValue = '';
@@ -163,9 +160,9 @@ export class StatisticsPageComponent implements OnInit, OnDestroy {
     get gameDurationMMSS(): string {
         const seconds = this.gameSessionService.getGameTimer();
         if (seconds == null) return '--:--';
-        const mm = Math.floor(seconds / TIME_CONVERSION).toString().padStart(2, '0');
-        const ss = Math.floor(seconds % TIME_CONVERSION).toString().padStart(2, '0');
-        return `${mm}:${ss}`;
+        const minutes = Math.floor(seconds / TIME_CONVERSION).toString().padStart(2, '0');
+        const secondsLeft = Math.floor(seconds % TIME_CONVERSION).toString().padStart(2, '0');
+        return `${minutes}:${secondsLeft}`;
     }
 
     get globalVisitedTilesPercentage(): number {

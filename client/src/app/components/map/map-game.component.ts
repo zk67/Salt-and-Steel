@@ -9,22 +9,16 @@ import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { getObjectDescription } from '@app/utils/game-utils';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import {
     ActionOnTilePayload, DebugMovePayload, GameOverPayload, MovePlayerPayload,
     PassFlagPayload, ToggleDebugPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
+import { DELAY_BEFORE_NAVIGATE_HOME, PLAYER_DIRECTION, TIME_ROUND } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { addPositions, canPassFlag, equalPositions, isTileDoor, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
-
-const PLAYER_DIRECTION: Record<string, string> = {
-    w: 'up', a: 'left', s: 'down', d: 'right',
-};
-
-const DELAY_BEFORE_NAVIGATE_HOME = 5000; // 5 seconds
-const TIME_ROUND = 10;
 
 export enum ContextMenuType {
     PlayerToolTip = 'player',
@@ -114,7 +108,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
         this.socketService.on<PassFlagPayload>(GatewayEvents.PassFlagRequest, (payload) => {
             if (this.gameService.clientPlayer()?.id === payload.targetId) {
 
-                const initiator = this.gameService.players().find(p => p.id === payload.initiatorId);
+                const initiator = this.gameService.players().find(player => player.id === payload.initiatorId);
 
                 const message = payload.isPass
                     ? `Le joueur ${initiator?.name} veut vous donner le drapeau. Acceptez-vous ?`
@@ -293,7 +287,7 @@ export class MapGameComponent implements OnInit, OnDestroy {
     }
 
     startCombat(playerId: string): void {
-        const player = this.gameService.players().find(p => p.id === playerId);
+        const player = this.gameService.players().find(findPlayer => findPlayer.id === playerId);
         const clientPlayer = this.gameService.clientPlayer();
         if (!player || !clientPlayer) return;
 

@@ -1,5 +1,5 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
-import { TurnPhase } from '@common/interfaces/game.interface';
+import { TurnPhase } from '@common/enums/game.enums';
 
 /**
  * Description:

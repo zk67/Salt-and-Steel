@@ -1,5 +1,6 @@
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
+import { MapObjectType } from '@common/enums/map.enums';
 import {
     ActionOnTilePayload,
     ActiveCombatPayload,
@@ -12,7 +13,6 @@ import {
     ToggleDebugPayload,
     UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { equalPositions } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
@@ -178,8 +178,8 @@ export class CurrentGamePlayService {
         const game = this.currentGamesService.getGameByRoomId(getRoomIdFromSocket(client));
         if (!game) return false;
 
-        const initiator = game.players.find(p => p.id === payload.initiatorId);
-        const target = game.players.find(p => p.id === payload.targetId);
+        const initiator = game.players.find(player => player.id === payload.initiatorId);
+        const target = game.players.find(player => player.id === payload.targetId);
 
         if (!initiator || !target) return false;
 
@@ -217,7 +217,7 @@ export class CurrentGamePlayService {
             return false;
         }
 
-        const player = game.players.find(p => p.id === payload.playerId);
+        const player = game.players.find(findPlayer => findPlayer.id === payload.playerId);
         if (!player) {
             this.logger.warn(`Player not found in game for socket ID: ${client.id}`);
             return false;

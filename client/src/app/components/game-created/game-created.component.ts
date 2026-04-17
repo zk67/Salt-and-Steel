@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { MapSize } from '@common/enums/map.enums';
 import { Game } from '@common/interfaces/game.interface';
-import { MapSize } from '@common/interfaces/map.interface';
 
 @Component({
     selector: 'app-game-created',

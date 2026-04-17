@@ -1,4 +1,5 @@
-import { MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { MapObjectType, TileType } from '@common/enums/map.enums';
+import { TileData } from '@common/interfaces/map.interface';
 
 export function createTile(type: TileType = TileType.Basic, mapObject: MapObjectType = MapObjectType.None): TileData {
     return { tileType: type, mapObject };

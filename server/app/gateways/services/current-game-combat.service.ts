@@ -1,15 +1,14 @@
 import { SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { ActiveCombatPayload, BattleWonPayload, CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { ActiveCombatPayload, BattleWonPayload, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
 import { Profile } from '@common/interfaces/player.interface';
+import { TIME_POSTURE, TIME_ROUND } from '@common/types/game.constant';
 import { getVPTurnDelayMs } from '@common/types/player.constants';
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CurrentGameBroadcastService } from './current-game-broadcast.service';
-
-const TIME_ROUND = 10;
-const TIME_POSTURE = 1000;
 
 @Injectable()
 export class CurrentGameCombatService {

@@ -1,4 +1,5 @@
-import { CombatPosture, Game, TurnPhase } from '@common/interfaces/game.interface';
+import { CombatPosture, TurnPhase } from '@common/enums/game.enums';
+import { Game } from '@common/interfaces/game.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { Position } from '@common/utils/map.utils';
 

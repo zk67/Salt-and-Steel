@@ -38,7 +38,7 @@ export class ChatGateway implements OnGatewayInit {
         const content = payload?.content?.trim();
 
         const game = this.currentGamesService.getGameByRoomId(roomId);
-        const author = game?.players.find((p) => p.id === socket.id);
+        const author = game?.players.find((player) => player.id === socket.id);
 
         if (author?.id && author?.name) {
             this.chatService.setPlayerName(author.id, author.name);
