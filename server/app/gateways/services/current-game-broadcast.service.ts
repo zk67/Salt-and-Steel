@@ -91,8 +91,8 @@ export class CurrentGameBroadcastService {
         this.server?.to(roomId).emit(GatewayEvents.ShrineBuffOff, playerId);
     }
 
-    emitGameMode(roomId: string, gameMode: GameMode): void {
-        this.server?.to(roomId).emit(GatewayEvents.GetGameModes, { gameMode });
+    emitGameMode(roomId: string, gameMode: GameMode, maxPlayers: number): void {
+        this.server?.to(roomId).emit(GatewayEvents.GetGameModes, { gameMode, maxPlayers });
     }
 
     emitHandlePassFlag(roomId: string, payload: PassFlagPayload): void {

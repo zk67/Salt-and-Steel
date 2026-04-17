@@ -13,6 +13,7 @@ import { GatewayEvents } from '@common/types/gateway.events';
 const TIME_BEFORE_NAVIGATE_HOME = 5000;
 const TIME_BEFORE_NAVIGATING_HOME = 10;
 const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
+const MAX_PLAYERS = 6;
 
 @Component({
     selector: 'app-waiting-page',
@@ -24,6 +25,7 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     messages: ChatMessage[] = [];
     playersSignal = signal<Player[]>([]);
+    maxPlayers = signal<number>(this.gameService.getSelectedHostGame?.()?.maxPlayers ?? MAX_PLAYERS);
     showClosedMessage = false;
     showKickedMessage = false;
 
@@ -32,13 +34,16 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
 
     gameMode = GameMode;
     currentGameMode = signal<GameMode | null>(null);
+    emptySlots = computed(() => Array.from({ length: Math.max(this.maxPlayers() - this.playersSignal().length, 0) }));
+    canAddVirtualPlayer = computed(() => this.isOrganizer && this.playersSignal().length < this.maxPlayers());
 
 
     isStartingGameValid = computed(() => {
         if (!this.isOrganizer || !this.currentGameMode()) return false;
+        if (this.playersSignal().length > this.maxPlayers()) return false;
 
         if (this.currentGameMode() === GameMode.CTF) {
-            return this.playersSignal().length % 2 === 0;
+            return this.playersSignal().length >= 2 && this.playersSignal().length % 2 === 0;
         } else {
             return this.playersSignal().length >= 2;
         }
@@ -148,8 +153,11 @@ export class WaitingPageComponent implements OnInit, OnDestroy {
             this.currentPlayerId = currentPlayer.id;
         }
 
-        this.socketService.on<{ gameMode: GameMode }>(GatewayEvents.GetGameModes, (payload) => {
+        this.socketService.on<{ gameMode: GameMode; maxPlayers: number }>(GatewayEvents.GetGameModes, (payload) => {
             this.currentGameMode.set(payload.gameMode);
+            if (payload.maxPlayers > 0) {
+                this.maxPlayers.set(payload.maxPlayers);
+            }
         });
 
         this.socketService.on(GatewayEvents.PlayersToGame, this.onPlayersToGame);
