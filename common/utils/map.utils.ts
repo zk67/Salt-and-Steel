@@ -115,7 +115,7 @@ export function getActionableTiles(game: Game, player: Player, players: Player[]
 
         const shrine = game.shrine.find(s => s.position.some(pos => equalPositions(pos, newPosition)));
 
-        if (shrine !== undefined && shrine.turnLeftDeactivated > 0) {
+        if (shrine !== undefined && (shrine.turnLeftDeactivated > 0 || ((player.shrineBuffs?.turnsLeft ?? 0) > 0 && shrine.objectType === MapObjectType.CombatShrine))) {
             return;
         }
 
