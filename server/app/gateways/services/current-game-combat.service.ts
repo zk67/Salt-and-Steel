@@ -1,7 +1,8 @@
 import { SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
 import { CurrentGamesService } from '@app/service/current-games.service';
 import { getRoomIdFromSocket } from '@app/utils/socket-utils';
-import { ActiveCombatPayload, BattleWonPayload, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { ActiveCombatPayload, BattleWonPayload, CombatPosture, SubmitCombatPosturePayload } from '@common/interfaces/game.interface';
+import { Profile } from '@common/interfaces/player.interface';
 import { getVPTurnDelayMs } from '@common/types/player.constants';
 import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
@@ -13,6 +14,7 @@ const TIME_POSTURE = 1000;
 @Injectable()
 export class CurrentGameCombatService {
     private combatRoundTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    private virtualPostureTimers = new Map<string, ReturnType<typeof setTimeout>[]>();
 
     constructor(
         private readonly currentGamesService: CurrentGamesService,
@@ -21,22 +23,11 @@ export class CurrentGameCombatService {
 
     handleStartCombat(client: Socket, payload: ActiveCombatPayload): void {
         const room = getRoomIdFromSocket(client);
-        const combatStarted = this.currentGamesService.startCombat(room, client.id, payload.defenderId);
+        this.startCombat(room, payload.attackerId, payload.defenderId);
+    }
 
-        if (!combatStarted) return;
-
-        this.broadcastService.emitCombatStarted(room, {
-            attackerId: client.id,
-            defenderId: payload.defenderId,
-            roundTimeSeconds: TIME_ROUND,
-        });
-
-        this.scheduleCombatRoundTimeout(room);
-
-        const delay = getVPTurnDelayMs();
-        setTimeout(() => {
-            this.currentGamesService.submitVirtualPlayerPostures(room);
-        }, delay);
+    startCombat(roomId: string, attackerId: string, defenderId: string): void {
+        this.startCombatFlow(roomId, attackerId, defenderId);
     }
 
     handleSubmitCombatPosture(client: Socket, payload: SubmitCombatPosturePayload): void {
@@ -45,17 +36,8 @@ export class CurrentGameCombatService {
         if (!game?.activeCombat) {
             return;
         }
-        const result = this.currentGamesService.submitCombatPosture(room, client.id, payload.posture);
 
-        if (!result) {
-            return;
-        }
-
-        if (result.roundResolved) {
-            this.clearCombatRoundTimer(room);
-        }
-
-        this.processCombatResult(room, result);
+        this.submitCombatPosture(room, client.id, payload.posture);
     }
 
     handleCombatSurrender(roomId: string, surrenderingPlayerId: string): BattleWonPayload | null {
@@ -82,7 +64,7 @@ export class CurrentGameCombatService {
         const payload = this.createSurrenderPayload(winner, loser);
         this.updateSurrenderCombatStats(winner, loser);
 
-        this.clearCombatRoundTimer(roomId);
+        this.clearRoundState(roomId);
         game.activeCombat = null;
 
         if (winner.id === attackerId && pausedTurnRemainingSeconds > 0) {
@@ -134,6 +116,24 @@ export class CurrentGameCombatService {
         }
     }
 
+    private clearVirtualPostureTimers(roomId: string): void {
+        const timers = this.virtualPostureTimers.get(roomId);
+        if (!timers) {
+            return;
+        }
+
+        for (const timer of timers) {
+            clearTimeout(timer);
+        }
+
+        this.virtualPostureTimers.delete(roomId);
+    }
+
+    private clearRoundState(roomId: string): void {
+        this.clearCombatRoundTimer(roomId);
+        this.clearVirtualPostureTimers(roomId);
+    }
+
     private scheduleCombatRoundTimeout(roomId: string): void {
         this.clearCombatRoundTimer(roomId);
 
@@ -147,22 +147,22 @@ export class CurrentGameCombatService {
                 return;
             }
 
-            this.processCombatResult(roomId, result);
+            this.handleCombatResolution(roomId, result);
         }, activeCombat.roundTimeSeconds * TIME_POSTURE);
 
         this.combatRoundTimers.set(roomId, timeout);
     }
 
     private processCombatResult(roomId: string, result: SubmitCombatPostureResult): void {
-        const game = this.currentGamesService.getGameByRoomId(roomId);
+        if (!result.roundResolved) {
+            return;
+        }
 
         if (result.roundResolved && result.combatRound) {
             this.broadcastService.emitCombatRoundDetailsToRoom(roomId, result.combatRound);
         }
 
         if (result.battlePayload) {
-            this.clearCombatRoundTimer(roomId);
-
             const payloadWithoutRound = { ...result.battlePayload };
             delete payloadWithoutRound.combatRound;
 
@@ -183,25 +183,41 @@ export class CurrentGameCombatService {
             return;
         }
 
-        if (result.roundResolved && game?.activeCombat) {
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+        if (game?.activeCombat) {
             this.broadcastService.emitCombatStarted(roomId, {
                 attackerId: game.activeCombat.attackerId,
                 defenderId: game.activeCombat.defenderId,
                 roundTimeSeconds: game.activeCombat.roundTimeSeconds,
             });
-
+            
             this.scheduleCombatRoundTimeout(roomId);
-
-            const delay = getVPTurnDelayMs();
-            setTimeout(() => {
-                this.currentGamesService.submitVirtualPlayerPostures(roomId);
-            }, delay);
+            this.scheduleVirtualPlayerPostures(roomId);
         }
     }
 
-    handleVirtualPlayerStartCombat(roomId: string, attackerId: string, defenderId: string): void {
+    private handleCombatResolution(roomId: string, result: SubmitCombatPostureResult): void {
+        if (result.roundResolved) {
+            this.clearRoundState(roomId);
+        }
+
+        this.processCombatResult(roomId, result);
+    }
+
+    private submitCombatPosture(roomId: string, playerId: string, posture: CombatPosture): void {
+        const result = this.currentGamesService.submitCombatPosture(roomId, playerId, posture);
+        if (!result) {
+            return;
+        }
+
+        this.handleCombatResolution(roomId, result);
+    }
+
+    private startCombatFlow(roomId: string, attackerId: string, defenderId: string): void {
         const combatStarted = this.currentGamesService.startCombat(roomId, attackerId, defenderId);
-        if (!combatStarted) return;
+        if (!combatStarted) {
+            return;
+        }
 
         this.broadcastService.emitCombatStarted(roomId, {
             attackerId,
@@ -209,11 +225,58 @@ export class CurrentGameCombatService {
             roundTimeSeconds: TIME_ROUND,
         });
 
-        const delay = getVPTurnDelayMs();
-
-        setTimeout(() => {
-            this.currentGamesService.submitVirtualPlayerPostures(roomId);
-            this.scheduleCombatRoundTimeout(roomId);
-        }, delay);
+        this.scheduleCombatRoundTimeout(roomId);
+        this.scheduleVirtualPlayerPostures(roomId);
     }
+
+    private scheduleVirtualPlayerPostures(roomId: string): void {
+        this.clearVirtualPostureTimers(roomId);
+
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+        const activeCombat = game?.activeCombat;
+        if (!game || !activeCombat) {
+            return;
+        }
+
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        let accumulatedDelayMs = 0;
+
+        for (const playerId of [activeCombat.attackerId, activeCombat.defenderId]) {
+            const player = game.players.find((currentPlayer) => currentPlayer.id === playerId);
+            if (!player?.isVirtual) {
+                continue;
+            }
+
+            const posture = player.virtualProfile === Profile.Aggressive
+                ? CombatPosture.Offensive
+                : CombatPosture.Defensive;
+
+            accumulatedDelayMs += getVPTurnDelayMs();
+            const timer = setTimeout(() => {
+                this.submitVirtualPlayerPosture(roomId, playerId, posture);
+            }, accumulatedDelayMs);
+            timers.push(timer);
+        }
+
+        if (timers.length > 0) {
+            this.virtualPostureTimers.set(roomId, timers);
+        }
+    }
+
+    private submitVirtualPlayerPosture(roomId: string, playerId: string, posture: CombatPosture): void {
+        const game = this.currentGamesService.getGameByRoomId(roomId);
+        if (!game?.activeCombat) {
+            return;
+        }
+
+        const isParticipant =
+            playerId === game.activeCombat.attackerId ||
+            playerId === game.activeCombat.defenderId;
+        if (!isParticipant) {
+            return;
+        }
+
+        this.submitCombatPosture(roomId, playerId, posture);
+    }
+
 }

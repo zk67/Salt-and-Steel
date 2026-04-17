@@ -5,31 +5,27 @@ import { CurrentGamesCombatService, SubmitCombatPostureResult } from '@app/servi
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
-import { VirtualPlayerService } from '@app/service/virtual-player/virtual-player.service';
 import { Timer } from '@app/utils/game-timer';
 import { giveShrineBuff } from '@app/utils/game-utils';
 import {
     ActionOnTilePayload, CombatPosture, Game, GameOverPayload, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
 import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
-import { Player, Profile } from '@common/interfaces/player.interface';
-import { VirtualPlayerTurnResult } from '@common/interfaces/virtual-player.interface';
+import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { getVPTurnDelayMs } from '@common/types/player.constants';
 import { addPositions, arePositionAdjacent, equalPositions, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
-
+import { VirtualPlayerFlowService } from './virtual-player/virtual-player-flow.service';
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
     private timer: Timer = new Timer(this);
     private stopWatch: Timer = new Timer(this);
     private emitCallback: ((roomId: string, payload: NewTurnPayload) => void) | undefined;
-
     private roomPlayerStateService = new RoomPlayerStateService();
     private gameLifecycleService = new GameLifecycleService();
     private turnFlowService: TurnFlowService;
-    private virtualPlayerService = new VirtualPlayerService();
+    private virtualPlayerFlowService: VirtualPlayerFlowService;
     private combatService: CurrentGamesCombatService;
     private combatGatewayService: CurrentGameCombatService | undefined;
 
@@ -37,11 +33,22 @@ export class CurrentGamesService {
         this.combatGatewayService = service;
     }
 
+    getVirtualPlayerFlowService(): VirtualPlayerFlowService {
+        return this.virtualPlayerFlowService;
+    }
+    
     constructor(private readonly broadcastService?: CurrentGameBroadcastService) {
         this.turnFlowService = new TurnFlowService((roomId, playerId) => {
             this.broadcastService?.emitShrineBuffOff(roomId, playerId);
         });
-
+        this.virtualPlayerFlowService = new VirtualPlayerFlowService(
+            (roomId) => this.getGameByRoomId(roomId),
+            (roomId, payload) => this.doActionAtTile(roomId, payload),
+            (roomId) => this.nextPlayerTurn(roomId),
+            (roomId, attackerId, defenderId) => this.combatGatewayService?.startCombat(roomId, attackerId, defenderId),
+            this.broadcastService,
+        );
+        
         this.combatService = new CurrentGamesCombatService(
             this.broadcastService,
             this.timer,
@@ -56,7 +63,6 @@ export class CurrentGamesService {
         game._id = gameId;
         this.games.push({ _game: game, roomId, players: [] });
     }
-
     getGameByRoomId(roomId: string): PlayableGame | undefined {
         return this.games.find((g) => g.roomId === roomId);
     }
@@ -69,7 +75,7 @@ export class CurrentGamesService {
         this.roomPlayerStateService.removeRoomState(roomId);
         return true;
     }
-
+    
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
 
@@ -109,136 +115,6 @@ export class CurrentGamesService {
         return true;
     }
 
-    // VP
-    addVirtualPlayer(roomId: string, profile: Profile): Player | null {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return null;
-        if (game.players.length >= game._game.maxPlayers) return null;
-
-        const id = `vp-${crypto.randomUUID()}`;
-        const player = this.virtualPlayerService.createVirtualPlayer(id, profile, game.players);
-
-        Logger.log(`VP created: id=${player.id}, isVirtual=${player.isVirtual}, profile=${player.virtualProfile}`);
-
-        game.players.push(player);
-        return player;
-    }
-
-    removeVirtualPlayer(roomId: string, playerId: string): boolean {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
-
-        const index = game.players.findIndex(p => p.id === playerId && p.isVirtual);
-        if (index === -1) return false;
-
-        game.players.splice(index, 1);
-        return true;
-    }
-
-    executeVirtualPlayerTurn(roomId: string, vpId: string): void {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return;
-        if (game.activeCombat) return;
-
-        const vp = game.players.find(p => p.id === vpId && p.isVirtual);
-        if (!vp) return;
-
-        const result = this.virtualPlayerService.decideTurn(vp, game);
-
-        if (result.moved) {
-            this.handleVirtualPlayerFlagPickup(roomId, vp);
-            this.broadcastService?.emitDebugMove(roomId, {
-                playerId: vp.id, targetPos: vp.position,
-            });
-        }
-
-        if (this.handleVirtualPlayerCombat(roomId, result)) return;
-
-        if (result.actionOnTile) {
-            if (this.doActionAtTile(roomId, result.actionOnTile)) {
-                this.broadcastService?.emitActionOnTile(roomId, result.actionOnTile);
-            }
-        }
-
-        if (!result.moved && !result.startedCombat && !result.actionOnTile) {
-            this.nextPlayerTurn(roomId);
-            return;
-        }
-
-        this.scheduleNextVirtualAction(roomId, vp, game);
-    }
-
-    submitVirtualPlayerPostures(roomId: string): void {
-        const game = this.getGameByRoomId(roomId);
-        if (!game?.activeCombat) return;
-
-        const { attackerId, defenderId } = game.activeCombat;
-
-        for (const playerId of [attackerId, defenderId]) {
-            if (!game.activeCombat) return;
-
-            const player = game.players.find(p => p.id === playerId);
-            if (!player?.isVirtual) continue;
-
-            const posture =
-                player.virtualProfile === Profile.Aggressive
-                    ? CombatPosture.Offensive
-                    : CombatPosture.Defensive;
-
-            this.combatService.submitCombatPosture(game, playerId, posture);
-        }
-    }
-
-    private handleVirtualPlayerCombat(roomId: string, result: VirtualPlayerTurnResult): boolean {
-        const game = this.getGameByRoomId(roomId);
-        if (!game) return false;
-        if (game.activeCombat) return true;
-
-        if (!result.startedCombat || !result.attackerId || !result.defenderId) return false;
-
-        this.combatGatewayService?.handleVirtualPlayerStartCombat(roomId, result.attackerId, result.defenderId);
-
-        return true;
-    }
-
-    private scheduleNextVirtualAction(roomId: string, vp: Player, game: PlayableGame): void {
-        const currentPlayerId = game.turnOrder?.[game.currentTurnIndex];
-        if (currentPlayerId !== vp.id) return;
-
-        if (vp.movementPoints > 0) {
-            const delay = getVPTurnDelayMs();
-            setTimeout(() => this.executeVirtualPlayerTurn(roomId, vp.id), delay);
-        } else {
-            this.nextPlayerTurn(roomId);
-        }
-    }
-
-    private handleVirtualPlayerFlagPickup(roomId: string, vp: Player): void {
-        const game = this.getGameByRoomId(roomId);
-        if (!game || game._game.gameMode !== GameMode.CTF) return;
-
-        const tile = game._game.tiles[vp.position.y][vp.position.x];
-
-        if (tile.mapObject === MapObjectType.Flag) {
-            tile.mapObject = MapObjectType.None;
-            vp.hasFlag = true;
-
-            const payload: UpdateFlagPayload = { playerId: vp.id, flagStatus: true, position: vp.position };
-
-            this.broadcastService?.emitUpdateFlag(roomId, payload);
-        }
-
-        if (
-            tile.mapObject === MapObjectType.SpawnPoint &&
-            equalPositions(game.spawnPoints?.get(vp.id), vp.position) &&
-            vp.hasFlag
-        ) {
-            vp.hasFlag = false;
-            this.broadcastService?.emitGameOver(roomId, vp.id);
-        }
-    }
-
-    // Game start
     startGame(roomId: string): PlayableGame {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
@@ -267,18 +143,21 @@ export class CurrentGamesService {
         this.broadcastService?.emitGameOver(roomId, updatedPayload);
     }
 
-
     allocateSpawnPoints(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
         this.gameLifecycleService.allocateSpawnPoints(game);
     }
-
-    // Turns
+    
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
-        this.turnFlowService.changeTurn(game, this.timer, this.emitTurnUpdate.bind(this), this.executeVirtualPlayerTurn.bind(this));
+        this.turnFlowService.changeTurn(
+            game,
+            this.timer,
+            this.emitTurnUpdate.bind(this),
+            this.virtualPlayerFlowService.executeVirtualPlayerTurn.bind(this.virtualPlayerFlowService),
+        );
     }
 
     nextPlayerTurn(roomId: string): void {
@@ -344,7 +223,7 @@ export class CurrentGamesService {
                 tile.mapObject === MapObjectType.SpawnPoint &&
                 equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag
             ) {
-                this.broadcastService.emitGameOver(roomId, player.id);
+                this.gameOver(roomId, { winnerId: player.id, gameDurationSeconds: 0, endedByAbandon: false });
             }
         }
 
