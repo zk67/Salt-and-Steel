@@ -36,7 +36,7 @@ export class CurrentGamesService {
     getVirtualPlayerFlowService(): VirtualPlayerFlowService {
         return this.virtualPlayerFlowService;
     }
-    
+
     constructor(private readonly broadcastService?: CurrentGameBroadcastService) {
         this.turnFlowService = new TurnFlowService((roomId, playerId) => {
             this.broadcastService?.emitShrineBuffOff(roomId, playerId);
@@ -48,7 +48,7 @@ export class CurrentGamesService {
             (roomId, attackerId, defenderId) => this.combatGatewayService?.startCombat(roomId, attackerId, defenderId),
             this.broadcastService,
         );
-        
+
         this.combatService = new CurrentGamesCombatService(
             this.broadcastService,
             this.timer,
@@ -75,7 +75,7 @@ export class CurrentGamesService {
         this.roomPlayerStateService.removeRoomState(roomId);
         return true;
     }
-    
+
     addPlayerToGame(roomId: string, player: Player): void {
         const game = this.getGameByRoomId(roomId);
 
@@ -148,7 +148,7 @@ export class CurrentGamesService {
         if (!game) return;
         this.gameLifecycleService.allocateSpawnPoints(game);
     }
-    
+
     changeTurn(roomId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game) return;
@@ -341,5 +341,9 @@ export class CurrentGamesService {
 
     private emitTurnUpdate(roomId: string, payload: NewTurnPayload): void {
         this.emitCallback?.(roomId, payload);
+    }
+
+    executeVirtualPlayerTurn(roomId: string, vpId: string): void {
+        this.virtualPlayerFlowService.executeVirtualPlayerTurn(roomId, vpId);
     }
 }

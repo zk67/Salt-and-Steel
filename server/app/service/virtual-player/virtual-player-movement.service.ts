@@ -78,25 +78,20 @@ export class VirtualPlayerMovementService {
         const path = this.bfsPath(vp.position, target, game, vp);
         if (!path || path.length < 2) return false;
 
-        let moved = false;
-        for (let i = 1; i < path.length; i++) {
-            const next = path[i];
-            const tile = game._game.tiles[next.y][next.x];
-            const cost = TILE_MOVEMENT_COST[tile.tileType] ?? 1;
+        const next = path[1];
+        const tile = game._game.tiles[next.y][next.x];
+        const cost = TILE_MOVEMENT_COST[tile.tileType] ?? 1;
 
-            if (vp.movementPoints < cost) break;
+        if (vp.movementPoints < cost) return false;
 
-            const occupied = game.players.some(
-                p => p.id !== vp.id && p.position.x === next.x && p.position.y === next.y,
-            );
-            if (occupied) break;
+        const occupied = game.players.some(
+            p => p.id !== vp.id && p.position.x === next.x && p.position.y === next.y,
+        );
+        if (occupied) return false;
 
-            vp.movementPoints -= cost;
-            vp.position = next;
-            moved = true;
-        }
-
-        return moved;
+        vp.movementPoints -= cost;
+        vp.position = next;
+        return true;
     }
 
     findNearestEnemy(vp: Player, enemies: Player[], game: PlayableGame): Position | null {

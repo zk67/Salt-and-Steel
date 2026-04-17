@@ -154,6 +154,7 @@ export class CurrentGameCombatService {
     }
 
     private processCombatResult(roomId: string, result: SubmitCombatPostureResult): void {
+        const game = this.currentGamesService.getGameByRoomId(roomId);
         if (!result.roundResolved) {
             return;
         }
@@ -178,19 +179,24 @@ export class CurrentGameCombatService {
 
             if (result.shouldAdvanceTurn) {
                 this.currentGamesService.nextPlayerTurn(roomId);
+            } else {
+                const currentPlayerId = game?.turnOrder?.[game.currentTurnIndex];
+                const currentPlayer = game?.players.find(p => p.id === currentPlayerId);
+                if (currentPlayer?.isVirtual) {
+                    setTimeout(() => this.currentGamesService.executeVirtualPlayerTurn(roomId, currentPlayerId), getVPTurnDelayMs());
+                }
             }
 
             return;
         }
 
-        const game = this.currentGamesService.getGameByRoomId(roomId);
         if (game?.activeCombat) {
             this.broadcastService.emitCombatStarted(roomId, {
                 attackerId: game.activeCombat.attackerId,
                 defenderId: game.activeCombat.defenderId,
                 roundTimeSeconds: game.activeCombat.roundTimeSeconds,
             });
-            
+
             this.scheduleCombatRoundTimeout(roomId);
             this.scheduleVirtualPlayerPostures(roomId);
         }
