@@ -23,11 +23,13 @@ export class ChatGateway implements OnGatewayInit {
     }
 
     formatTime(): string {
-        const date = new Date();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
-        return `${hours}:${minutes}:${seconds}`;
+        return new Date().toLocaleTimeString('en-CA', {
+            timeZone: 'America/Toronto',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
     }
 
     @SubscribeMessage(GatewayEvents.SendMessage)
