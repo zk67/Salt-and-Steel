@@ -9,14 +9,19 @@ import { getVPTurnDelayMs } from '@common/types/player.constants';
 import { equalPositions } from '@common/utils/map.utils';
 import { generateUUID } from '@common/utils/general.utils';
 
+type VirtualPlayerFlowActions = {
+    doActionAtTile: (roomId: string, payload: ActionOnTilePayload) => boolean;
+    nextPlayerTurn: (roomId: string) => void;
+    startCombat: (roomId: string, attackerId: string, defenderId: string) => void;
+    gameOver: (roomId: string, winnerId: string) => void;
+};
+
 export class VirtualPlayerFlowService {
     private readonly virtualPlayerService = new VirtualPlayerService();
 
     constructor(
         private readonly getGameByRoomId: (roomId: string) => PlayableGame | undefined,
-        private readonly doActionAtTile: (roomId: string, payload: ActionOnTilePayload) => boolean,
-        private readonly nextPlayerTurn: (roomId: string) => void,
-        private readonly startCombat: (roomId: string, attackerId: string, defenderId: string) => void,
+        private readonly actions: VirtualPlayerFlowActions,
         private readonly broadcastService?: CurrentGameBroadcastService,
     ) {}
 
@@ -61,7 +66,7 @@ export class VirtualPlayerFlowService {
         this.handleAction(roomId, result);
 
         if (this.shouldAdvanceTurn(result)) {
-            this.nextPlayerTurn(roomId);
+            this.actions.nextPlayerTurn(roomId);
             return;
         }
 
@@ -85,7 +90,7 @@ export class VirtualPlayerFlowService {
             return false;
         }
 
-        this.startCombat(roomId, result.attackerId, result.defenderId);
+        this.actions.startCombat(roomId, result.attackerId, result.defenderId);
         return true;
     }
 
@@ -94,7 +99,7 @@ export class VirtualPlayerFlowService {
             return;
         }
 
-        if (this.doActionAtTile(roomId, result.actionOnTile)) {
+        if (this.actions.doActionAtTile(roomId, result.actionOnTile)) {
             this.broadcastService?.emitActionOnTile(roomId, result.actionOnTile);
         }
     }
@@ -113,7 +118,7 @@ export class VirtualPlayerFlowService {
             return;
         }
 
-        this.nextPlayerTurn(roomId);
+        this.actions.nextPlayerTurn(roomId);
     }
 
     private handleFlagPickup(roomId: string, vp: Player): void {
@@ -139,7 +144,7 @@ export class VirtualPlayerFlowService {
             vp.hasFlag
         ) {
             vp.hasFlag = false;
-            this.broadcastService?.emitGameOver(roomId, vp.id);
+            this.actions.gameOver(roomId, vp.id);
         }
     }
 }

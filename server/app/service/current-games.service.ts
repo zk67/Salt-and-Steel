@@ -2,20 +2,28 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { CurrentGameCombatService } from '@app/gateways/services/current-game-combat.service';
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
 import { CurrentGamesCombatService, SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
+import { CurrentGamesFlagService } from '@app/service/current-games-flag.service';
 import { GameLifecycleService } from '@app/service/game-lifecycle.service';
 import { RoomPlayerStateService } from '@app/service/room-player-state.service';
 import { TurnFlowService } from '@app/service/turn-flow.service';
 import { Timer } from '@app/utils/game-timer';
 import { giveShrineBuff } from '@app/utils/game-utils';
 import {
-    ActionOnTilePayload, CombatPosture, Game, GameOverPayload, NewTurnPayload, ToggleDebugPayload, UpdateFlagPayload,
+    ActionOnTilePayload,
+    CombatPosture,
+    Game,
+    GameOverPayload,
+    NewTurnPayload,
+    ToggleDebugPayload,
+    UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { GameMode, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, arePositionAdjacent, equalPositions, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
+import { addPositions, arePositionAdjacent, isTileDoor, isValidTile, Position, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { VirtualPlayerFlowService } from './virtual-player/virtual-player-flow.service';
+
 @Injectable()
 export class CurrentGamesService {
     private games: PlayableGame[] = [];
@@ -27,6 +35,7 @@ export class CurrentGamesService {
     private turnFlowService: TurnFlowService;
     private virtualPlayerFlowService: VirtualPlayerFlowService;
     private combatService: CurrentGamesCombatService;
+    private flagService: CurrentGamesFlagService;
     private combatGatewayService: CurrentGameCombatService | undefined;
 
     setCombatGatewayService(service: CurrentGameCombatService): void {
@@ -41,14 +50,17 @@ export class CurrentGamesService {
         this.turnFlowService = new TurnFlowService((roomId, playerId) => {
             this.broadcastService?.emitShrineBuffOff(roomId, playerId);
         });
+        this.flagService = new CurrentGamesFlagService(this.broadcastService);
         this.virtualPlayerFlowService = new VirtualPlayerFlowService(
             (roomId) => this.getGameByRoomId(roomId),
-            (roomId, payload) => this.doActionAtTile(roomId, payload),
-            (roomId) => this.nextPlayerTurn(roomId),
-            (roomId, attackerId, defenderId) => this.combatGatewayService?.startCombat(roomId, attackerId, defenderId),
+            {
+                doActionAtTile: (roomId, payload) => this.doActionAtTile(roomId, payload),
+                nextPlayerTurn: (roomId) => this.nextPlayerTurn(roomId),
+                startCombat: (roomId, attackerId, defenderId) => this.combatGatewayService?.startCombat(roomId, attackerId, defenderId),
+                gameOver: (roomId, winnerId) => this.gameOver(roomId, { winnerId, gameDurationSeconds: 0, endedByAbandon: false }),
+            },
             this.broadcastService,
         );
-
         this.combatService = new CurrentGamesCombatService(
             this.broadcastService,
             this.timer,
@@ -63,6 +75,7 @@ export class CurrentGamesService {
         game._id = gameId;
         this.games.push({ _game: game, roomId, players: [] });
     }
+
     getGameByRoomId(roomId: string): PlayableGame | undefined {
         return this.games.find((g) => g.roomId === roomId);
     }
@@ -204,28 +217,16 @@ export class CurrentGamesService {
 
         player.movementPoints -= movementCost;
         player.position = newPosition;
-
-        const tile = game._game.tiles[newPosition.y][newPosition.x];
-
-        if (game._game.gameMode === GameMode.CTF) {
-            if (tile.mapObject === MapObjectType.Flag) {
-                tile.mapObject = MapObjectType.None;
-
-                const payload: UpdateFlagPayload = { playerId: player.id, flagStatus: true, position: newPosition };
-
-                this.handleUpdateFlag(roomId, payload);
-                this.broadcastService.emitUpdateFlag(roomId, payload);
-
-                Logger.log(`${player.name} picked up the flag in room ${roomId}.`);
-            }
-
-            if (
-                tile.mapObject === MapObjectType.SpawnPoint &&
-                equalPositions(game.spawnPoints?.get(player.id), newPosition) && player.hasFlag
-            ) {
-                this.gameOver(roomId, { winnerId: player.id, gameDurationSeconds: 0, endedByAbandon: false });
-            }
-        }
+        this.flagService.handlePlayerMovement(
+            roomId,
+            game,
+            player,
+            newPosition,
+            {
+                updateFlag: this.handleUpdateFlag.bind(this),
+                gameOver: this.gameOver.bind(this),
+            },
+        );
 
         return true;
     }
