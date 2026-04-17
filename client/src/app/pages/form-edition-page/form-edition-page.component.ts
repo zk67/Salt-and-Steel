@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { APP_ROUTES } from '@app/const/routes-const';
-import { GameMode, MapSize } from '@common/interfaces/map.interface';
+import { GameMode, MapSize } from '@common/enums/map.enums';
 
 @Component({
     selector: 'app-form-edition-page',

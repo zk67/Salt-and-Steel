@@ -3,9 +3,11 @@ import 'reflect-metadata'; //keep at top
 import { PlayableGame } from '@app/interface/game.interface';
 import { CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import { DiceTarget } from '@common/enums/player.enums';
-import { BattleWonPayload, CombatPosture, CombatRoundDetails, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { BattleWonPayload, CombatRoundDetails, Game } from '@common/interfaces/game.interface';
+import { TileData } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 
 /**

@@ -3,7 +3,8 @@ import { computed, Injectable, signal } from '@angular/core';
 import { getMinMaxPlayers } from '@app/utils/game-utils';
 import { createTile, getShrineImageUrl } from '@app/utils/tile';
 import { ActionOnTilePayload, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
+import { Shrine, TileData} from '@common/interfaces/map.interface';
+import { MapObjectType, TileType, GameMode } from '@common/enums/map.enums';
 import { isShrine, Position } from '@common/utils/map.utils';
 @Injectable({
     providedIn: 'root',

@@ -26,17 +26,17 @@
 
         <h3 class="panel-subtitle">Choisissez un avatar</h3>
         <div class="avatar-grid" role="list">
-          @for (a of avatars; track a) {
+          @for (avatarGrid of avatars; track avatarGrid) {
             <button
               type="button"
               class="avatar-medallion"
               role="listitem"
-              [class.selected]="avatar.value === a"
-              [disabled]="isAvatarUnavailable(a)"
-              [class.unavailable]="isAvatarUnavailable(a)"
-              (click)="selectAvatar(a)"
+              [class.selected]="avatar.value === avatarGrid"
+              [disabled]="isAvatarUnavailable(avatarGrid)"
+              [class.unavailable]="isAvatarUnavailable(avatarGrid)"
+              (click)="selectAvatar(avatarGrid)"
             >
-              <img [src]="a" [alt]="'Avatar ' + a" class="avatar" />
+              <img [src]="avatarGrid" [alt]="'Avatar ' + avatarGrid" class="avatar" />
               <span class="avatar-stamp" aria-hidden="true">SÉLECTIONNÉ</span>
             </button>
           }

@@ -2,8 +2,10 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { CurrentGameCombatService } from '@app/gateways/services/current-game-combat.service';
 import { PlayableGame } from '@app/interface/game.interface';
 import { CurrentGamesService } from '@app/service/current-games.service';
-import { CombatPosture, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
+import { Game } from '@common/interfaces/game.interface';
+import { TileData } from '@common/interfaces/map.interface';
 import type { Socket } from 'socket.io';
 
 /**

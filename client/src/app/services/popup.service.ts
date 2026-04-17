@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-
-const DEFAULT_NOTIFICATION_DURATION_MS = 3000;
+import { DEFAULT_NOTIFICATION_DURATION_MS } from '@common/types/menu-page.constants';
 
 export interface ChoicePopupConfig {
   title?: string;

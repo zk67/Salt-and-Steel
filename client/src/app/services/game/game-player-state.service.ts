@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { PassFlagPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
-import { MapObjectType } from '@common/interfaces/map.interface';
+import { MapObjectType } from '@common/enums/map.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { GatewayEvents } from '@common/types/gateway.events';
 
@@ -59,7 +59,7 @@ export class GamePlayerStateService {
     }
 
     addVictoryPoint(playerId: string): void {
-        const player = this.players().find((p) => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (!player) return;
         const newStats = {
             ...player.stats,
@@ -69,7 +69,7 @@ export class GamePlayerStateService {
     }
 
     addDefeatPoint(playerId: string): void {
-        const player = this.players().find((p) => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (!player) return;
         const newStats = {
             ...player.stats,
@@ -79,7 +79,7 @@ export class GamePlayerStateService {
     }
 
     addCombatPoint(playerId: string): void {
-        const player = this.players().find((p) => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (!player) return;
         const newStats = {
             ...player.stats,
@@ -89,7 +89,7 @@ export class GamePlayerStateService {
     }
 
     addTotalLifeLost(playerId: string, lifeLost: number): void {
-        const player = this.players().find((p) => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (!player) return;
         const newStats = {
             ...player.stats,
@@ -99,7 +99,7 @@ export class GamePlayerStateService {
     }
 
     addTotalDamageDealt(playerId: string, damageDealt: number): void {
-        const player = this.players().find((p) => p.id === playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === playerId);
         if (!player) return;
         const newStats = {
             ...player.stats,
@@ -119,8 +119,8 @@ export class GamePlayerStateService {
     }
 
     private handlePassFlag(payload: PassFlagPayload): void {
-        const initiator = this.players().find(p => p.id === payload.initiatorId);
-        const target = this.players().find(p => p.id === payload.targetId);
+        const initiator = this.players().find(findPlayer => findPlayer.id === payload.initiatorId);
+        const target = this.players().find(findPlayer => findPlayer.id === payload.targetId);
         if (!initiator || !target) return;
 
         if (payload.isPass) {
@@ -139,7 +139,7 @@ export class GamePlayerStateService {
     }
 
     private handleUpdateFlag(payload: UpdateFlagPayload): void {
-        const player = this.players().find(p => p.id === payload.playerId);
+        const player = this.players().find((findPlayer) => findPlayer.id === payload.playerId);
         if (!player) return;
         this.updatePlayer(player.id, { hasFlag: payload.flagStatus });
         if (payload.flagStatus) {

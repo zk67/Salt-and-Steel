@@ -1,6 +1,7 @@
 import { PlayableGame } from '@app/interface/game.interface';
 import { Timer } from '@app/utils/game-timer';
-import { NewTurnPayload, TurnPhase } from '@common/interfaces/game.interface';
+import { NewTurnPayload } from '@common/interfaces/game.interface';
+import { TurnPhase } from '@common/enums/game.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { TIMER_TURN, TIMER_WAIT_TURN } from '@common/types/game.constant';
 import { Logger } from '@nestjs/common';

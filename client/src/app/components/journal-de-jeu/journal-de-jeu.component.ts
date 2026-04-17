@@ -5,9 +5,10 @@ import { SocketClientService } from '@app/services/socket/socket-client.service'
 import { ChatMessage } from '@common/interfaces/chat.message.interface';
 import {
   ActionOnTilePayload, ActiveCombatPayload, BattleWonPayload,
-  CombatRoundDetails, NewTurnPayload, PassFlagPayload, ToggleDebugPayload, TurnPhase, UpdateFlagPayload,
+  CombatRoundDetails, NewTurnPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { TurnPhase } from '@common/enums/game.enums';
+import { MapObjectType, TileType } from '@common/enums/map.enums';
 import { GatewayEvents } from '@common/types/gateway.events';
 
 
@@ -59,16 +60,16 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   formatTime(): string {
     const date = new Date();
-    const h = date.getHours().toString().padStart(2, '0');
-    const m = date.getMinutes().toString().padStart(2, '0');
-    const s = date.getSeconds().toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
   }
 
   private passFlag = (payload: PassFlagPayload) => {
     const players = this.gameService.getPlayers();
-    const initiator = players.find((p) => p.id === payload.initiatorId);
-    const receiver = players.find((p) => p.id === payload.targetId);
+    const initiator = players.find((player) => player.id === payload.initiatorId);
+    const receiver = players.find((player) => player.id === payload.targetId);
     const message: ChatMessage = {
       author: 'System',
       content: `${initiator?.name} a passé le drapeau à ${receiver?.name} !`,
@@ -79,8 +80,8 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private gameOver = (payload: { winnerId: string }) => {
     const players = this.gameService.getPlayers();
-    const winner = players.find((p) => p.id === payload.winnerId);
-    const remainingPlayers = players.filter((p) => p.id !== payload.winnerId).map((p) => p.name).join(', ');
+    const winner = players.find((player) => player.id === payload.winnerId);
+    const remainingPlayers = players.filter((player) => player.id !== payload.winnerId).map((player) => player.name).join(', ');
 
     const message: ChatMessage = {
       author: 'System',
@@ -147,7 +148,7 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private surrender = (payload: { playerId: string }) => {
     const players = this.gameService.getPlayers();
-    const player = players.find((p) => p.id === payload.playerId);
+    const player = players.find((findPlayer) => findPlayer.id === payload.playerId);
 
     const message: ChatMessage = {
       author: 'System',
@@ -178,7 +179,7 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private mapAction = (payload: ActionOnTilePayload) => {
     const players = this.gameService.getPlayers();
-    const player = players.find((p) => p.id === payload.playerId);
+    const player = players.find((findPlayer) => findPlayer.id === payload.playerId);
     const tile = this.mapService.getTile(payload.position);
 
     if (tile?.tileType === TileType.OpenDoor) {
@@ -245,8 +246,8 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
       const attackerId = payload.attackerRespawn?.playerId;
       const defenderId = payload.defenderRespawn?.playerId;
 
-      const attacker = players.find((p) => p.id === attackerId);
-      const defender = players.find((p) => p.id === defenderId);
+      const attacker = players.find((player) => player.id === attackerId);
+      const defender = players.find((player) => player.id === defenderId);
 
       const attackerName = attacker?.name;
       const defenderName = defender?.name;
@@ -282,7 +283,7 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private flagUpdate = (payload: UpdateFlagPayload) => {
     const players = this.gameService.getPlayers();
-    const player = players.find((p) => p.id === payload.playerId);
+    const player = players.find((findPlayer) => findPlayer.id === payload.playerId);
 
     const message: ChatMessage = {
       author: 'System',
@@ -321,18 +322,18 @@ export class JournalDeJeuComponent implements OnInit, OnDestroy, AfterViewInit {
 
 
   getMessageClass(msg: ChatMessage): string {
-    const c = msg.content;
-    if (c.includes('Nouveau tour')) return 'msg-turn';
-    if (c.includes('combat a commencé')) return 'msg-combat-start';
-    if (c.includes('combat est terminé')) return 'msg-combat-end';
-    if (c.includes("données d'attaque") || c.includes('données de défense') || c.includes('Différence entre'))
+    const messageClass = msg.content;
+    if (messageClass.includes('Nouveau tour')) return 'msg-turn';
+    if (messageClass.includes('combat a commencé')) return 'msg-combat-start';
+    if (messageClass.includes('combat est terminé')) return 'msg-combat-end';
+    if (messageClass.includes("données d'attaque") || messageClass.includes('données de défense') || messageClass.includes('Différence entre'))
       return 'msg-combat-round';
-    if (c.includes('drapeau')) return 'msg-flag';
-    if (c.includes('porte')) return 'msg-door';
-    if (c.includes('sanctuaire')) return 'msg-shrine';
-    if (c.includes('debug')) return 'msg-debug';
-    if (c.includes('abandonné')) return 'msg-surrender';
-    if (c.includes('jeu est terminé')) return 'msg-gameover';
+    if (messageClass.includes('drapeau')) return 'msg-flag';
+    if (messageClass.includes('porte')) return 'msg-door';
+    if (messageClass.includes('sanctuaire')) return 'msg-shrine';
+    if (messageClass.includes('debug')) return 'msg-debug';
+    if (messageClass.includes('abandonné')) return 'msg-surrender';
+    if (messageClass.includes('jeu est terminé')) return 'msg-gameover';
     return '';
   }
 }

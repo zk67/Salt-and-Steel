@@ -1,6 +1,4 @@
-export const MAX_NAME_LENGTH = 30;
-export const MAX_DESCRIPTION_LENGTH = 100;
-export const MIN_NAME_LENGTH = 3;
+import { MAX_NAME_LENGTH, MIN_NAME_LENGTH } from '@common/types/menu-page.constants';
 
 export function isStringValid(input: string, minLength: number = MIN_NAME_LENGTH, maxLength: number = MAX_NAME_LENGTH): boolean {
   input = input.trim();

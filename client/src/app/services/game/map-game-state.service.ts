@@ -1,20 +1,18 @@
 import { Injectable } from '@angular/core';
 import { GameService } from '@app/services/game/game.service';
 import { MapService } from '@app/services/map/map.service';
+import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import {
     ActionOnTilePayload,
     DebugMovePayload,
     MovePlayerPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-import { SHRINE_BUFF_DURATION, SHRINE_TURN_LEFT } from '@common/types/game.constant';
+import { PERCENTAGE, SHRINE_BUFF_DURATION, SHRINE_TURN_LEFT } from '@common/types/game.constant';
 import { DIRECTION_STRING } from '@common/types/game.record';
-import { addPositions, isTileDoor, movableTiles, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
-import { SocketClientService } from '@app/services/socket/socket-client.service';
 import { GatewayEvents } from '@common/types/gateway.events';
-
-const PERCENTAGE = 100;
+import { addPositions, isTileDoor, movableTiles, TILE_MOVEMENT_COST } from '@common/utils/map.utils';
 
 @Injectable({
     providedIn: 'root',
@@ -27,7 +25,7 @@ export class MapGameStateService {
     ) {}
 
     handlePlayerMovePayload(payload: MovePlayerPayload): void {
-        const player = this.gameService.players().find((p) => p.id === payload.playerId);
+        const player = this.gameService.players().find((findPlayer) => findPlayer.id === payload.playerId);
         if (!player) return;
 
         const directionVector = DIRECTION_STRING[payload.direction];
@@ -48,7 +46,7 @@ export class MapGameStateService {
     }
 
     handleClickDebugPayload(payload: DebugMovePayload): void {
-        const player = this.gameService.players().find((p) => p.id === payload.playerId);
+        const player = this.gameService.players().find((findPlayer) => findPlayer.id === payload.playerId);
         if (!player) return;
 
         const updatedPlayer: Player = {
@@ -96,7 +94,7 @@ export class MapGameStateService {
     }
 
     handleActionOnTile(payload: ActionOnTilePayload): void {
-        const player = this.gameService.players().find((p) => p.id === payload.playerId);
+        const player = this.gameService.players().find((findPlayer) => findPlayer.id === payload.playerId);
         if (!player) return;
 
         const tile = this.mapService.getTile(payload.position);
@@ -146,7 +144,7 @@ export class MapGameStateService {
             this.gameService.updatePlayer(player.id, { actionsLeft: player.actionsLeft - 1 });
         }
 
-        if(this.gameService.canPlayerStillDoAction()) {
+        if (this.gameService.canPlayerStillDoAction()) {
             this.gameService.actionTile.set(movableTiles(this.mapService.getTileMap(), player, this.gameService.getPlayers()));
         } else {
             this.gameService.actionTile.set([]);

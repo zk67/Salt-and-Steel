@@ -3,9 +3,18 @@ import { CurrentGameCombatService } from '@app/gateways/services/current-game-co
 import { PlayableGame } from '@app/interface/game.interface';
 import { SubmitCombatPostureResult } from '@app/service/current-games-combat-resolution.service';
 import { CurrentGamesService } from '@app/service/current-games.service';
-import { CombatPosture, CombatRoundDetails, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode } from '@common/enums/map.enums';
+import { CombatRoundDetails, Game } from '@common/interfaces/game.interface';
+import { TileData } from '@common/interfaces/map.interface';
+import {
+    DEFAULT_PAUSED_TURN_SECONDS, DEFAULT_TILE, EXPECTED_COMBAT_STARTED_CALL_COUNT,
+    GRID_SIZE, ROUND_TIME_SECONDS, ROUND_TIMEOUT_MS, SHORT_PAUSED_TURN_SECONDS,
+    TIME_BEFORE_ORIGINAL_TIMEOUT_MS, TIME_TO_REACH_NEXT_ROUND_TIMEOUT_MS,
+    TIME_UNTIL_ORIGINAL_TIMEOUT_WOULD_FIRE_MS,
+} from '@common/types/tests.constant';
 import type { Socket } from 'socket.io';
+
 /**
  * Description:
  * Ce fichier de tests vérifie que CurrentGameCombatService orchestre correctement
@@ -17,16 +26,6 @@ import type { Socket } from 'socket.io';
  * 2) On simule les différents scénarios de combat afin de valider les appels
  * émis, les transitions entre rounds et la gestion du tour après résolution.
  */
-const DEFAULT_TILE: TileData = { tileType: TileType.Basic, mapObject: MapObjectType.None };
-const GRID_SIZE = 3;
-const DEFAULT_PAUSED_TURN_SECONDS = 12;
-const ROUND_TIME_SECONDS = 10;
-const ROUND_TIMEOUT_MS = 10000;
-const SHORT_PAUSED_TURN_SECONDS = 9;
-const EXPECTED_COMBAT_STARTED_CALL_COUNT = 3;
-const TIME_BEFORE_ORIGINAL_TIMEOUT_MS = 9000;
-const TIME_UNTIL_ORIGINAL_TIMEOUT_WOULD_FIRE_MS = 999;
-const TIME_TO_REACH_NEXT_ROUND_TIMEOUT_MS = 9001;
 
 describe('CurrentGameCombatService', () => {
     let currentGamesService: jest.Mocked<CurrentGamesService>;

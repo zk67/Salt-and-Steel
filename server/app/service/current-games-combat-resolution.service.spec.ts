@@ -4,9 +4,11 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { PlayableGame } from '@app/interface/game.interface';
 import { CurrentGamesCombatService } from '@app/service/current-games-combat-resolution.service';
 import { Timer } from '@app/utils/game-timer';
+import { CombatPosture } from '@common/enums/game.enums';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import { DiceTarget } from '@common/enums/player.enums';
-import { CombatPosture, Game } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '@common/interfaces/map.interface';
+import { Game } from '@common/interfaces/game.interface';
+import { TileData } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { COMBAT_TIMER } from '@common/types/player.constants';
 

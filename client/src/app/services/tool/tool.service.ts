@@ -1,13 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MapService } from '@app/services/map/map.service';
 import { getShrineImageUrl } from '@app/utils/tile';
-import { GameMode, MapObjectType, MapSize, Shrine, TileData, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, MapSize, TileType } from '@common/enums/map.enums';
+import { Shrine, TileData } from '@common/interfaces/map.interface';
+import { OBJECT_QUANTITY_LARGE, OBJECT_QUANTITY_MEDIUM, OBJECT_QUANTITY_SMALL } from '@common/types/map.constant';
 import { isShrine, isTileDoor, Position } from '@common/utils/map.utils';
-
-const OBJECT_QUANTITY_SMALL = 2;
-const OBJECT_QUANTITY_MEDIUM = 4;
-const OBJECT_QUANTITY_LARGE = 6;
-
 
 @Injectable({
     providedIn: 'root',

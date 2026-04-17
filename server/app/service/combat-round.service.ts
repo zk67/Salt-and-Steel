@@ -1,19 +1,14 @@
 import { PlayableGame } from '@app/interface/game.interface';
+import { CombatPosture } from '@common/enums/game.enums';
+import { TileType } from '@common/enums/map.enums';
 import { DiceTarget } from '@common/enums/player.enums';
 import {
     CombatParticipantRoundDetails,
-    CombatPosture,
     CombatRoundDetails,
     CombatStatBreakdown,
 } from '@common/interfaces/game.interface';
-import { TileType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
-
-const ICE_COMBAT_PENALTY = -2;
-const DICE_6 = 6;
-const DICE_4 = 4;
-const POSTURE_BONUS = 2;
-const MIN_DICE_VALUE = 1;
+import { DICE_4, DICE_6, ICE_COMBAT_PENALTY, MIN_DICE_VALUE, POSTURE_BONUS } from '@common/types/game.constant';
 
 export class CombatRoundService {
     buildCombatRoundDetails(

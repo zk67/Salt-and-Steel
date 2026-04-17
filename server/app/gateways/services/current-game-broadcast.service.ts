@@ -2,7 +2,7 @@ import {
     ActionOnTilePayload, ActiveCombatPayload, BattleWonPayload, CombatRoundDetails, DebugMovePayload, GameInfoPayload,
     GameOverPayload, MovePlayerPayload, PassFlagPayload, ToggleDebugPayload, UpdateFlagPayload,
 } from '@common/interfaces/game.interface';
-import { GameMode } from '@common/interfaces/map.interface';
+import { GameMode } from '@common/enums/map.enums';
 import { GatewayEvents } from '@common/types/gateway.events';
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';

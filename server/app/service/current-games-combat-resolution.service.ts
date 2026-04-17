@@ -3,10 +3,8 @@ import { PlayableGame } from '@app/interface/game.interface';
 import { CombatContext, CombatResolutionService } from '@app/service/combat-resolution.service';
 import { CombatRoundService } from '@app/service/combat-round.service';
 import { Timer } from '@app/utils/game-timer';
-import {
-    BattleWonPayload, CombatPosture, CombatRoundDetails,
-    UpdateFlagPayload,
-} from '@common/interfaces/game.interface';
+import { BattleWonPayload, CombatRoundDetails, UpdateFlagPayload } from '@common/interfaces/game.interface';
+import { CombatPosture } from '@common/enums/game.enums';
 import { COMBAT_TIMER } from '@common/types/player.constants';
 import { arePositionAdjacent } from '@common/utils/map.utils';
 import { Injectable, Logger } from '@nestjs/common';
@@ -36,8 +34,8 @@ export class CurrentGamesCombatService {
             Logger.warn('blocked: activeCombat exists'); return false;
         }
 
-        const attacker = game.players.find((p) => p.id === attackerId);
-        const defender = game.players.find((p) => p.id === defenderId);
+        const attacker = game.players.find((player) => player.id === attackerId);
+        const defender = game.players.find((player) => player.id === defenderId);
         if (!attacker || !defender) {
             Logger.warn(`blocked: attacker=${!!attacker}, defender=${!!defender}`); return false;
         }
@@ -99,7 +97,7 @@ export class CurrentGamesCombatService {
     }
 
     handleUpdateFlag(game: PlayableGame, payload: UpdateFlagPayload): boolean {
-        const player = game.players.find(p => p.id === payload.playerId);
+        const player = game.players.find(findPlayer => findPlayer.id === payload.playerId);
         if (!player) return false;
 
         player.hasFlag = payload.flagStatus;

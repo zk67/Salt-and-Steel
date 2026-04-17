@@ -8,7 +8,7 @@ export class RoomPlayerStateService {
         const baseName = requestedName.trim();
         const roomRegistry = this.getOrCreateRoomNameRegistry(roomId);
 
-        const baseNameAlreadyUsed = currentPlayers.some((p) => p.name === baseName);
+        const baseNameAlreadyUsed = currentPlayers.some((player) => player.name === baseName);
         const trackedSuffix = roomRegistry.get(baseName) ?? 1;
 
         if (!baseNameAlreadyUsed && trackedSuffix === 1) {
@@ -27,7 +27,7 @@ export class RoomPlayerStateService {
     }
 
     getUnavailableAvatars(roomId: string, currentPlayers: Player[]): string[] {
-        const waitingRoomAvatars = currentPlayers.map((p) => p.imageUrl).filter(Boolean);
+        const waitingRoomAvatars = currentPlayers.map((player) => player.imageUrl).filter(Boolean);
         const roomMap = this.selectedAvatarsByRoom.get(roomId);
         const selectedAvatars = roomMap ? Array.from(roomMap.values()) : [];
         const allAvatars = waitingRoomAvatars.concat(selectedAvatars);

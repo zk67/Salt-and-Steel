@@ -1,4 +1,4 @@
-import { CombatPosture } from '@common/interfaces/game.interface';
+import { CombatPosture } from '@common/enums/game.enums';
 import { Player, Profile } from '@common/interfaces/player.interface';
 
 export class VirtualPlayerCombatService {

@@ -14,3 +14,14 @@ export const CHARACTER_PAGE_AVATARS: string[] = Array.from(
 
 export const CHARACTER_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
 export const MESSAGE_SHOW_TIME = 1000;
+export const PERCENTAGE = 100;
+export const TIME_CONVERSION = 60;
+export const TIME_BEFORE_NAVIGATE_HOME = 5000;
+export const TIME_BEFORE_NAVIGATING_HOME = 10;
+export const WAITING_PAGE_REFRESH_FLAG = 'waitingPageRefresh';
+export const DEFAULT_NOTIFICATION_DURATION_MS = 3000;
+export const MAX_NAME_LENGTH = 30;
+export const MAX_DESCRIPTION_LENGTH = 100;
+export const MIN_NAME_LENGTH = 3;
+export const STATISTICS_PAGE_REFRESH_FLAG = 'statistics-page-refresh-flag';
+export const MAX_PLAYERS = 6;

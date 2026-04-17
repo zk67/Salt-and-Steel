@@ -1,10 +1,10 @@
 import { CurrentGameBroadcastService } from '@app/gateways/services/current-game-broadcast.service';
 import { PlayableGame } from '@app/interface/game.interface';
 import { GameOverPayload, UpdateFlagPayload } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { equalPositions, Position } from '@common/utils/map.utils';
 import { Logger } from '@nestjs/common';
+import { MapObjectType, GameMode } from '@common/enums/map.enums';
 
 type FlagMovementActions = {
     updateFlag: (roomId: string, payload: UpdateFlagPayload) => boolean;

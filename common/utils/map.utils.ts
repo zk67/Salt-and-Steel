@@ -1,5 +1,6 @@
 import { Game } from '../interfaces/game.interface';
-import { GameMode, MapObjectType, TileData, TileType } from '../interfaces/map.interface';
+import { TileData } from '../interfaces/map.interface';
+import { GameMode, MapObjectType, TileType } from '../enums/map.enums';
 import { Player } from '../interfaces/player.interface';
 
 export type Position = { x: number; y: number };
@@ -66,7 +67,7 @@ function getVisitedKey(position: Position): string {
 
 function shouldVisitTile(visited: Map<string, number>, position: Position, remainingMovementPoints: number): boolean {
     const previousMovementPoints = visited.get(getVisitedKey(position));
-    return previousMovementPoints === undefined || remainingMovementPoints > previousMovementPoints;
+    return !previousMovementPoints || remainingMovementPoints > previousMovementPoints;
 }
 
 export function movableTiles(tiles: TileData[][], player: Player, players: Player[]): boolean[][] {
@@ -86,7 +87,7 @@ export function movableTiles(tiles: TileData[][], player: Player, players: Playe
 
         for (const newPosition of getNeighborPositions(current)) {
             const remainingMovementPoints = canMoveToTile(tiles, players, current, newPosition);
-            if (remainingMovementPoints === null) continue;
+            if (!remainingMovementPoints) continue;
 
             if (!shouldVisitTile(visited, newPosition, remainingMovementPoints)) continue;
 
@@ -115,7 +116,7 @@ export function getActionableTiles(game: Game, player: Player, players: Player[]
 
         const shrine = game.shrine.find(s => s.position.some(pos => equalPositions(pos, newPosition)));
 
-        if (shrine !== undefined && (shrine.turnLeftDeactivated > 0 || ((player.shrineBuffs?.turnsLeft ?? 0) > 0 && shrine.objectType === MapObjectType.CombatShrine))) {
+        if (shrine && (shrine.turnLeftDeactivated > 0 || ((player.shrineBuffs?.turnsLeft ?? 0) > 0 && shrine.objectType === MapObjectType.CombatShrine))) {
             return;
         }
 

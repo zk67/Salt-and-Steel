@@ -1,5 +1,5 @@
 import { PlayableGame } from '@app/interface/game.interface';
-import { GameMode } from '@common/interfaces/map.interface';
+import { GameMode } from '@common/enums/map.enums';
 import { Player, Profile } from '@common/interfaces/player.interface';
 import { VirtualPlayerTurnResult } from '@common/interfaces/virtual-player.interface';
 import { arePositionAdjacent } from '@common/utils/map.utils';

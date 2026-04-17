@@ -2,7 +2,7 @@ import { CurrentGameBroadcastService } from '@app/gateways/services/current-game
 import { PlayableGame } from '@app/interface/game.interface';
 import { VirtualPlayerService } from '@app/service/virtual-player/virtual-player.service';
 import { ActionOnTilePayload } from '@common/interfaces/game.interface';
-import { GameMode, MapObjectType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType } from '@common/enums/map.enums';
 import { Player, Profile } from '@common/interfaces/player.interface';
 import { VirtualPlayerTurnResult } from '@common/interfaces/virtual-player.interface';
 import { getVPTurnDelayMs } from '@common/types/player.constants';
@@ -48,16 +48,16 @@ export class VirtualPlayerFlowService {
         return true;
     }
 
-    executeVirtualPlayerTurn(roomId: string, vpId: string): void {
+    executeVirtualPlayerTurn(roomId: string, virtualPlayerId: string): void {
         const game = this.getGameByRoomId(roomId);
         if (!game || game.activeCombat) return;
 
-        const vp = game.players.find((player) => player.id === vpId && player.isVirtual);
-        if (!vp) return;
+        const virtualPlayer = game.players.find((player) => player.id === virtualPlayerId && player.isVirtual);
+        if (!virtualPlayer) return;
 
-        const result = this.virtualPlayerService.decideTurn(vp, game);
+        const result = this.virtualPlayerService.decideTurn(virtualPlayer, game);
 
-        this.handleMovement(roomId, vp, result);
+        this.handleMovement(roomId, virtualPlayer, result);
 
         if (this.startVirtualPlayerCombat(roomId, result)) {
             return;
@@ -70,18 +70,18 @@ export class VirtualPlayerFlowService {
             return;
         }
 
-        this.scheduleNextVirtualAction(roomId, vp, game);
+        this.scheduleNextVirtualAction(roomId, virtualPlayer, game);
     }
 
-    private handleMovement(roomId: string, vp: Player, result: VirtualPlayerTurnResult): void {
+    private handleMovement(roomId: string, virtualPlayer: Player, result: VirtualPlayerTurnResult): void {
         if (!result.moved) {
             return;
         }
 
-        this.handleFlagPickup(roomId, vp);
+        this.handleFlagPickup(roomId, virtualPlayer);
         this.broadcastService?.emitDebugMove(roomId, {
-            playerId: vp.id,
-            targetPos: vp.position,
+            playerId: virtualPlayer.id,
+            targetPos: virtualPlayer.position,
         });
     }
 
@@ -108,43 +108,43 @@ export class VirtualPlayerFlowService {
         return !result.moved && !result.startedCombat && !result.actionOnTile;
     }
 
-    private scheduleNextVirtualAction(roomId: string, vp: Player, game: PlayableGame): void {
-        if (game.turnOrder?.[game.currentTurnIndex] !== vp.id) {
+    private scheduleNextVirtualAction(roomId: string, virtualPlayer: Player, game: PlayableGame): void {
+        if (game.turnOrder?.[game.currentTurnIndex] !== virtualPlayer.id) {
             return;
         }
 
-        if (vp.movementPoints > 0) {
-            setTimeout(() => this.executeVirtualPlayerTurn(roomId, vp.id), getVPTurnDelayMs());
+        if (virtualPlayer.movementPoints > 0) {
+            setTimeout(() => this.executeVirtualPlayerTurn(roomId, virtualPlayer.id), getVPTurnDelayMs());
             return;
         }
 
         this.actions.nextPlayerTurn(roomId);
     }
 
-    private handleFlagPickup(roomId: string, vp: Player): void {
+    private handleFlagPickup(roomId: string, virtualPlayer: Player): void {
         const game = this.getGameByRoomId(roomId);
         if (!game || game._game.gameMode !== GameMode.CTF) return;
 
-        const tile = game._game.tiles[vp.position.y][vp.position.x];
+        const tile = game._game.tiles[virtualPlayer.position.y][virtualPlayer.position.x];
 
         if (tile.mapObject === MapObjectType.Flag) {
             tile.mapObject = MapObjectType.None;
-            vp.hasFlag = true;
+            virtualPlayer.hasFlag = true;
 
             this.broadcastService?.emitUpdateFlag(roomId, {
-                playerId: vp.id,
+                playerId: virtualPlayer.id,
                 flagStatus: true,
-                position: vp.position,
+                position: virtualPlayer.position,
             });
         }
 
         if (
             tile.mapObject === MapObjectType.SpawnPoint &&
-            equalPositions(game.spawnPoints?.get(vp.id), vp.position) &&
-            vp.hasFlag
+            equalPositions(game.spawnPoints?.get(virtualPlayer.id), virtualPlayer.position) &&
+            virtualPlayer.hasFlag
         ) {
-            vp.hasFlag = false;
-            this.actions.gameOver(roomId, vp.id);
+            virtualPlayer.hasFlag = false;
+            this.actions.gameOver(roomId, virtualPlayer.id);
         }
     }
 }

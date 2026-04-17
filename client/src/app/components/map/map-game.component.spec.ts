@@ -8,8 +8,8 @@ import { MapGameStateService } from '@app/services/game/map-game-state.service';
 import { MapService } from '@app/services/map/map.service';
 import { PopupService } from '@app/services/popup.service';
 import { SocketClientService } from '@app/services/socket/socket-client.service';
+import { GameMode } from '@common/enums/map.enums';
 import { DiceTarget } from '@common/enums/player.enums';
-import { GameMode } from '@common/interfaces/map.interface';
 import { Player } from '@common/interfaces/player.interface';
 import { MapGameComponent } from './map-game.component';
 

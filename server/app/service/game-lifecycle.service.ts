@@ -1,5 +1,5 @@
 import { JoinableGameSummary, PlayableGame } from '@app/interface/game.interface';
-import { MapObjectType } from '@common/interfaces/map.interface';
+import { MapObjectType } from '@common/enums/map.enums';
 import { Player } from '@common/interfaces/player.interface';
 import { Position } from '@common/utils/map.utils';
 
@@ -8,13 +8,13 @@ const RANDOM_RANGE = 0.5;
 export class GameLifecycleService {
     initializeTurnOrder(players: Player[]): string[] {
         const shuffled = [...players].sort(() => Math.random() - RANDOM_RANGE);
-        const sorted = shuffled.sort((a, b) => b.speed - a.speed);
+        const sorted = shuffled.sort((aPlayer, bPlayer) => bPlayer.speed - aPlayer.speed);
 
         sorted.forEach((player, idx) => {
             player.turnOrder = idx;
         });
 
-        return sorted.map((p) => p.id);
+        return sorted.map((player) => player.id);
     }
 
     allocateSpawnPoints(game: PlayableGame): void {

@@ -1,5 +1,5 @@
-import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@app/const/game-const';
-import { MapObjectType, MapSize } from '@common/interfaces/map.interface';
+import { MapObjectType, MapSize } from '@common/enums/map.enums';
+import { MAX_PLAYERS_LARGE, MAX_PLAYERS_MEDIUM, MAX_PLAYERS_SMALL, MIN_PLAYERS } from '@common/types/game.constant';
 
 export function getMinMaxPlayers(size: number): { minPlayers: number; maxPlayers: number } {
     const minPlayers: number = MIN_PLAYERS;

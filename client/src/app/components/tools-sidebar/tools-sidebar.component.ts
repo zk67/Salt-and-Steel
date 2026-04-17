@@ -7,7 +7,7 @@ import { MapPreviewService } from '@app/services/map/map-preview.service';
 import { MapService } from '@app/services/map/map.service';
 import { SaveService } from '@app/services/save/save.service';
 import { ToolService, ToolType } from '@app/services/tool/tool.service';
-import { GameMode, MapObjectType, TileType } from '@common/interfaces/map.interface';
+import { GameMode, MapObjectType, TileType } from '@common/enums/map.enums';
 import { firstValueFrom } from 'rxjs';
 
 @Component({

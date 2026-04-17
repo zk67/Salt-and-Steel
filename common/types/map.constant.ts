@@ -1,0 +1,5 @@
+export const DEFAULT_PREVIEW_SIZE = 256;
+export const OBJECT_PADDING_RATIO = 0.15;
+export const OBJECT_QUANTITY_SMALL = 2;
+export const OBJECT_QUANTITY_MEDIUM = 4;
+export const OBJECT_QUANTITY_LARGE = 6;
