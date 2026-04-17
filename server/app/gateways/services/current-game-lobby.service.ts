@@ -209,7 +209,7 @@ export class CurrentGameLobbyService {
         if (!isOrganizer) return;
 
         const profile = payload?.profile === Profile.Aggressive ? Profile.Aggressive : Profile.Defensive;
-        const player = this.currentGamesService.addVirtualPlayer(room, profile);
+        const player = this.currentGamesService.getVirtualPlayerFlowService().addVirtualPlayer(room, profile);
         if (player) {
             this.broadcastPlayers(room);
         }
@@ -224,7 +224,7 @@ export class CurrentGameLobbyService {
         if (!isOrganizer) return;
         const virtualPlayer = game.players.find(p => p.isVirtual);
         if (!virtualPlayer) return;
-        const removed = this.currentGamesService.removePlayerFromGame(room, virtualPlayer.id);
+        const removed = this.currentGamesService.getVirtualPlayerFlowService().removeVirtualPlayer(room, virtualPlayer.id);
         if (removed) {
             this.broadcastPlayers(room);
             this.emitJoinableGames();
