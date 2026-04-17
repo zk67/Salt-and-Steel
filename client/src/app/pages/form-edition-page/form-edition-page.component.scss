@@ -1,7 +1,9 @@
 .config-page {
     min-height: 100vh;
     padding: 32px 24px 120px;
-    background: url("../../../assets/admin-page/adminbackground4.webp");
+    background: url("../../../assets/admin-page/background.png");
+    background-color: rgba(0, 0, 0, 0.45);
+    background-blend-mode: multiply;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
@@ -15,10 +17,10 @@
 .panel {
     max-width: 1000px;
     margin: 0 auto;
-    border: 3px solid #482929;
+    border: 3px solid #ffffff;
     border-radius: 10px;
     padding: 24px;
-    background-color: #c8bfb427;
+    background-color: #edebe927;
 }
 
 .section {
@@ -40,7 +42,7 @@
 }
 
 .option-card {
-    border: 2px solid #331d1d;
+    border: 2px solid #fdfdfd;
     border-radius: 10px;
     padding: 18px;
     text-align: center;
@@ -48,8 +50,8 @@
 }
 
 .form-radio input[type='radio']:checked + .option-card {
-    border-color:  #71563a;
-    background: #84727265;
+    border-color:  #ffffff;
+    background: #ffffff65;
 }
 
 .option-card.disabled {
@@ -59,18 +61,18 @@
 
 .desc {
     margin-top: 6px;
-    color: #666;
+    color: #ffffff;
 }
 
 .players {
     margin-top: 8px;
-    color: #71563a;
+    color: #ffffff;
     font-weight: 600;
 }
 
 .size-description {
     margin: 12px 0 0;
-    color: #666;
+    color: #ffffff;
 }
 
 .btn-submit {

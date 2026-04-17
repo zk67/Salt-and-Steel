@@ -13,7 +13,9 @@
     position: relative;
     min-height: 100vh;
     padding: 28px 32px;
-    background:url("../../../assets/admin-page/adminbackground4.webp");
+    background:url("../../../assets/admin-page/background.png");
+    background-color: rgba(0, 0, 0, 0.45);
+    background-blend-mode: multiply;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
@@ -24,7 +26,7 @@
 }
 
 .list-frame {
-    border: 3px solid #543630b4;
+    border: 3px solid #ffffffb4;
     height: 600px;
     margin: 0 18px;
     padding: 12px;
