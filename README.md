@@ -11,7 +11,7 @@ Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lo
 * Création de cartes personnalisées
 * Combats sur des cartes préconçues
 * Combats sur des cartes créées par les joueurs
-* [Ajouter d'autres fonctionnalités importantes]
+* Parties & combats contre des joueurs virutels
 
 ## 🛠️ Technologies
 
