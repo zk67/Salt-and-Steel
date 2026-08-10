@@ -1,60 +1,60 @@
 # Salt & Steel
 
-**Salt & Steel** is a multiplayer web game developed as a team project as part of the Software Engineering program at Polytechnique Montréal.
+**Salt & Steel** est un jeu web multijoueur développé en équipe dans le cadre du programme de génie logiciel de Polytechnique Montréal.
 
-Players can create their own maps and compete against other players in real-time battles, either on pre-built arenas or on maps created by the community.
+Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lors de combats en temps réel, sur des cartes préconçues ou créées par la communauté.
 
-## 🎮 Features
+## 🎮 Fonctionnalités
 
-* Multiplayer battles
-* Real-time player interactions
-* Custom map creation
-* Battles on pre-built maps
-* Battles on player-created maps
+* Combats multijoueurs
+* Interactions entre les joueurs en temps réel
+* Création de cartes personnalisées
+* Combats sur des cartes préconçues
+* Combats sur des cartes créées par les joueurs
 * [Ajouter d'autres fonctionnalités importantes]
 
 ## 🛠️ Technologies
 
-* **Frontend:** Angular, TypeScript
-* **Backend:** NestJS, Node.js
-* **Real-time communication:** Socket.IO
-* **Testing:** Jest
-* **Code quality:** ESLint
+* **Frontend :** Angular, TypeScript
+* **Backend :** NestJS, Node.js
+* **Communication en temps réel :** Socket.IO
+* **Tests :** Jest
+* **Qualité du code :** ESLint
 * [Ajouter les autres technologies utilisées]
 
-## 👥 Team Project
+## 👥 Projet d'équipe
 
-Salt & Steel was developed collaboratively by a team of software engineering students.
+Salt & Steel a été développé en collaboration par une équipe d'étudiants en génie logiciel.
 
-The project involved collaborative development, code reviews, version control, testing, and the integration of multiple frontend and backend components.
+Le projet a nécessité une collaboration étroite entre les membres de l'équipe, notamment à travers le développement collaboratif, les revues de code, la gestion des versions, les tests et l'intégration de plusieurs composants frontend et backend.
 
-## 👤 My Role
+## 👤 Mon rôle
 
-**Co-Founder & Developer**
+**Cofondateur & Développeur**
 
-I contributed to the design and development of the application alongside the rest of the team.
+J'ai participé à la conception et au développement de l'application en collaboration avec les autres membres de l'équipe.
 
-### My Contributions
+### Mes contributions
 
 * [Fonctionnalité que tu as développée]
 * [Fonctionnalité que tu as développée]
 * [Fonctionnalité que tu as développée]
 * [Autre contribution importante]
 
-## 📸 Screenshots
+## 📸 Captures d'écran
 
-*Add screenshots or GIFs showcasing the game and its main features.*
+*Ajouter des captures d'écran ou des GIFs présentant le jeu et ses principales fonctionnalités.*
 
-## 🚀 Running the Project
+## 🚀 Lancer le projet
 
-### Prerequisites
+### Prérequis
 
 * Node.js
 * npm
 
 ### Installation
 
-Clone the repository and install the dependencies for both the client and server:
+Cloner le repository et installer les dépendances du client et du serveur :
 
 ```bash
 cd client
@@ -64,34 +64,34 @@ cd ../server-nestjs
 npm ci
 ```
 
-### Development
+### Développement
 
-Start the client:
+Lancer le client :
 
 ```bash
 cd client
 npm start
 ```
 
-Start the server:
+Lancer le serveur :
 
 ```bash
 cd server-nestjs
 npm start
 ```
 
-The client and server will then be available locally according to their respective configurations.
+Le client et le serveur seront ensuite accessibles localement selon leur configuration respective.
 
-## 📚 Project Documentation
+## 📚 Documentation du projet
 
-Additional documentation is available in the repository:
+La documentation supplémentaire est disponible dans le repository :
 
-* [Contributing Guide](CONTRIBUTING.md)
-* [Deployment Guide](DEPLOYMENT.md)
-* [Testing Documentation](TESTS.md)
+* [Guide de contribution](CONTRIBUTING.md)
+* [Guide de déploiement](DEPLOYMENT.md)
+* [Documentation des tests](TESTS.md)
 
-## 🎓 Academic Context
+## 🎓 Contexte académique
 
-This project was developed as part of **LOG2995 – Projet de génie logiciel** at Polytechnique Montréal.
+Ce projet a été développé dans le cadre du cours **LOG2995 – Projet de génie logiciel** à Polytechnique Montréal.
 
-The project provided an opportunity to apply software engineering concepts in a collaborative environment, including version control, code reviews, automated testing, continuous integration, and agile development practices.
+Le projet nous a permis de mettre en pratique plusieurs concepts du génie logiciel dans un environnement collaboratif, notamment la gestion de versions, les revues de code, les tests automatisés, l'intégration continue et les méthodes de développement Agile.
