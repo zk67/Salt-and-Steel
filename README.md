@@ -24,13 +24,13 @@ Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lo
 
 ## 👥 Projet d'équipe
 
-Salt & Steel a été développé en collaboration par une équipe d'étudiants en génie logiciel.
+Salt & Steel a été développé en collaboration par une équipe de 6 étudiants en génie logiciel dans le cadre du cours LOG2995.
 
-Le projet a nécessité une collaboration étroite entre les membres de l'équipe, notamment à travers le développement collaboratif, les revues de code, la gestion des versions, les tests et l'intégration de plusieurs composants frontend et backend.
+Le projet a nécessité une collaboration étroite entre les membres de l'équipe, notamment à travers le développement collaboratif en agile, les revues de code, la gestion des versions, les tests et l'intégration de plusieurs composants frontend et backend.
 
 ## 👤 Mon rôle
 
-**Cofondateur & Développeur**
+**Développeur**
 
 J'ai participé à la conception et au développement de l'application en collaboration avec les autres membres de l'équipe.
 
