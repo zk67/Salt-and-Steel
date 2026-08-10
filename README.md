@@ -95,3 +95,5 @@ La documentation supplémentaire est disponible dans le repository :
 Ce projet a été développé dans le cadre du cours **LOG2995 – Projet de génie logiciel** à Polytechnique Montréal.
 
 Le projet nous a permis de mettre en pratique plusieurs concepts du génie logiciel dans un environnement collaboratif, notamment la gestion de versions, les revues de code, les tests automatisés, l'intégration continue et les méthodes de développement Agile.
+
+
