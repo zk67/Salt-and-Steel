@@ -1,6 +1,6 @@
 # Salt & Steel
 
-**Salt & Steel** est un jeu web multijoueur développé en équipe dans le cadre du programme de génie logiciel de Polytechnique Montréal.
+**Salt & Steel** est un jeu web multijoueur & solo développé en équipe dans le cadre du programme de génie logiciel de Polytechnique Montréal.
 
 Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lors de combats en temps réel, sur des cartes préconçues ou créées par la communauté.
 
