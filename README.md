@@ -20,7 +20,7 @@ Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lo
 * **Communication en temps réel :** Socket.IO
 * **Tests :** Jest
 * **Qualité du code :** ESLint
-* [Ajouter les autres technologies utilisées]
+* **Base de donée :** MongoDB
 
 ## 👥 Projet d'équipe
 
