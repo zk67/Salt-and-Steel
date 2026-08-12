@@ -1,81 +1,99 @@
-# Serveur NestJS
+# Salt & Steel
 
-Ce projet est une implémentation du serveur de départ utilisant le cadriciel [NestJS](https://nestjs.com/). Ceci est une alternative à un serveur de base qui vous est fournie et qui utilise NodeJS/Express. Vous pouvez utiliser le serveur NodeJS/Express fourni ou ce serveur pour votre projet.
+**Salt & Steel** est un jeu web multijoueur & solo développé en équipe dans le cadre du programme de génie logiciel de Polytechnique Montréal.
 
-## NestJS
+Les joueurs peuvent créer leurs propres cartes et affronter d'autres joueurs lors de combats en temps réel, sur des cartes préconçues ou créées par la communauté.
 
-NestJS est un cadriciel de développement de serveurs dynamiques utilisant NodeJS et Express avec une architecture très similaire à celle d'Angular. Vous remarquerez l'utilisation de termes tels que `service`, `module` et autres similaires à Angular.
+## 🎮 Fonctionnalités
 
-NestJS utilise des décorateurs (annotations avec le symbole `@`) pour attacher des fonctionnalités supplémentaires au code. Par exemple, la configuration d'un gestionnaire de route en NestJS :
+* Combats multijoueurs
+* Interactions entre les joueurs en temps réel
+* Création de cartes personnalisées
+* Combats sur des cartes préconçues
+* Combats sur des cartes créées par les joueurs
+* Parties & combats contre des joueurs virutels
 
-```ts
-@Get('/')
-dateInfo(): Message {
-    return {
-        body: this.dateService.currentTime(),
-    };
-}
+## 🛠️ Technologies
+
+* **Frontend :** Angular, TypeScript
+* **Backend :** NestJS, Node.js
+* **Communication en temps réel :** Socket.IO
+* **Tests :** Jest
+* **Qualité du code :** ESLint
+* **Base de donée :** MongoDB
+
+## 👥 Projet d'équipe
+
+Salt & Steel a été développé en collaboration par une équipe de 6 étudiants en génie logiciel dans le cadre du cours LOG2995.
+
+Le projet a nécessité une collaboration étroite entre les membres de l'équipe, notamment à travers le développement collaboratif en agile, les revues de code, la gestion des versions, les tests et l'intégration de plusieurs composants frontend et backend.
+
+## 👤 Mon rôle
+
+**Développeur**
+
+J'ai participé à la conception et au développement de l'application en collaboration avec les autres membres de l'équipe.
+
+### Mes contributions
+
+* [Fonctionnalité que tu as développée]
+* [Fonctionnalité que tu as développée]
+* [Fonctionnalité que tu as développée]
+* [Autre contribution importante]
+
+## 📸 Captures d'écran
+
+*Ajouter des captures d'écran ou des GIFs présentant le jeu et ses principales fonctionnalités.*
+
+## 🚀 Lancer le projet
+
+### Prérequis
+
+* Node.js
+* npm
+
+### Installation
+
+Cloner le repository et installer les dépendances du client et du serveur :
+
+```bash
+cd client
+npm ci
+
+cd ../server-nestjs
+npm ci
 ```
 
-est équivalente à la configuration suivante avec Express :
+### Développement
 
-```ts
-this.router.get('/', (req: Request, res: Response) => {
-    this.dateService.currentTime().then((time: Message) => {
-        res.json(time);
-    });
-});
+Lancer le client :
+
+```bash
+cd client
+npm start
 ```
 
-## Intégration avec les autres exemples du cours
+Lancer le serveur :
 
-Afin de vous aider, ce projet inclut également le code nécessaire pour présenter les fonctionnalités de communication avec une base de données `MongoDB` et la communication avec `SocketIO`. Le code se base sur les projets suivants disponibles sur GitLab :
-
--   [`MongoDB`](https://gitlab.com/nikolayradoev/mongodb-example) : la route `/api/docs` du serveur NodeJS offre une interface qui vous permet de tester la connexion avec la base de données. Notez que NestJS utilise la librairie `Mongoose` pour la communication avec MongoDB.
-
-    **Important** : vous devez configurer la variable d'environnement `DATABASE_CONNECTION_STRING` disponible dans le fichier `.env` avant de pouvoir vous connecter à une base de données.
-
--   [`SocketIO`](https://gitlab.com/nikolayradoev/socket-io-exemple) : vous pouvez utiliser le site web (client) de cet exemple pour tester la communication par WebSocket avec le serveur NestJS. Notez que cet exemple assume que le serveur est disponible sur le port `5000` : vous devez modifier l'URI de vos requêtes.
-
-NestJS utilise la librairie `Jest` pour ses tests. L'ensemble du code qui est fourni est déjà testé avec plusieurs exemples de tests unitaires. Vous pouvez vous baser sur ces exemples pour tester vos propres fonctionnalités.
-
-# Choix de serveur à utiliser
-
-Vous devez choisir le serveur à utiliser dans votre projet : NodeJS/Express de base ou NestJS. Dans les deux cas, vous devez apporter quelques changements à votre entrepôt.
-
-Notez que les configurations pour le déploiement et le pipeline de validation assument qu'il n'y a qu'un seul répertoire `/server` dans votre entrepôt. Peu importe votre choix, le répertoire de votre serveur doit porter ce nom.
-
-### Serveur NodeJS de base
-
-Si vous avez décidé de garder le serveur NodeJS de base, vous n'avez qu'à supprimer le répertoire `/server-nestjs` et pousser vos changements sur Git.
-
-**Note : il est important de retirer le répertoire du serveur non utilisé pour ne pas avoir du _code mort_ qui n'est jamais utilisé dans votre entrepôt.**
-
-### Serveur NestJS
-
-Si vous avez décidé de prendre le serveur NestJS, vous devez :
-
-- Supprimer le répertoire `/server` et renommer `/server-nestjs` à `/server`.
-- Modifier la valeur du champ `entryFile` à `server/app/index` dans le fichier `nest-cli.json`.
-- Modifier la valeur du champ `@app` à `out/server/app` dans le fichier `/server/package.json`.
-
-N'oubliez pas de pousser vos changements sur Git.
-
-**Note : il est important de retirer le répertoire du serveur non utilisé pour ne pas avoir du _code mort_ qui n'est jamais utilisé dans votre entrepôt.**
-
-### Serveur NestJS sans base de données
-
-Si vous voulez débuter avec le serveur NestJS sans une connexion à une instance MongoDB configurée, vous devez modifier le fichier [app.module.ts](./app/app.module.ts) et retirer les références à `MongooseModule`, `CourseController` et `CourseService`. Votre configuration devrait être la suivante :
-
-```ts
-@Module({
-    imports: [
-        ConfigModule.forRoot({ isGlobal: true })
-    ],
-    controllers: [DateController, ExampleController],
-    providers: [ChatGateway, DateService, ExampleService, Logger],
-})
-export class AppModule {}
+```bash
+cd server-nestjs
+npm start
 ```
 
-**Note : l'utilisation de MongoDB sera requise dans le projet. Il est recommandé de compléter la configuration de `MongooseModule` le plus tôt possible.**
+Le client et le serveur seront ensuite accessibles localement selon leur configuration respective.
+
+## 📚 Documentation du projet
+
+La documentation supplémentaire est disponible dans le repository :
+
+* [Guide de contribution](CONTRIBUTING.md)
+* [Guide de déploiement](DEPLOYMENT.md)
+* [Documentation des tests](TESTS.md)
+
+## 🎓 Contexte académique
+
+Ce projet a été développé dans le cadre du cours **LOG2995 – Projet de génie logiciel** à Polytechnique Montréal.
+
+Le projet nous a permis de mettre en pratique plusieurs concepts du génie logiciel dans un environnement collaboratif, notamment la gestion de versions, les revues de code, les tests automatisés, l'intégration continue et les méthodes de développement Agile.
+
+
