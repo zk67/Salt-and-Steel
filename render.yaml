@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: salt-and-steel
+    runtime: node
+    plan: free
+    buildCommand: npm ci --prefix client && npm run build --prefix client && npm ci --prefix server && npm run build --prefix server
+    startCommand: node server/out/server/app/index.js
+    healthCheckPath: /api/docs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: DATABASE_CONNECTION_STRING
+        sync: false

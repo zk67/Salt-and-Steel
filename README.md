@@ -73,6 +73,17 @@ cd client
 npm start
 ```
 
+## Déploiement sur Render
+
+Le fichier `render.yaml` à la racine décrit un service web Render unique. Le serveur NestJS sert le client Angular compilé, l'API sous `/api` et les connexions Socket.IO sur la même origine HTTPS.
+
+1. Créez un cluster MongoDB Atlas et autorisez les connexions depuis Render (`0.0.0.0/0` dans Atlas, avec un utilisateur et un mot de passe robustes).
+2. Dans Render, choisissez **New > Blueprint** et connectez ce dépôt.
+3. À la création du Blueprint, renseignez `DATABASE_CONNECTION_STRING` avec l'URI MongoDB complète, par exemple `mongodb+srv://UTILISATEUR:MOT_DE_PASSE@cluster.example.mongodb.net/salt-and-steel?retryWrites=true&w=majority`.
+4. Lancez le déploiement. Render fournit ensuite une URL HTTPS en `onrender.com`.
+
+Ne placez jamais l'URI MongoDB réelle dans Git. Le plan gratuit peut mettre le serveur en veille après une période d'inactivité; la première requête suivante peut donc être plus lente.
+
 Lancer le serveur :
 
 ```bash
@@ -95,5 +106,4 @@ La documentation supplémentaire est disponible dans le repository :
 Ce projet a été développé dans le cadre du cours **LOG2995 – Projet de génie logiciel** à Polytechnique Montréal.
 
 Le projet nous a permis de mettre en pratique plusieurs concepts du génie logiciel dans un environnement collaboratif, notamment la gestion de versions, les revues de code, les tests automatisés, l'intégration continue et les méthodes de développement Agile.
-
 
